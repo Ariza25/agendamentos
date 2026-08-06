@@ -20,7 +20,7 @@ func NewConfigurationHandler(useCase *appconfiguration.UseCase) *ConfigurationHa
 func (h *ConfigurationHandler) Get(w http.ResponseWriter, r *http.Request) {
 	configuration, err := h.useCase.Get(resolveRequestTenantID(r, nil))
 	if err != nil {
-		writeInternalError(w, "Nao foi possivel carregar as configuracoes.")
+		writeInternalError(w, "Could not load the configuration.")
 		return
 	}
 	writeJSON(w, http.StatusOK, configuration)
@@ -29,7 +29,7 @@ func (h *ConfigurationHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *ConfigurationHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var input configurationdomain.Configuration
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados das configuracoes.")
+		writeInvalidPayload(w, "Could not read the configuration data.")
 		return
 	}
 	input.TenantID = resolveRequestTenantID(r, nil)
@@ -44,8 +44,8 @@ func (h *ConfigurationHandler) Update(w http.ResponseWriter, r *http.Request) {
 func writeConfigurationError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, appconfiguration.ErrInvalidConfiguration):
-		writeBadRequestError(w, "invalid_input", "Dados das configuracoes invalidos.")
+		writeBadRequestError(w, "invalid_input", "Invalid configuration data.")
 	default:
-		writeInternalError(w, "Nao foi possivel processar as configuracoes.")
+		writeInternalError(w, "Could not process the configuration.")
 	}
 }

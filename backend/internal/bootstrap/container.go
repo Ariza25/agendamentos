@@ -13,29 +13,46 @@ import (
 	"erpagendamentos/backend/internal/application/appointment"
 	"erpagendamentos/backend/internal/application/auth"
 	"erpagendamentos/backend/internal/application/booking"
+	"erpagendamentos/backend/internal/application/commerce"
 	"erpagendamentos/backend/internal/application/configuration"
 	"erpagendamentos/backend/internal/application/customer"
+	"erpagendamentos/backend/internal/application/notification"
+	"erpagendamentos/backend/internal/application/payment"
 	"erpagendamentos/backend/internal/application/professional"
 	"erpagendamentos/backend/internal/application/service"
 	"erpagendamentos/backend/internal/application/tenant"
+	"erpagendamentos/backend/internal/application/waitinglist"
 	authdomain "erpagendamentos/backend/internal/domain/auth"
+	configurationdomain "erpagendamentos/backend/internal/domain/configuration"
+	customerdomain "erpagendamentos/backend/internal/domain/customer"
+	paymentdomain "erpagendamentos/backend/internal/domain/payment"
+	servicedomain "erpagendamentos/backend/internal/domain/service"
 	tenantdomain "erpagendamentos/backend/internal/domain/tenant"
+	notificationinfra "erpagendamentos/backend/internal/infrastructure/notifications"
+	paymentinfra "erpagendamentos/backend/internal/infrastructure/payments"
 	"erpagendamentos/backend/internal/interfaces/http/rest"
 )
 
 type Container struct {
-	db                   *sql.DB
-	databaseRequired     bool
-	authUseCase          *auth.UseCase
-	tenantUseCase        *tenant.UseCase
-	professionalUseCase  *professional.UseCase
-	serviceUseCase       *service.UseCase
-	customerUseCase      *customer.UseCase
-	appointmentUseCase   *appointment.UseCase
-	configurationUseCase *configuration.UseCase
-	bookingUseCase       *booking.UseCase
-	authMaintenance      auth.MaintenanceConfig
-	router               *rest.Router
+	db                      *sql.DB
+	databaseRequired        bool
+	authUseCase             *auth.UseCase
+	tenantUseCase           *tenant.UseCase
+	professionalUseCase     *professional.UseCase
+	serviceUseCase          *service.UseCase
+	customerUseCase         *customer.UseCase
+	appointmentUseCase      *appointment.UseCase
+	configurationUseCase    *configuration.UseCase
+	bookingUseCase          *booking.UseCase
+	notificationUseCase     *notification.UseCase
+	paymentUseCase          *payment.UseCase
+	waitingListUseCase      *waitinglist.UseCase
+	commerceUseCase         *commerce.UseCase
+	authMaintenance         auth.MaintenanceConfig
+	customerRepository      customerdomain.Repository
+	serviceRepository       servicedomain.Repository
+	configurationRepository configurationdomain.Repository
+	router                  *rest.Router
 }
 
 func NewContainer() *Container {
@@ -47,6 +64,10 @@ func NewContainer() *Container {
 	ensureDefaultTenant(repositories.tenant)
 	authComponents := buildAuthComponents(authRepository)
 
+	appointmentUseCase := appointment.NewUseCase(repositories.appointment)
+	notificationUseCase := notification.NewUseCase(repositories.notification, notificationinfra.NewLogProvider())
+	paymentUseCase := payment.NewUseCase(repositories.payment, buildPaymentProvider())
+
 	container := &Container{
 		db:                   db,
 		databaseRequired:     databaseRequired,
@@ -55,9 +76,22 @@ func NewContainer() *Container {
 		professionalUseCase:  professional.NewUseCase(repositories.professional),
 		serviceUseCase:       service.NewUseCase(repositories.service),
 		customerUseCase:      customer.NewUseCase(repositories.customer),
-		appointmentUseCase:   appointment.NewUseCase(repositories.appointment),
+		appointmentUseCase:   appointmentUseCase,
 		configurationUseCase: configuration.NewUseCase(repositories.configuration),
-		authMaintenance:      authComponents.maintenance,
+		notificationUseCase:  notificationUseCase,
+		paymentUseCase:       paymentUseCase,
+		waitingListUseCase:   waitinglist.NewUseCase(repositories.waitingList),
+		commerceUseCase: commerce.NewUseCase(
+			repositories.packages,
+			repositories.packageCredits,
+			repositories.giftCards,
+			repositories.memberships,
+			repositories.memberPlans,
+		),
+		authMaintenance:         authComponents.maintenance,
+		customerRepository:      repositories.customer,
+		serviceRepository:       repositories.service,
+		configurationRepository: repositories.configuration,
 	}
 	container.bookingUseCase = booking.NewUseCase(
 		repositories.tenant,
@@ -65,9 +99,16 @@ func NewContainer() *Container {
 		repositories.service,
 		repositories.professional,
 		repositories.customer,
-		container.appointmentUseCase,
+		appointmentUseCase,
 	)
 	return container
+}
+
+func buildPaymentProvider() paymentdomain.Provider {
+	if secretKey := strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")); secretKey != "" {
+		return paymentinfra.NewStripeProvider(secretKey)
+	}
+	return paymentinfra.NewMockProvider()
 }
 
 func isProductionEnv() bool {
@@ -140,6 +181,15 @@ func (c *Container) Router() *rest.Router {
 		AppointmentUseCase:    c.appointmentUseCase,
 		ConfigurationUseCase:  c.configurationUseCase,
 		BookingUseCase:        c.bookingUseCase,
+		NotificationUseCase:   c.notificationUseCase,
+		PaymentUseCase:        c.paymentUseCase,
+		WaitingListUseCase:    c.waitingListUseCase,
+		CommerceUseCase:       c.commerceUseCase,
+		CustomerRepository:    c.customerRepository,
+		ServiceRepository:     c.serviceRepository,
+		ConfigurationRepo:     c.configurationRepository,
+		ReminderInterval:      durationSecondsEnv("REMINDER_INTERVAL_SECONDS", 30*time.Minute),
+		ReminderEnabled:       boolEnv("REMINDER_WORKER_ENABLED", true),
 	})
 	return c.router
 }

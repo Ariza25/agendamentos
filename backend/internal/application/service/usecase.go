@@ -52,7 +52,17 @@ func (u *UseCase) Create(input domain.Service) (domain.Service, error) {
 	if input.Color == "" {
 		input.Color = "#8B5CF6"
 	}
-	return u.repository.Create(input)
+	created, err := u.repository.Create(input)
+	if err != nil {
+		return domain.Service{}, err
+	}
+	if len(input.ProfessionalIDs) > 0 {
+		if err := u.repository.SetProfessionals(input.TenantID, created.ID, input.ProfessionalIDs); err != nil {
+			return domain.Service{}, err
+		}
+		return u.repository.GetByID(input.TenantID, created.ID)
+	}
+	return created, nil
 }
 
 func (u *UseCase) Update(input domain.Service) (domain.Service, error) {
@@ -79,7 +89,17 @@ func (u *UseCase) Update(input domain.Service) (domain.Service, error) {
 	if input.PriceCents < 0 {
 		input.PriceCents = current.PriceCents
 	}
-	return u.repository.Update(input)
+	updated, err := u.repository.Update(input)
+	if err != nil {
+		return domain.Service{}, err
+	}
+	if input.ProfessionalIDs != nil {
+		if err := u.repository.SetProfessionals(tenantID, id, input.ProfessionalIDs); err != nil {
+			return domain.Service{}, err
+		}
+		return u.repository.GetByID(tenantID, id)
+	}
+	return updated, nil
 }
 
 func (u *UseCase) SetActive(tenantID string, id string, active bool) (domain.Service, error) {

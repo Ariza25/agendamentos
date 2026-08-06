@@ -1,7 +1,7 @@
 import { forwardRef, useState } from 'react'
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'unstyled'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'unstyled'
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon'
 
 type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> & {
@@ -16,6 +16,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-strong)]',
   secondary: 'border border-[var(--color-border)] bg-white text-[var(--color-text)] hover:bg-[var(--color-bg-muted)]',
   ghost: 'bg-transparent text-[var(--color-text)] hover:bg-[var(--color-bg-muted)]',
+  danger: 'bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger-strong)]',
   unstyled: '',
 }
 

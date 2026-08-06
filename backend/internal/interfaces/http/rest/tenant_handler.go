@@ -21,7 +21,7 @@ func NewTenantHandler(useCase *apptenant.UseCase) *TenantHandler {
 func (h *TenantHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenants, err := h.useCase.ListTenants()
 	if err != nil {
-		writeInternalError(w, "Nao foi possivel carregar os estabelecimentos.")
+		writeInternalError(w, "Could not load the establishments.")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"tenants": tenants})
@@ -30,7 +30,7 @@ func (h *TenantHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *TenantHandler) Get(w http.ResponseWriter, r *http.Request) {
 	tenant, err := h.useCase.GetTenant(r.PathValue("tenantID"))
 	if err != nil {
-		writeNotFoundError(w, "not_found", "Estabelecimento nao encontrado.")
+		writeNotFoundError(w, "not_found", "Establishment not found.")
 		return
 	}
 	writeJSON(w, http.StatusOK, tenant)
@@ -39,7 +39,7 @@ func (h *TenantHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *TenantHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input tenantdomain.Tenant
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do estabelecimento.")
+		writeInvalidPayload(w, "Could not read the establishment data.")
 		return
 	}
 	tenant, err := h.useCase.CreateTenant(input)
@@ -53,7 +53,7 @@ func (h *TenantHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *TenantHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var input tenantdomain.Tenant
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do estabelecimento.")
+		writeInvalidPayload(w, "Could not read the establishment data.")
 		return
 	}
 	input.ID = r.PathValue("tenantID")
@@ -70,7 +70,7 @@ func (h *TenantHandler) SetActive(w http.ResponseWriter, r *http.Request) {
 		Active bool `json:"active"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Informe se o estabelecimento deve estar ativo.")
+		writeInvalidPayload(w, "Provide whether the establishment should be active.")
 		return
 	}
 	tenant, err := h.useCase.SetActive(r.PathValue("tenantID"), input.Active)
@@ -92,15 +92,15 @@ func (h *TenantHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func writeTenantError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, apptenant.ErrTenantNotFound):
-		writeNotFoundError(w, "not_found", "Estabelecimento nao encontrado.")
+		writeNotFoundError(w, "not_found", "Establishment not found.")
 	case errors.Is(err, apptenant.ErrInvalidTenant):
-		writeBadRequestError(w, "invalid_input", "Dados do estabelecimento invalidos.")
+		writeBadRequestError(w, "invalid_input", "Invalid establishment data.")
 	case errors.Is(err, apptenant.ErrSlugAlreadyUsed):
-		writeConflictError(w, "slug_already_used", "Ja existe um estabelecimento com este identificador.")
+		writeConflictError(w, "slug_already_used", "An establishment with this identifier already exists.")
 	case errors.Is(err, apptenant.ErrLastActiveTenant):
-		writeConflictError(w, "last_active_tenant", "Nao e possivel remover o ultimo estabelecimento ativo.")
+		writeConflictError(w, "last_active_tenant", "It is not possible to remove the last active establishment.")
 	default:
-		writeInternalError(w, "Nao foi possivel processar o estabelecimento.")
+		writeInternalError(w, "Could not process the establishment.")
 	}
 }
 

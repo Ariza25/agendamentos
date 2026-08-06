@@ -25,18 +25,18 @@ func NewAuthHandler(useCase *appauth.UseCase) *AuthHandler {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var input authdomain.LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados de login. Revise os campos enviados.")
+		writeInvalidPayload(w, "Could not read the login data. Review the submitted fields.")
 		return
 	}
 	for _, key := range []string{requestClientIP(r), strings.ToLower(strings.TrimSpace(input.Audience)) + ":" + strings.ToLower(strings.TrimSpace(input.Email))} {
 		allowed, limitErr := h.useCase.AllowSecurityRequest("login", key, 10, 15*time.Minute)
 		if limitErr != nil {
-			writeAPIError(w, http.StatusServiceUnavailable, "auth_service_unavailable", "Nao foi possivel autenticar agora.")
+			writeAPIError(w, http.StatusServiceUnavailable, "auth_service_unavailable", "Could not authenticate right now.")
 			return
 		}
 		if !allowed {
 			w.Header().Set("Retry-After", "900")
-			writeAPIError(w, http.StatusTooManyRequests, "rate_limited", "Muitas tentativas de acesso. Aguarde alguns minutos.")
+			writeAPIError(w, http.StatusTooManyRequests, "rate_limited", "Too many login attempts. Wait a few minutes.")
 			return
 		}
 	}
@@ -44,11 +44,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	session, err := h.useCase.Login(input)
 	if err != nil {
 		if errors.Is(err, appauth.ErrMFARequired) {
-			writeAPIError(w, http.StatusPreconditionRequired, "mfa_required", "Informe o codigo do aplicativo autenticador.")
+			writeAPIError(w, http.StatusPreconditionRequired, "mfa_required", "Provide the code from your authenticator app.")
 			return
 		}
 		if validation, ok := err.(*appauth.ValidationError); ok {
-			writeValidationError(w, "Revise os campos destacados e tente novamente.", validation.FieldErrors)
+			writeValidationError(w, "Review the highlighted fields and try again.", validation.FieldErrors)
 			return
 		}
 		logWarn("admin login failed", map[string]any{
@@ -57,7 +57,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			"source":     "auth",
 			"error":      err.Error(),
 		})
-		writeAPIError(w, http.StatusUnauthorized, "invalid_credentials", "Email ou senha incorretos.")
+		writeAPIError(w, http.StatusUnauthorized, "invalid_credentials", "Incorrect email or password.")
 		return
 	}
 
@@ -98,7 +98,7 @@ func (h *AuthHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
 	}
 	sessions, err := h.useCase.ListSessions(claims.UserID, claims.SessionID)
 	if err != nil {
-		writeAPIError(w, http.StatusInternalServerError, "session_list_failed", "Nao foi possivel carregar os dispositivos conectados.")
+		writeAPIError(w, http.StatusInternalServerError, "session_list_failed", "Could not load the connected devices.")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"sessions": sessions})
@@ -112,11 +112,11 @@ func (h *AuthHandler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionID := strings.TrimSpace(r.PathValue("sessionID"))
 	if sessionID == "" {
-		writeInvalidPayload(w, "Informe a sessao que sera encerrada.")
+		writeInvalidPayload(w, "Provide the session to be ended.")
 		return
 	}
 	if err := h.useCase.RevokeSession(claims.UserID, sessionID); err != nil {
-		writeAPIError(w, http.StatusInternalServerError, "session_revoke_failed", "Nao foi possivel encerrar a sessao.")
+		writeAPIError(w, http.StatusInternalServerError, "session_revoke_failed", "Could not end the session.")
 		return
 	}
 	if sessionID == claims.SessionID {
@@ -132,7 +132,7 @@ func (h *AuthHandler) RevokeOtherSessions(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err := h.useCase.RevokeOtherSessions(claims.UserID, claims.SessionID); err != nil {
-		writeAPIError(w, http.StatusInternalServerError, "session_revoke_failed", "Nao foi possivel encerrar as outras sessoes.")
+		writeAPIError(w, http.StatusInternalServerError, "session_revoke_failed", "Could not end the other sessions.")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -147,14 +147,14 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	var input authdomain.UpdateProfileInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do perfil. Revise os campos enviados.")
+		writeInvalidPayload(w, "Could not read the profile data. Review the submitted fields.")
 		return
 	}
 	input.UserID = claims.UserID
 
 	account, err := h.useCase.UpdateProfile(input)
 	if err != nil {
-		writeAPIError(w, http.StatusBadRequest, "invalid_profile", "Nao foi possivel atualizar o perfil.")
+		writeAPIError(w, http.StatusBadRequest, "invalid_profile", "Could not update the profile.")
 		return
 	}
 
@@ -170,17 +170,17 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	var input authdomain.ChangePasswordInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados de senha. Revise os campos enviados.")
+		writeInvalidPayload(w, "Could not read the password data. Review the submitted fields.")
 		return
 	}
 	input.UserID = claims.UserID
 
 	if err := h.useCase.ChangePassword(input); err != nil {
 		if validation, ok := err.(*appauth.ValidationError); ok {
-			writeValidationError(w, "Revise os campos de senha e tente novamente.", validation.FieldErrors)
+			writeValidationError(w, "Review the password fields and try again.", validation.FieldErrors)
 			return
 		}
-		writeAPIError(w, http.StatusBadRequest, "password_change_failed", "Nao foi possivel alterar a senha.")
+		writeAPIError(w, http.StatusBadRequest, "password_change_failed", "Could not change the password.")
 		return
 	}
 
@@ -238,7 +238,7 @@ func (h *AuthHandler) trackSession(r *http.Request, token string) {
 func (h *AuthHandler) ListAdminUsers(w http.ResponseWriter, r *http.Request) {
 	accounts, err := h.useCase.ListAccounts()
 	if err != nil {
-		writeAPIError(w, http.StatusInternalServerError, "internal_error", "Nao foi possivel carregar os usuarios.")
+		writeAPIError(w, http.StatusInternalServerError, "internal_error", "Could not load the users.")
 		return
 	}
 
@@ -263,7 +263,7 @@ func (h *AuthHandler) ListAdminUsers(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) CreateAdminUser(w http.ResponseWriter, r *http.Request) {
 	var input authdomain.RegisterInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do usuario. Revise os campos enviados.")
+		writeInvalidPayload(w, "Could not read the user data. Review the submitted fields.")
 		return
 	}
 
@@ -302,7 +302,7 @@ func (h *AuthHandler) UpdateAdminUserRole(w http.ResponseWriter, r *http.Request
 	}
 	var input payload
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler o perfil do usuario. Revise os campos enviados.")
+		writeInvalidPayload(w, "Could not read the user profile. Review the submitted fields.")
 		return
 	}
 
@@ -326,21 +326,21 @@ func (h *AuthHandler) DeleteAdminUser(w http.ResponseWriter, r *http.Request) {
 
 func writeAdminAuthError(w http.ResponseWriter, err error) {
 	if validation, ok := err.(*appauth.ValidationError); ok {
-		writeValidationError(w, "Revise os campos destacados e tente novamente.", validation.FieldErrors)
+		writeValidationError(w, "Review the highlighted fields and try again.", validation.FieldErrors)
 		return
 	}
 
 	switch {
 	case errors.Is(err, appauth.ErrInvalidRole):
-		writeBadRequestError(w, "invalid_input", "Perfil de usuario invalido.")
+		writeBadRequestError(w, "invalid_input", "Invalid user profile.")
 	case errors.Is(err, appauth.ErrAccountNotFound):
-		writeNotFoundError(w, "not_found", "Usuario nao encontrado.")
+		writeNotFoundError(w, "not_found", "User not found.")
 	case errors.Is(err, appauth.ErrLastAdmin):
-		writeConflictError(w, "last_admin", "Nao e possivel remover o ultimo acesso administrativo.")
+		writeConflictError(w, "last_admin", "It is not possible to remove the last administrative access.")
 	case errors.Is(err, appauth.ErrEmailAlreadyRegistered):
-		writeConflictError(w, "email_already_registered", "Ja existe uma conta cadastrada com este email.")
+		writeConflictError(w, "email_already_registered", "An account with this email already exists.")
 	default:
-		writeInternalError(w, "Falha interna ao processar usuario.")
+		writeInternalError(w, "Internal error while processing the user.")
 	}
 }
 

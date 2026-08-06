@@ -11,6 +11,13 @@ const ProfessionalsPage = lazy(() => import('../pages/ProfessionalsPage').then((
 const ConfigurationPage = lazy(() => import('../pages/ConfigurationPage').then((module) => ({ default: module.ConfigurationPage })))
 const TeamPage = lazy(() => import('../pages/TeamPage').then((module) => ({ default: module.TeamPage })))
 const TenantsPage = lazy(() => import('../pages/TenantsPage').then((module) => ({ default: module.TenantsPage })))
+const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage').then((module) => ({ default: module.AnalyticsPage })))
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage').then((module) => ({ default: module.NotificationsPage })))
+const PaymentsPage = lazy(() => import('../pages/PaymentsPage').then((module) => ({ default: module.PaymentsPage })))
+const PackagesPage = lazy(() => import('../pages/PackagesPage').then((module) => ({ default: module.PackagesPage })))
+const GiftCardsPage = lazy(() => import('../pages/GiftCardsPage').then((module) => ({ default: module.GiftCardsPage })))
+const MembershipsPage = lazy(() => import('../pages/MembershipsPage').then((module) => ({ default: module.MembershipsPage })))
+const WaitingListPage = lazy(() => import('../pages/WaitingListPage').then((module) => ({ default: module.WaitingListPage })))
 
 type AdminRoutesProps = {
   canAccessRoute: (area: AdminAreaKey) => boolean
@@ -31,6 +38,13 @@ export function AdminRoutes({ canAccessRoute, defaultRoute }: AdminRoutesProps) 
         <Route element={canAccessRoute('configuration') ? <ConfigurationPage /> : <AccessDeniedPage />} path="/configuration" />
         <Route element={canAccessRoute('team') ? <TeamPage /> : <AccessDeniedPage />} path="/team" />
         <Route element={canAccessRoute('tenants') ? <TenantsPage /> : <AccessDeniedPage />} path="/tenants" />
+        <Route element={canAccessRoute('analytics') ? <AnalyticsPage /> : <AccessDeniedPage />} path="/analytics" />
+        <Route element={canAccessRoute('notifications') ? <NotificationsPage /> : <AccessDeniedPage />} path="/notifications" />
+        <Route element={canAccessRoute('payments') ? <PaymentsPage /> : <AccessDeniedPage />} path="/payments" />
+        <Route element={canAccessRoute('packages') ? <PackagesPage /> : <AccessDeniedPage />} path="/packages" />
+        <Route element={canAccessRoute('gift-cards') ? <GiftCardsPage /> : <AccessDeniedPage />} path="/gift-cards" />
+        <Route element={canAccessRoute('memberships') ? <MembershipsPage /> : <AccessDeniedPage />} path="/memberships" />
+        <Route element={canAccessRoute('waiting-list') ? <WaitingListPage /> : <AccessDeniedPage />} path="/waiting-list" />
         <Route element={<Navigate replace to={defaultRoute} />} path="*" />
       </Routes>
     </Suspense>

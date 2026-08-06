@@ -59,7 +59,7 @@ func withRateLimit(authUseCase *appauth.UseCase, next http.Handler) http.Handler
 			for _, identity := range identities {
 				allowed, err := authUseCase.AllowSecurityRequest(config.scope, identity, config.limit, config.window)
 				if err != nil {
-					writeAPIError(w, http.StatusServiceUnavailable, "rate_limit_unavailable", "Nao foi possivel validar a requisicao agora.")
+					writeAPIError(w, http.StatusServiceUnavailable, "rate_limit_unavailable", "Could not validate the request right now.")
 					return
 				}
 				if !allowed {
@@ -128,7 +128,7 @@ func writeRateLimited(w http.ResponseWriter, r *http.Request, routeKey string, c
 		"route_key":  routeKey,
 		"scope":      scope,
 	})
-	writeAPIError(w, http.StatusTooManyRequests, "rate_limited", "Muitas tentativas. Aguarde um instante e tente novamente.")
+	writeAPIError(w, http.StatusTooManyRequests, "rate_limited", "Too many attempts. Please wait a moment and try again.")
 }
 
 func (l *memoryRateLimiter) allow(clientIP string, routeKey string, sensitive bool) (bool, time.Duration) {

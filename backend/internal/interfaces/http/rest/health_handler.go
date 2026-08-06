@@ -21,7 +21,7 @@ func readiness(checker func() error) http.HandlerFunc {
 				"request_id": requestIDFromContext(r.Context()),
 				"error":      err.Error(),
 			})
-			writeAPIError(w, http.StatusServiceUnavailable, "service_unavailable", "Servico temporariamente indisponivel.")
+			writeAPIError(w, http.StatusServiceUnavailable, "service_unavailable", "Service temporarily unavailable.")
 			return
 		}
 

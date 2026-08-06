@@ -21,7 +21,7 @@ func (h *ProfessionalHandler) List(w http.ResponseWriter, r *http.Request) {
 	tenantID := resolveRequestTenantID(r, nil)
 	professionals, err := h.useCase.ListByTenant(tenantID)
 	if err != nil {
-		writeInternalError(w, "Nao foi possivel carregar os profissionais.")
+		writeInternalError(w, "Could not load the professionals.")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"professionals": professionals})
@@ -30,7 +30,7 @@ func (h *ProfessionalHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *ProfessionalHandler) Get(w http.ResponseWriter, r *http.Request) {
 	professional, err := h.useCase.GetByID(resolveRequestTenantID(r, nil), r.PathValue("professionalID"))
 	if err != nil {
-		writeNotFoundError(w, "not_found", "Profissional nao encontrado.")
+		writeNotFoundError(w, "not_found", "Professional not found.")
 		return
 	}
 	writeJSON(w, http.StatusOK, professional)
@@ -39,7 +39,7 @@ func (h *ProfessionalHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *ProfessionalHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input professionaldomain.Professional
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do profissional.")
+		writeInvalidPayload(w, "Could not read the professional data.")
 		return
 	}
 	input.TenantID = resolveRequestTenantID(r, nil)
@@ -54,7 +54,7 @@ func (h *ProfessionalHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *ProfessionalHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var input professionaldomain.Professional
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do profissional.")
+		writeInvalidPayload(w, "Could not read the professional data.")
 		return
 	}
 	input.TenantID = resolveRequestTenantID(r, nil)
@@ -72,7 +72,7 @@ func (h *ProfessionalHandler) SetActive(w http.ResponseWriter, r *http.Request) 
 		Active bool `json:"active"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Informe se o profissional deve estar ativo.")
+		writeInvalidPayload(w, "Provide whether the professional should be active.")
 		return
 	}
 	professional, err := h.useCase.SetActive(resolveRequestTenantID(r, nil), r.PathValue("professionalID"), input.Active)
@@ -94,10 +94,10 @@ func (h *ProfessionalHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func writeProfessionalError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, appprofessional.ErrProfessionalNotFound):
-		writeNotFoundError(w, "not_found", "Profissional nao encontrado.")
+		writeNotFoundError(w, "not_found", "Professional not found.")
 	case errors.Is(err, appprofessional.ErrInvalidProfessional):
-		writeBadRequestError(w, "invalid_input", "Dados do profissional invalidos.")
+		writeBadRequestError(w, "invalid_input", "Invalid professional data.")
 	default:
-		writeInternalError(w, "Nao foi possivel processar o profissional.")
+		writeInternalError(w, "Could not process the professional.")
 	}
 }

@@ -67,7 +67,7 @@ func (r *ServiceRepository) GetByID(tenantID string, id string) (service.Service
 	if err != nil {
 		return service.Service{}, err
 	}
-	return item, nil
+	return r.populateProfessionalIDs(item)
 }
 
 func (r *ServiceRepository) ListByTenant(tenantID string) ([]service.Service, error) {
@@ -88,7 +88,11 @@ func (r *ServiceRepository) ListByTenant(tenantID string) ([]service.Service, er
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, item)
+		populated, err := r.populateProfessionalIDs(item)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, populated)
 	}
 	return items, rows.Err()
 }
@@ -110,6 +114,62 @@ func (r *ServiceRepository) SetActive(tenantID string, id string, active bool) (
 		return service.Service{}, fmt.Errorf("service not found")
 	}
 	return r.GetByID(tenantID, id)
+}
+
+func (r *ServiceRepository) SetProfessionals(tenantID string, serviceID string, professionalIDs []string) error {
+	transaction, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin service professionals: %w", err)
+	}
+	defer transaction.Rollback()
+	if _, err := transaction.Exec(`DELETE FROM catalog.service_professionals WHERE service_id = $1`, serviceID); err != nil {
+		return fmt.Errorf("clear service professionals: %w", err)
+	}
+	for _, professionalID := range professionalIDs {
+		professionalID = strings.TrimSpace(professionalID)
+		if professionalID == "" {
+			continue
+		}
+		if _, err := transaction.Exec(`
+			INSERT INTO catalog.service_professionals (tenant_id, service_id, professional_id)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (service_id, professional_id) DO NOTHING
+		`, tenantID, serviceID, professionalID); err != nil {
+			return fmt.Errorf("insert service professional: %w", err)
+		}
+	}
+	return transaction.Commit()
+}
+
+func (r *ServiceRepository) GetProfessionalIDs(tenantID string, serviceID string) ([]string, error) {
+	rows, err := r.db.Query(`
+		SELECT professional_id
+		FROM catalog.service_professionals
+		WHERE service_id = $1 AND tenant_id = $2
+		ORDER BY professional_id ASC
+	`, strings.TrimSpace(serviceID), strings.TrimSpace(tenantID))
+	if err != nil {
+		return nil, fmt.Errorf("query service professionals: %w", err)
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan service professional: %w", err)
+		}
+		items = append(items, id)
+	}
+	return items, rows.Err()
+}
+
+func (r *ServiceRepository) populateProfessionalIDs(item service.Service) (service.Service, error) {
+	ids, err := r.GetProfessionalIDs(item.TenantID, item.ID)
+	if err != nil {
+		return service.Service{}, err
+	}
+	item.ProfessionalIDs = ids
+	return item, nil
 }
 
 func (r *ServiceRepository) Delete(tenantID string, id string) error {

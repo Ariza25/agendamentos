@@ -100,6 +100,37 @@ func (r *ServiceRepository) SetActive(tenantID string, id string, active bool) (
 	return current, nil
 }
 
+func (r *ServiceRepository) SetProfessionals(tenantID string, serviceID string, professionalIDs []string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current, exists := r.services[strings.TrimSpace(serviceID)]
+	if !exists || current.TenantID != strings.TrimSpace(tenantID) {
+		return fmt.Errorf("service not found")
+	}
+	ids := []string{}
+	for _, id := range professionalIDs {
+		id = strings.TrimSpace(id)
+		if id != "" {
+			ids = append(ids, id)
+		}
+	}
+	current.ProfessionalIDs = ids
+	r.services[current.ID] = current
+	return nil
+}
+
+func (r *ServiceRepository) GetProfessionalIDs(tenantID string, serviceID string) ([]string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current, exists := r.services[strings.TrimSpace(serviceID)]
+	if !exists || current.TenantID != strings.TrimSpace(tenantID) {
+		return nil, fmt.Errorf("service not found")
+	}
+	return current.ProfessionalIDs, nil
+}
+
 func (r *ServiceRepository) Delete(tenantID string, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

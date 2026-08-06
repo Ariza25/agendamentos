@@ -61,7 +61,7 @@ func (h *BookingHandler) Availability(w http.ResponseWriter, r *http.Request) {
 func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input appbooking.BookingInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do agendamento.")
+		writeInvalidPayload(w, "Could not read the appointment data.")
 		return
 	}
 	result, err := h.useCase.CreateBooking(r.PathValue("slug"), input)
@@ -72,19 +72,63 @@ func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, result)
 }
 
+func (h *BookingHandler) GetByManagementCode(w http.ResponseWriter, r *http.Request) {
+	appointment, err := h.useCase.GetByManagementCode(r.PathValue("slug"), r.PathValue("code"))
+	if err != nil {
+		writeBookingError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, appointment)
+}
+
+func (h *BookingHandler) Cancel(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Reason string `json:"reason"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&input)
+	appointment, err := h.useCase.CancelPublic(r.PathValue("slug"), r.PathValue("code"), input.Reason)
+	if err != nil {
+		writeBookingError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, appointment)
+}
+
+func (h *BookingHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		StartsAt string `json:"startsAt"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeInvalidPayload(w, "Provide the new appointment time.")
+		return
+	}
+	appointment, err := h.useCase.ReschedulePublic(r.PathValue("slug"), r.PathValue("code"), input.StartsAt)
+	if err != nil {
+		writeBookingError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, appointment)
+}
+
 func writeBookingError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, appbooking.ErrTenantNotFound):
-		writeNotFoundError(w, "not_found", "Estabelecimento nao encontrado.")
+		writeNotFoundError(w, "not_found", "Establishment not found.")
 	case errors.Is(err, appbooking.ErrBookingDisabled):
-		writeAPIError(w, http.StatusForbidden, "booking_disabled", "O agendamento online esta desativado para este estabelecimento.")
+		writeAPIError(w, http.StatusForbidden, "booking_disabled", "Online booking is disabled for this establishment.")
 	case errors.Is(err, appbooking.ErrSlotUnavailable):
-		writeConflictError(w, "time_conflict", "Este horario nao esta mais disponivel.")
+		writeConflictError(w, "time_conflict", "This time slot is no longer available.")
 	case errors.Is(err, appbooking.ErrInvalidBooking):
-		writeBadRequestError(w, "invalid_input", "Dados do agendamento invalidos.")
+		writeBadRequestError(w, "invalid_input", "Invalid appointment data.")
 	case errors.Is(err, appbooking.ErrNoAvailableSlots):
-		writeBadRequestError(w, "no_available_slots", "Nao ha horarios disponiveis para esta data.")
+		writeBadRequestError(w, "no_available_slots", "No slots available for this date.")
+	case errors.Is(err, appbooking.ErrInvalidCode):
+		writeNotFoundError(w, "not_found", "Appointment not found. Check the code and try again.")
+	case errors.Is(err, appbooking.ErrAppointmentDone):
+		writeConflictError(w, "appointment_done", "This appointment can no longer be managed online.")
+	case errors.Is(err, appbooking.ErrCancellationTooLate):
+		writeConflictError(w, "cancellation_window", "The cancellation window for this appointment has passed.")
 	default:
-		writeInternalError(w, "Nao foi possivel processar o agendamento online.")
+		writeInternalError(w, "Could not process the online appointment.")
 	}
 }

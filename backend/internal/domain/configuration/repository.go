@@ -7,6 +7,14 @@ type WorkingHours struct {
 	Enabled   bool   `json:"enabled"`
 }
 
+type ClosedDay struct {
+	Date      string `json:"date"`
+	Name      string `json:"name"`
+	AllDay    bool   `json:"allDay"`
+	OpenTime  string `json:"openTime,omitempty"`
+	CloseTime string `json:"closeTime,omitempty"`
+}
+
 type Configuration struct {
 	TenantID                   string         `json:"tenantId"`
 	EstablishmentName          string         `json:"establishmentName"`
@@ -15,6 +23,18 @@ type Configuration struct {
 	DefaultDurationMinutes     int            `json:"defaultDurationMinutes"`
 	AllowOnlineBooking         bool           `json:"allowOnlineBooking"`
 	AdvanceNoticeHours         int            `json:"advanceNoticeHours"`
+	BufferMinutes              int            `json:"bufferMinutes"`
+	ClosedDays                 []ClosedDay    `json:"closedDays"`
+	NotificationsEnabled       bool           `json:"notificationsEnabled"`
+	NotificationReminderHours  int            `json:"notificationReminderHours"`
+	NotificationChannel        string         `json:"notificationChannel"`
+	DepositEnabled             bool           `json:"depositEnabled"`
+	DepositType                string         `json:"depositType"`
+	DepositAmountCents         int            `json:"depositAmountCents"`
+	DepositPercentage          int            `json:"depositPercentage"`
+	NoShowFeeCents             int            `json:"noShowFeeCents"`
+	CancellationPolicyHours    int            `json:"cancellationPolicyHours"`
+	CalendarSyncEnabled        bool           `json:"calendarSyncEnabled"`
 	UpdatedAt                  string         `json:"updatedAt"`
 }
 

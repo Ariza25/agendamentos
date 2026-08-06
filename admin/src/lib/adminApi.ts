@@ -2,12 +2,21 @@ import type {
   AdminInviteResponse,
   AdminUser,
   Appointment,
+  AppointmentAnalytics,
   AppointmentSummary,
   Configuration,
   Customer,
+  GiftCard,
+  MemberPlan,
+  Membership,
+  NotificationLog,
+  Package,
+  PackageCredit,
+  Payment,
   Professional,
   Service,
   Tenant,
+  WaitingListEntry,
 } from '../types'
 import { adminFetch, cachedAdminJson, parseJson, invalidateAdminGetCache } from './adminHttp'
 
@@ -188,6 +197,270 @@ export async function updateAppointmentStatus(id: string, status: string): Promi
   })
   const data = await parseJson<Appointment>(response)
   invalidateMutations()
+  return data
+}
+
+export async function checkInAppointment(id: string): Promise<Appointment> {
+  const response = await adminFetch(`/api/v1/admin/appointments/${id}/check-in`, { method: 'POST' })
+  const data = await parseJson<Appointment>(response)
+  invalidateMutations()
+  return data
+}
+
+export async function markAppointmentNoShow(id: string, feeCents = 0): Promise<Appointment> {
+  const response = await adminFetch(`/api/v1/admin/appointments/${id}/no-show`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ feeCents }),
+  })
+  const data = await parseJson<Appointment>(response)
+  invalidateMutations()
+  return data
+}
+
+export async function fetchAppointmentAnalytics(from: string, to: string): Promise<AppointmentAnalytics> {
+  const params = new URLSearchParams({ from, to })
+  return cachedAdminJson<AppointmentAnalytics>(`/api/v1/admin/appointments/analytics?${params.toString()}`)
+}
+
+export async function fetchNotifications(limit = 50): Promise<NotificationLog[]> {
+  const data = await cachedAdminJson<{ notifications: NotificationLog[] }>(`/api/v1/admin/notifications?limit=${limit}`)
+  return data.notifications
+}
+
+export async function sendTestNotification(input: {
+  channel: string
+  recipient: string
+  subject: string
+  body: string
+}): Promise<NotificationLog> {
+  const response = await adminFetch('/api/v1/admin/notifications/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<NotificationLog>(response)
+  invalidateAdminGetCache('/api/v1/admin/notifications')
+  return data
+}
+
+export async function fetchPayments(limit = 50): Promise<Payment[]> {
+  const data = await cachedAdminJson<{ payments: Payment[] }>(`/api/v1/admin/payments?limit=${limit}`)
+  return data.payments
+}
+
+export async function createPayment(input: {
+  appointmentId?: string
+  amountCents: number
+  method: string
+  description?: string
+}): Promise<Payment> {
+  const response = await adminFetch('/api/v1/admin/payments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Payment>(response)
+  invalidateAdminGetCache('/api/v1/admin/payments')
+  return data
+}
+
+export async function markPaymentPaid(id: string): Promise<Payment> {
+  const response = await adminFetch(`/api/v1/admin/payments/${id}/mark-paid`, { method: 'POST' })
+  const data = await parseJson<Payment>(response)
+  invalidateAdminGetCache('/api/v1/admin/payments')
+  return data
+}
+
+export async function refundPayment(id: string): Promise<Payment> {
+  const response = await adminFetch(`/api/v1/admin/payments/${id}/refund`, { method: 'POST' })
+  const data = await parseJson<Payment>(response)
+  invalidateAdminGetCache('/api/v1/admin/payments')
+  return data
+}
+
+export async function fetchWaitingList(status = ''): Promise<WaitingListEntry[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : ''
+  const data = await cachedAdminJson<{ entries: WaitingListEntry[] }>(`/api/v1/admin/waiting-list${query}`)
+  return data.entries
+}
+
+export async function updateWaitingListStatus(id: string, status: string): Promise<WaitingListEntry> {
+  const response = await adminFetch(`/api/v1/admin/waiting-list/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  const data = await parseJson<WaitingListEntry>(response)
+  invalidateAdminGetCache('/api/v1/admin/waiting-list')
+  return data
+}
+
+export async function fetchPackages(): Promise<Package[]> {
+  const data = await cachedAdminJson<{ packages: Package[] }>('/api/v1/admin/packages')
+  return data.packages
+}
+
+export async function createPackage(input: Partial<Package>): Promise<Package> {
+  const response = await adminFetch('/api/v1/admin/packages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Package>(response)
+  invalidateAdminGetCache('/api/v1/admin/packages')
+  return data
+}
+
+export async function updatePackage(id: string, input: Partial<Package>): Promise<Package> {
+  const response = await adminFetch(`/api/v1/admin/packages/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Package>(response)
+  invalidateAdminGetCache('/api/v1/admin/packages')
+  return data
+}
+
+export async function setPackageActive(id: string, active: boolean): Promise<Package> {
+  const response = await adminFetch(`/api/v1/admin/packages/${id}/active`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active }),
+  })
+  const data = await parseJson<Package>(response)
+  invalidateAdminGetCache('/api/v1/admin/packages')
+  return data
+}
+
+export async function deletePackage(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/packages/${id}`, { method: 'DELETE' })
+  await parseJson<{ status?: string } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/packages')
+}
+
+export async function fetchGiftCards(): Promise<GiftCard[]> {
+  const data = await cachedAdminJson<{ giftCards: GiftCard[] }>('/api/v1/admin/gift-cards')
+  return data.giftCards
+}
+
+export async function createGiftCard(input: Partial<GiftCard>): Promise<GiftCard> {
+  const response = await adminFetch('/api/v1/admin/gift-cards', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<GiftCard>(response)
+  invalidateAdminGetCache('/api/v1/admin/gift-cards')
+  return data
+}
+
+export async function updateGiftCard(id: string, input: Partial<GiftCard>): Promise<GiftCard> {
+  const response = await adminFetch(`/api/v1/admin/gift-cards/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<GiftCard>(response)
+  invalidateAdminGetCache('/api/v1/admin/gift-cards')
+  return data
+}
+
+export async function deleteGiftCard(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/gift-cards/${id}`, { method: 'DELETE' })
+  await parseJson<{ status?: string } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/gift-cards')
+}
+
+export async function fetchMemberships(): Promise<Membership[]> {
+  const data = await cachedAdminJson<{ memberships: Membership[] }>('/api/v1/admin/memberships')
+  return data.memberships
+}
+
+export async function createMembership(input: Partial<Membership>): Promise<Membership> {
+  const response = await adminFetch('/api/v1/admin/memberships', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Membership>(response)
+  invalidateAdminGetCache('/api/v1/admin/memberships')
+  return data
+}
+
+export async function updateMembership(id: string, input: Partial<Membership>): Promise<Membership> {
+  const response = await adminFetch(`/api/v1/admin/memberships/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Membership>(response)
+  invalidateAdminGetCache('/api/v1/admin/memberships')
+  return data
+}
+
+export async function setMembershipActive(id: string, active: boolean): Promise<Membership> {
+  const response = await adminFetch(`/api/v1/admin/memberships/${id}/active`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active }),
+  })
+  const data = await parseJson<Membership>(response)
+  invalidateAdminGetCache('/api/v1/admin/memberships')
+  return data
+}
+
+export async function deleteMembership(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/memberships/${id}`, { method: 'DELETE' })
+  await parseJson<{ status?: string } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/memberships')
+}
+
+export async function fetchMemberPlans(): Promise<MemberPlan[]> {
+  const data = await cachedAdminJson<{ memberPlans: MemberPlan[] }>('/api/v1/admin/member-plans')
+  return data.memberPlans
+}
+
+export async function createMemberPlan(input: Partial<MemberPlan>): Promise<MemberPlan> {
+  const response = await adminFetch('/api/v1/admin/member-plans', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<MemberPlan>(response)
+  invalidateAdminGetCache('/api/v1/admin/member-plans')
+  return data
+}
+
+export async function updateMemberPlanStatus(id: string, status: string): Promise<MemberPlan> {
+  const response = await adminFetch(`/api/v1/admin/member-plans/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  const data = await parseJson<MemberPlan>(response)
+  invalidateAdminGetCache('/api/v1/admin/member-plans')
+  return data
+}
+
+export async function fetchPackageCredits(): Promise<PackageCredit[]> {
+  const data = await cachedAdminJson<{ packageCredits: PackageCredit[] }>('/api/v1/admin/package-credits')
+  return data.packageCredits
+}
+
+export async function createPackageCredit(input: {
+  packageId: string
+  customerId: string
+  sessionsTotal: number
+}): Promise<PackageCredit> {
+  const response = await adminFetch('/api/v1/admin/package-credits', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<PackageCredit>(response)
+  invalidateAdminGetCache('/api/v1/admin/package-credits')
   return data
 }
 

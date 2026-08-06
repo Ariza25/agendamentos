@@ -38,5 +38,35 @@ func (u *UseCase) Update(input domain.Configuration) (domain.Configuration, erro
 	if input.AdvanceNoticeHours < 0 {
 		input.AdvanceNoticeHours = 0
 	}
+	if input.BufferMinutes < 0 {
+		input.BufferMinutes = 0
+	}
+	if input.NotificationReminderHours <= 0 {
+		input.NotificationReminderHours = 24
+	}
+	if input.NotificationChannel == "" {
+		input.NotificationChannel = "whatsapp"
+	}
+	if input.ClosedDays == nil {
+		input.ClosedDays = []domain.ClosedDay{}
+	}
+	if input.DepositType == "" {
+		input.DepositType = "fixed"
+	}
+	if input.DepositType != "fixed" && input.DepositType != "percentage" {
+		input.DepositType = "fixed"
+	}
+	if input.DepositAmountCents < 0 {
+		input.DepositAmountCents = 0
+	}
+	if input.DepositPercentage < 0 || input.DepositPercentage > 100 {
+		input.DepositPercentage = 0
+	}
+	if input.NoShowFeeCents < 0 {
+		input.NoShowFeeCents = 0
+	}
+	if input.CancellationPolicyHours < 0 {
+		input.CancellationPolicyHours = 0
+	}
 	return u.repository.Update(input)
 }

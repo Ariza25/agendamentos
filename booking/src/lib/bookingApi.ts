@@ -9,6 +9,7 @@ export type Service = {
   priceCents: number
   color: string
   active: boolean
+  professionalIds?: string[]
 }
 
 export type Professional = {
@@ -65,6 +66,23 @@ export type BookingResult = {
     phone: string
     email: string
   }
+  managementCode: string
+}
+
+export type PublicAppointment = {
+  id: string
+  tenantId: string
+  professionalId: string
+  serviceId: string
+  customerId: string
+  startsAt: string
+  endsAt: string
+  status: string
+  notes: string
+  source?: string
+  cancellationReason?: string
+  createdAt: string
+  updatedAt: string
 }
 
 async function publicFetch<T>(path: string, init?: RequestInit, fallbackMessage = 'Falha na requisicao.'): Promise<T> {
@@ -120,5 +138,45 @@ export function createPublicBooking(
     `/api/v1/public/${encodeURIComponent(slug)}/appointments`,
     { method: 'POST', body: JSON.stringify(input) },
     'Nao foi possivel concluir o agendamento.',
+  )
+}
+
+export function fetchPublicAppointment(slug: string, code: string): Promise<PublicAppointment> {
+  return publicFetch<PublicAppointment>(
+    `/api/v1/public/${encodeURIComponent(slug)}/appointments/${encodeURIComponent(code)}`,
+    undefined,
+    'Nao foi possivel localizar o agendamento. Confira o codigo.',
+  )
+}
+
+export function cancelPublicAppointment(slug: string, code: string, reason: string): Promise<PublicAppointment> {
+  return publicFetch<PublicAppointment>(
+    `/api/v1/public/${encodeURIComponent(slug)}/appointments/${encodeURIComponent(code)}/cancel`,
+    { method: 'PATCH', body: JSON.stringify({ reason }) },
+    'Nao foi possivel cancelar o agendamento.',
+  )
+}
+
+export function reschedulePublicAppointment(slug: string, code: string, startsAt: string): Promise<PublicAppointment> {
+  return publicFetch<PublicAppointment>(
+    `/api/v1/public/${encodeURIComponent(slug)}/appointments/${encodeURIComponent(code)}/reschedule`,
+    { method: 'PATCH', body: JSON.stringify({ startsAt }) },
+    'Nao foi possivel reagendar. Tente novamente.',
+  )
+}
+
+export function signUpWaitingList(
+  slug: string,
+  input: {
+    serviceId: string
+    professionalId?: string
+    name: string
+    phone: string
+  },
+): Promise<{ id: string }> {
+  return publicFetch<{ id: string }>(
+    `/api/v1/public/${encodeURIComponent(slug)}/waiting-list`,
+    { method: 'POST', body: JSON.stringify(input) },
+    'Nao foi possivel entrar na lista de espera.',
   )
 }

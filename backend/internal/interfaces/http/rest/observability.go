@@ -46,7 +46,7 @@ func withObservability(next http.Handler) http.Handler {
 					"path":       r.URL.Path,
 					"panic":      fmt.Sprint(recovered),
 				})
-				writeAPIError(recorder, http.StatusInternalServerError, "internal_error", "Falha interna no servidor.")
+				writeAPIError(recorder, http.StatusInternalServerError, "internal_error", "Internal server failure.")
 			}
 
 			durationMs := time.Since(startedAt).Milliseconds()

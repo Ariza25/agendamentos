@@ -1,3 +1,5 @@
+import { getApiErrorMessage, translateFieldErrors } from './apiMessages'
+
 export type ApiErrorPayload = {
   error?: string
   code?: string
@@ -23,11 +25,12 @@ export function buildApiError(
   fallbackMessage: string,
   status = 0,
 ): ApiError {
+  const code = payload?.code || 'unknown_error'
   return new ApiError(
-    payload?.error || fallbackMessage,
-    payload?.code || 'unknown_error',
+    getApiErrorMessage(code, payload?.error || fallbackMessage),
+    code,
     status,
-    payload?.fieldErrors ?? {},
+    translateFieldErrors(payload?.fieldErrors),
   )
 }
 

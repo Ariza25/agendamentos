@@ -59,6 +59,66 @@ func (r *AppointmentRepository) GetByID(tenantID string, id string) (appointment
 	return item, nil
 }
 
+func (r *AppointmentRepository) GetByManagementCodeHash(tenantID string, hash string) (appointment.Appointment, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	hash = strings.TrimSpace(hash)
+	for _, item := range r.appointments {
+		if item.TenantID == tenantID && item.ManagementCodeHash == hash {
+			return item, nil
+		}
+	}
+	return appointment.Appointment{}, fmt.Errorf("appointment not found")
+}
+
+func (r *AppointmentRepository) ListDueReminders(from string, to string) ([]appointment.Appointment, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	fromTime, err := time.Parse(time.RFC3339, from)
+	if err != nil {
+		return nil, fmt.Errorf("invalid reminder window start")
+	}
+	toTime, err := time.Parse(time.RFC3339, to)
+	if err != nil {
+		return nil, fmt.Errorf("invalid reminder window end")
+	}
+	items := []appointment.Appointment{}
+	for _, item := range r.appointments {
+		itemStart, _, ok := parseAppointmentInterval(item)
+		if !ok {
+			continue
+		}
+		if itemStart.Before(fromTime) || !itemStart.Before(toTime) {
+			continue
+		}
+		if item.Status != "scheduled" && item.Status != "confirmed" {
+			continue
+		}
+		if item.ReminderSentAt != "" {
+			continue
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func (r *AppointmentRepository) SetReminderSent(tenantID string, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current, exists := r.appointments[strings.TrimSpace(id)]
+	if !exists || current.TenantID != strings.TrimSpace(tenantID) {
+		return fmt.Errorf("appointment not found")
+	}
+	current.ReminderSentAt = time.Now().Format(time.RFC3339)
+	current.UpdatedAt = time.Now().Format(time.RFC3339)
+	r.appointments[current.ID] = current
+	return nil
+}
+
 func (r *AppointmentRepository) ListByRange(tenantID string, from string, to string, professionalID string, customerID string, status string) ([]appointment.Appointment, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -191,6 +251,73 @@ func (r *AppointmentRepository) Delete(tenantID string, id string) error {
 	}
 	delete(r.appointments, current.ID)
 	return nil
+}
+
+func (r *AppointmentRepository) Analytics(tenantID string, from string, to string) (appointment.Analytics, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	fromTime, hasFrom := parseAppointmentBound(from)
+	toTime, hasTo := parseAppointmentBound(to)
+	result := appointment.Analytics{}
+	counts := map[string]int{}
+	serviceCounts := map[string]*appointment.ServiceMetric{}
+	professionalCounts := map[string]*appointment.ProfessionalMetric{}
+	dayCounts := map[string]int{}
+	byDay := map[string]*appointment.DayMetric{}
+
+	for _, item := range r.appointments {
+		if item.TenantID != tenantID {
+			continue
+		}
+		itemStart, itemEnd, ok := parseAppointmentInterval(item)
+		if !ok {
+			continue
+		}
+		if hasFrom && itemEnd.Before(fromTime) {
+			continue
+		}
+		if hasTo && !itemStart.Before(toTime) {
+			continue
+		}
+		result.TotalAppointments++
+		counts[item.Status]++
+		if serviceCounts[item.ServiceID] == nil {
+			serviceCounts[item.ServiceID] = &appointment.ServiceMetric{ServiceID: item.ServiceID}
+		}
+		serviceCounts[item.ServiceID].Count++
+		if professionalCounts[item.ProfessionalID] == nil {
+			professionalCounts[item.ProfessionalID] = &appointment.ProfessionalMetric{ProfessionalID: item.ProfessionalID}
+		}
+		professionalCounts[item.ProfessionalID].Count++
+		date := itemStart.Local().Format("2006-01-02")
+		if dayCounts[date] == 0 {
+			dayCounts[date] = 1
+			byDay[date] = &appointment.DayMetric{Date: date}
+		} else {
+			dayCounts[date]++
+			byDay[date].Count = dayCounts[date]
+		}
+	}
+	result.Scheduled = counts["scheduled"]
+	result.Confirmed = counts["confirmed"]
+	result.Completed = counts["completed"]
+	result.Cancelled = counts["cancelled"]
+	result.NoShow = counts["no_show"]
+	if result.TotalAppointments > 0 {
+		result.NoShowRate = float64(result.NoShow) / float64(result.TotalAppointments) * 100
+	}
+	for _, metric := range serviceCounts {
+		result.ByService = append(result.ByService, *metric)
+	}
+	for _, metric := range professionalCounts {
+		result.ByProfessional = append(result.ByProfessional, *metric)
+	}
+	for _, metric := range byDay {
+		result.ByDay = append(result.ByDay, *metric)
+	}
+	return result, nil
 }
 
 func parseAppointmentBound(value string) (time.Time, bool) {

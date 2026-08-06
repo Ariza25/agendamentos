@@ -1,7 +1,7 @@
-import { ArrowLeft, CalendarDays, Check, Clock, User, Users } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Check, Clock, Copy, User, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import {
   createPublicBooking,
@@ -588,6 +588,32 @@ function Confirmation({
           {info.tenant.name} já recebeu sua solicitação. Qualquer dúvida, entre em contato por telefone.
         </p>
 
+        {booking.managementCode ? (
+          <div className="mt-6 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-ink-soft)]">
+              Código do agendamento
+            </p>
+            <p className="mt-1 flex items-center justify-center gap-2">
+              <span className="font-headline text-3xl font-black tracking-[0.2em] text-[var(--color-ink)]">
+                {booking.managementCode}
+              </span>
+              <button
+                aria-label="Copiar código"
+                className="rounded-lg p-1.5 text-[var(--color-ink-soft)] transition hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-primary)]"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(booking.managementCode)
+                }}
+                type="button"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </p>
+            <p className="mt-2 text-xs font-semibold text-[var(--color-ink-soft)]">
+              Guarde este código para cancelar ou reagendar pelo site.
+            </p>
+          </div>
+        ) : null}
+
         <dl className="mt-6 space-y-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] p-4 text-left text-sm">
           <div className="flex items-center justify-between gap-3">
             <dt className="font-semibold text-[var(--color-ink-soft)]">Serviço</dt>
@@ -616,6 +642,14 @@ function Confirmation({
         <Button className="mt-6" onClick={() => navigate('/')} size="lg" variant="secondary">
           Fazer outro agendamento
         </Button>
+        {booking.managementCode ? (
+          <Link
+            className="mt-3 block text-sm font-bold text-[var(--color-primary)] underline-offset-4 hover:underline"
+            to={`/manage/${info.tenant.slug}`}
+          >
+            Cancelar ou reagendar este horário
+          </Link>
+        ) : null}
       </section>
     </main>
   )

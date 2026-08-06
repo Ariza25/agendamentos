@@ -22,10 +22,11 @@ func NewAppointmentRepository(db *sql.DB) *AppointmentRepository {
 func (r *AppointmentRepository) Create(input appointment.Appointment) (appointment.Appointment, error) {
 	item := input
 	item.ID = uuid.NewString()
-	if _, err := r.db.Exec(`
-		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, customer_id, starts_at, ends_at, status, notes, created_by)
-		VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz, $8, $9, $10)
-	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy); err != nil {
+	_, err := r.db.Exec(`
+		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, customer_id, starts_at, ends_at, status, notes, created_by, management_code_hash, series_id, payment_status, no_show_fee_cents, source, cancellation_reason)
+		VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy, nullIfEmpty(item.ManagementCodeHash), item.SeriesID, item.PaymentStatus, item.NoShowFeeCents, item.Source, item.CancellationReason)
+	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("insert appointment: %w", err)
 	}
 	return r.GetByID(item.TenantID, item.ID)
@@ -41,9 +42,17 @@ func (r *AppointmentRepository) Update(input appointment.Appointment) (appointme
 		    ends_at = $7::timestamptz,
 		    status = $8,
 		    notes = COALESCE(NULLIF($9, ''), notes),
+		    management_code_hash = COALESCE(NULLIF($10, ''), management_code_hash),
+		    series_id = COALESCE(NULLIF($11, ''), series_id),
+		    payment_status = COALESCE(NULLIF($12, ''), payment_status),
+		    no_show_fee_cents = $13,
+		    source = COALESCE(NULLIF($14, ''), source),
+		    cancellation_reason = COALESCE(NULLIF($15, ''), cancellation_reason),
+		    check_in_at = $16,
+		    no_show_at = $17,
 		    updated_at = NOW()
 		WHERE id = $1 AND tenant_id = $2
-	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes))
+	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes), nullIfEmpty(input.ManagementCodeHash), input.SeriesID, input.PaymentStatus, input.NoShowFeeCents, input.Source, input.CancellationReason, nullIfEmpty(input.CheckInAt), nullIfEmpty(input.NoShowAt))
 	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("update appointment: %w", err)
 	}
@@ -58,21 +67,22 @@ func (r *AppointmentRepository) Update(input appointment.Appointment) (appointme
 }
 
 func (r *AppointmentRepository) GetByID(tenantID string, id string) (appointment.Appointment, error) {
-	item, err := scanAppointmentRow(r.db.QueryRow(`
-		SELECT id, tenant_id, professional_id, service_id, customer_id, starts_at, ends_at, status, notes, created_by, created_at, updated_at
+	return scanAppointmentRow(r.db.QueryRow(appointmentSelectColumns()+`
 		FROM catalog.appointments
 		WHERE id = $1 AND tenant_id = $2
 	`, strings.TrimSpace(id), strings.TrimSpace(tenantID)))
-	if err != nil {
-		return appointment.Appointment{}, err
-	}
-	return item, nil
+}
+
+func (r *AppointmentRepository) GetByManagementCodeHash(tenantID string, hash string) (appointment.Appointment, error) {
+	return scanAppointmentRow(r.db.QueryRow(appointmentSelectColumns()+`
+		FROM catalog.appointments
+		WHERE tenant_id = $1 AND management_code_hash = $2
+	`, strings.TrimSpace(tenantID), strings.TrimSpace(hash)))
 }
 
 func (r *AppointmentRepository) ListByRange(tenantID string, from string, to string, professionalID string, customerID string, status string) ([]appointment.Appointment, error) {
 	tenantID = strings.TrimSpace(tenantID)
-	query := `
-		SELECT id, tenant_id, professional_id, service_id, customer_id, starts_at, ends_at, status, notes, created_by, created_at, updated_at
+	query := appointmentSelectColumns() + `
 		FROM catalog.appointments
 		WHERE tenant_id = $1
 	`
@@ -122,6 +132,31 @@ func (r *AppointmentRepository) ListByRange(tenantID string, from string, to str
 	return items, rows.Err()
 }
 
+func (r *AppointmentRepository) ListDueReminders(from string, to string) ([]appointment.Appointment, error) {
+	rows, err := r.db.Query(appointmentSelectColumns()+`
+		FROM catalog.appointments
+		WHERE starts_at >= $1::timestamptz
+		  AND starts_at < $2::timestamptz
+		  AND status IN ('scheduled', 'confirmed')
+		  AND reminder_sent_at IS NULL
+		ORDER BY starts_at ASC
+	`, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("query due reminders: %w", err)
+	}
+	defer rows.Close()
+
+	items := []appointment.Appointment{}
+	for rows.Next() {
+		item, err := scanAppointmentRows(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (r *AppointmentRepository) UpdateStatus(tenantID string, id string, status string, updatedBy string) (appointment.Appointment, error) {
 	result, err := r.db.Exec(`
 		UPDATE catalog.appointments
@@ -139,6 +174,25 @@ func (r *AppointmentRepository) UpdateStatus(tenantID string, id string, status 
 		return appointment.Appointment{}, fmt.Errorf("appointment not found")
 	}
 	return r.GetByID(tenantID, id)
+}
+
+func (r *AppointmentRepository) SetReminderSent(tenantID string, id string) error {
+	result, err := r.db.Exec(`
+		UPDATE catalog.appointments
+		SET reminder_sent_at = NOW()
+		WHERE id = $1 AND tenant_id = $2
+	`, id, tenantID)
+	if err != nil {
+		return fmt.Errorf("set reminder sent: %w", err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check reminder sent: %w", err)
+	}
+	if affected == 0 {
+		return fmt.Errorf("appointment not found")
+	}
+	return nil
 }
 
 func (r *AppointmentRepository) HasConflict(tenantID string, professionalID string, startsAt string, endsAt string, excludeID string) (bool, error) {
@@ -194,6 +248,111 @@ func (r *AppointmentRepository) CountByStatus(tenantID string, from string, to s
 	return items, rows.Err()
 }
 
+func (r *AppointmentRepository) Analytics(tenantID string, from string, to string) (appointment.Analytics, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	result := appointment.Analytics{}
+
+	if err := r.db.QueryRow(`
+		SELECT
+			COUNT(*) AS total,
+			COUNT(*) FILTER (WHERE status = 'scheduled') AS scheduled,
+			COUNT(*) FILTER (WHERE status = 'confirmed') AS confirmed,
+			COUNT(*) FILTER (WHERE status = 'completed') AS completed,
+			COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled,
+			COUNT(*) FILTER (WHERE status = 'no_show') AS no_show,
+			COALESCE(SUM(s.price_cents) FILTER (WHERE a.status = 'completed'), 0) AS revenue
+		FROM catalog.appointments a
+		LEFT JOIN catalog.services s ON s.id = a.service_id
+		WHERE a.tenant_id = $1
+		  AND a.ends_at >= $2::timestamptz
+		  AND a.starts_at < $3::timestamptz
+	`, tenantID, from, to).Scan(&result.TotalAppointments, &result.Scheduled, &result.Confirmed, &result.Completed, &result.Cancelled, &result.NoShow, &result.RevenueCents); err != nil {
+		return appointment.Analytics{}, fmt.Errorf("analytics totals: %w", err)
+	}
+	if result.TotalAppointments > 0 {
+		result.NoShowRate = float64(result.NoShow) / float64(result.TotalAppointments) * 100
+	}
+
+	serviceRows, err := r.db.Query(`
+		SELECT a.service_id, COALESCE(s.name, '') AS name, COUNT(*) AS count, COALESCE(SUM(s.price_cents) FILTER (WHERE a.status = 'completed'), 0) AS revenue
+		FROM catalog.appointments a
+		LEFT JOIN catalog.services s ON s.id = a.service_id
+		WHERE a.tenant_id = $1
+		  AND a.ends_at >= $2::timestamptz
+		  AND a.starts_at < $3::timestamptz
+		GROUP BY a.service_id, s.name
+		ORDER BY count DESC
+		LIMIT 10
+	`, tenantID, from, to)
+	if err != nil {
+		return appointment.Analytics{}, fmt.Errorf("analytics by service: %w", err)
+	}
+	defer serviceRows.Close()
+	for serviceRows.Next() {
+		var metric appointment.ServiceMetric
+		if err := serviceRows.Scan(&metric.ServiceID, &metric.ServiceName, &metric.Count, &metric.RevenueCents); err != nil {
+			return appointment.Analytics{}, fmt.Errorf("scan analytics service: %w", err)
+		}
+		result.ByService = append(result.ByService, metric)
+	}
+	if err := serviceRows.Err(); err != nil {
+		return appointment.Analytics{}, fmt.Errorf("analytics by service: %w", err)
+	}
+
+	professionalRows, err := r.db.Query(`
+		SELECT a.professional_id, COALESCE(p.name, '') AS name, COUNT(*) AS count
+		FROM catalog.appointments a
+		LEFT JOIN catalog.professionals p ON p.id = a.professional_id
+		WHERE a.tenant_id = $1
+		  AND a.ends_at >= $2::timestamptz
+		  AND a.starts_at < $3::timestamptz
+		GROUP BY a.professional_id, p.name
+		ORDER BY count DESC
+		LIMIT 10
+	`, tenantID, from, to)
+	if err != nil {
+		return appointment.Analytics{}, fmt.Errorf("analytics by professional: %w", err)
+	}
+	defer professionalRows.Close()
+	for professionalRows.Next() {
+		var metric appointment.ProfessionalMetric
+		if err := professionalRows.Scan(&metric.ProfessionalID, &metric.ProfessionalName, &metric.Count); err != nil {
+			return appointment.Analytics{}, fmt.Errorf("scan analytics professional: %w", err)
+		}
+		result.ByProfessional = append(result.ByProfessional, metric)
+	}
+	if err := professionalRows.Err(); err != nil {
+		return appointment.Analytics{}, fmt.Errorf("analytics by professional: %w", err)
+	}
+
+	dayRows, err := r.db.Query(`
+		SELECT (a.starts_at AT TIME ZONE 'UTC')::date AS date, COUNT(*) AS count
+		FROM catalog.appointments a
+		WHERE a.tenant_id = $1
+		  AND a.ends_at >= $2::timestamptz
+		  AND a.starts_at < $3::timestamptz
+		  AND a.status IN ('scheduled', 'confirmed', 'in_progress', 'completed')
+		GROUP BY date
+		ORDER BY date ASC
+	`, tenantID, from, to)
+	if err != nil {
+		return appointment.Analytics{}, fmt.Errorf("analytics by day: %w", err)
+	}
+	defer dayRows.Close()
+	for dayRows.Next() {
+		var metric appointment.DayMetric
+		if err := dayRows.Scan(&metric.Date, &metric.Count); err != nil {
+			return appointment.Analytics{}, fmt.Errorf("scan analytics day: %w", err)
+		}
+		result.ByDay = append(result.ByDay, metric)
+	}
+	if err := dayRows.Err(); err != nil {
+		return appointment.Analytics{}, fmt.Errorf("analytics by day: %w", err)
+	}
+
+	return result, nil
+}
+
 func (r *AppointmentRepository) Delete(tenantID string, id string) error {
 	result, err := r.db.Exec(`
 		DELETE FROM catalog.appointments
@@ -220,10 +379,18 @@ func scanAppointmentRow(scanner appointmentScanner) (appointment.Appointment, er
 	return scanAppointmentRows(scanner)
 }
 
+func appointmentSelectColumns() string {
+	return `
+		SELECT id, tenant_id, professional_id, service_id, customer_id, starts_at, ends_at, status, notes, created_by,
+		       management_code_hash, series_id, payment_status, no_show_fee_cents, source, cancellation_reason,
+		       check_in_at, no_show_at, reminder_sent_at, created_at, updated_at`
+}
+
 func scanAppointmentRows(scanner appointmentScanner) (appointment.Appointment, error) {
 	var item appointment.Appointment
 	var startsAt, endsAt, createdAt, updatedAt time.Time
-	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &createdAt, &updatedAt); err != nil {
+	var checkInAt, noShowAt, reminderSentAt sql.NullTime
+	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &item.ManagementCodeHash, &item.SeriesID, &item.PaymentStatus, &item.NoShowFeeCents, &item.Source, &item.CancellationReason, &checkInAt, &noShowAt, &reminderSentAt, &createdAt, &updatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return appointment.Appointment{}, fmt.Errorf("appointment not found")
 		}
@@ -233,5 +400,22 @@ func scanAppointmentRows(scanner appointmentScanner) (appointment.Appointment, e
 	item.EndsAt = endsAt.UTC().Format(time.RFC3339)
 	item.CreatedAt = createdAt.Format(time.RFC3339)
 	item.UpdatedAt = updatedAt.Format(time.RFC3339)
+	if checkInAt.Valid {
+		item.CheckInAt = checkInAt.Time.UTC().Format(time.RFC3339)
+	}
+	if noShowAt.Valid {
+		item.NoShowAt = noShowAt.Time.UTC().Format(time.RFC3339)
+	}
+	if reminderSentAt.Valid {
+		item.ReminderSentAt = reminderSentAt.Time.UTC().Format(time.RFC3339)
+	}
 	return item, nil
+}
+
+func nullIfEmpty(value string) any {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return value
 }

@@ -1,7 +1,13 @@
 import { CalendarClock, Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { deleteAppointment, fetchAppointments, updateAppointmentStatus } from '../lib/adminApi'
+import {
+  checkInAppointment,
+  deleteAppointment,
+  fetchAppointments,
+  markAppointmentNoShow,
+  updateAppointmentStatus,
+} from '../lib/adminApi'
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_TONES, nextStatusesFor } from '../lib/appointmentStatus'
 import { formatDate, formatTime, todayKey } from '../lib/format'
 import { AppointmentFormModal } from '../features/appointments/components/AppointmentFormModal'
@@ -50,6 +56,26 @@ export function AppointmentsPage() {
     try {
       await updateAppointmentStatus(appointment.id, nextStatus)
       showToast({ message: 'Status atualizado.', tone: 'success' })
+      loadAppointments()
+    } catch (error) {
+      showToast({ message: (error as Error).message, tone: 'error' })
+    }
+  }
+
+  async function handleCheckIn(appointment: Appointment) {
+    try {
+      await checkInAppointment(appointment.id)
+      showToast({ message: 'Cliente fez check-in.', tone: 'success' })
+      loadAppointments()
+    } catch (error) {
+      showToast({ message: (error as Error).message, tone: 'error' })
+    }
+  }
+
+  async function handleNoShow(appointment: Appointment) {
+    try {
+      await markAppointmentNoShow(appointment.id)
+      showToast({ message: 'Agendamento marcado como não comparecimento.', tone: 'success' })
       loadAppointments()
     } catch (error) {
       showToast({ message: (error as Error).message, tone: 'error' })
@@ -151,6 +177,10 @@ export function AppointmentsPage() {
                         {formatTime(appointment.startsAt)} – {formatTime(appointment.endsAt)}
                       </span>
                       <Badge tone={APPOINTMENT_STATUS_TONES[appointment.status]}>{APPOINTMENT_STATUS_LABELS[appointment.status]}</Badge>
+                      {appointment.managementCode ? (
+                        <Badge tone="accent">Código {appointment.managementCode}</Badge>
+                      ) : null}
+                      {appointment.checkInAt ? <Badge tone="success">Check-in realizado</Badge> : null}
                     </div>
                     <p className="mt-1.5 truncate font-bold text-[var(--color-ink)]">
                       {customer?.name ?? 'Cliente desconhecido'}
@@ -164,6 +194,16 @@ export function AppointmentsPage() {
                     {appointment.notes ? <p className="mt-1 truncate text-xs italic text-[var(--color-ink-soft)]">{appointment.notes}</p> : null}
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {appointment.status === 'confirmed' || appointment.status === 'in_progress' ? (
+                      <Button onClick={() => void handleCheckIn(appointment)} size="sm" variant="secondary">
+                        Check-in
+                      </Button>
+                    ) : null}
+                    {appointment.status === 'scheduled' || appointment.status === 'confirmed' ? (
+                      <Button onClick={() => void handleNoShow(appointment)} size="sm" variant="danger">
+                        No-show
+                      </Button>
+                    ) : null}
                     {nextStatuses.length > 0 ? (
                       <Select
                         className="h-9 w-auto min-w-32 text-xs"

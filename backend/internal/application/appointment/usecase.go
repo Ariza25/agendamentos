@@ -40,6 +40,11 @@ type UseCase struct {
 	repository domain.Repository
 }
 
+type RecurrenceInput struct {
+	Frequency string `json:"frequency"`
+	Count     int    `json:"count"`
+}
+
 func NewUseCase(repository domain.Repository) *UseCase {
 	return &UseCase{repository: repository}
 }
@@ -57,6 +62,14 @@ func (u *UseCase) ListByRange(tenantID string, from string, to string, professio
 
 func (u *UseCase) GetByID(tenantID string, id string) (domain.Appointment, error) {
 	item, err := u.repository.GetByID(strings.TrimSpace(tenantID), strings.TrimSpace(id))
+	if err != nil {
+		return domain.Appointment{}, ErrAppointmentNotFound
+	}
+	return item, nil
+}
+
+func (u *UseCase) GetByManagementCode(tenantID string, codeHash string) (domain.Appointment, error) {
+	item, err := u.repository.GetByManagementCodeHash(strings.TrimSpace(tenantID), strings.TrimSpace(codeHash))
 	if err != nil {
 		return domain.Appointment{}, ErrAppointmentNotFound
 	}
@@ -105,6 +118,95 @@ func (u *UseCase) Create(input domain.Appointment) (domain.Appointment, error) {
 
 	input.ID = uuid.NewString()
 	return u.repository.Create(input)
+}
+
+func (u *UseCase) CreateSeries(input domain.Appointment, recurrence RecurrenceInput) ([]domain.Appointment, error) {
+	if recurrence.Frequency != "daily" && recurrence.Frequency != "weekly" {
+		return nil, ErrInvalidAppointment
+	}
+	if recurrence.Count <= 0 || recurrence.Count > 60 {
+		recurrence.Count = 4
+	}
+	base, err := parseRFC3339(input.StartsAt)
+	if err != nil {
+		return nil, ErrInvalidAppointment
+	}
+	input.SeriesID = uuid.NewString()
+
+	created := []domain.Appointment{}
+	for index := 0; index < recurrence.Count; index++ {
+		item := input
+		if index > 0 {
+			if recurrence.Frequency == "daily" {
+				base = base.AddDate(0, 0, 1)
+			} else {
+				base = base.AddDate(0, 0, 7)
+			}
+			item.StartsAt = base.Format(time.RFC3339)
+			itemEndsAt, err := parseRFC3339(input.EndsAt)
+			if err != nil {
+				return nil, ErrInvalidAppointment
+			}
+			offset := itemEndsAt.Sub(base.Add(time.Duration(-1) * time.Hour))
+			item.EndsAt = base.Add(offset).Format(time.RFC3339)
+		}
+		appointment, err := u.Create(item)
+		if err != nil {
+			if index == 0 {
+				return nil, err
+			}
+			break
+		}
+		created = append(created, appointment)
+	}
+	if len(created) == 0 {
+		return nil, ErrTimeConflict
+	}
+	return created, nil
+}
+
+func (u *UseCase) CheckIn(tenantID string, id string, updatedBy string) (domain.Appointment, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	id = strings.TrimSpace(id)
+	current, err := u.repository.GetByID(tenantID, id)
+	if err != nil {
+		return domain.Appointment{}, ErrAppointmentNotFound
+	}
+	if current.Status != StatusScheduled && current.Status != StatusConfirmed {
+		return domain.Appointment{}, ErrInvalidStatusChange
+	}
+	current.Status = StatusInProgress
+	current.CheckInAt = time.Now().UTC().Format(time.RFC3339)
+	return u.repository.Update(current)
+}
+
+func (u *UseCase) MarkNoShow(tenantID string, id string, updatedBy string, feeCents int) (domain.Appointment, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	id = strings.TrimSpace(id)
+	current, err := u.repository.GetByID(tenantID, id)
+	if err != nil {
+		return domain.Appointment{}, ErrAppointmentNotFound
+	}
+	if current.Status != StatusScheduled && current.Status != StatusConfirmed && current.Status != StatusInProgress {
+		return domain.Appointment{}, ErrInvalidStatusChange
+	}
+	current.Status = StatusNoShow
+	current.NoShowAt = time.Now().UTC().Format(time.RFC3339)
+	current.NoShowFeeCents = feeCents
+	current.PaymentStatus = "no_show_fee"
+	return u.repository.Update(current)
+}
+
+func (u *UseCase) ListDueReminders(from string, to string) ([]domain.Appointment, error) {
+	return u.repository.ListDueReminders(strings.TrimSpace(from), strings.TrimSpace(to))
+}
+
+func (u *UseCase) SetReminderSent(tenantID string, id string) error {
+	return u.repository.SetReminderSent(strings.TrimSpace(tenantID), strings.TrimSpace(id))
+}
+
+func (u *UseCase) Analytics(tenantID string, from string, to string) (domain.Analytics, error) {
+	return u.repository.Analytics(strings.TrimSpace(tenantID), strings.TrimSpace(from), strings.TrimSpace(to))
 }
 
 func (u *UseCase) Update(input domain.Appointment) (domain.Appointment, error) {
@@ -230,7 +332,7 @@ func parseRFC3339(value string) (time.Time, error) {
 	}
 	parsed, err := time.Parse(time.RFC3339, value)
 	if err != nil {
-		parsed, err = time.Parse("2006-01-02T15:04", value)
+		parsed, err = time.ParseInLocation("2006-01-02T15:04", value, time.Local)
 	}
 	return parsed, err
 }

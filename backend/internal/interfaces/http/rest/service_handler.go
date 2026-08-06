@@ -20,7 +20,7 @@ func NewServiceHandler(useCase *appservice.UseCase) *ServiceHandler {
 func (h *ServiceHandler) List(w http.ResponseWriter, r *http.Request) {
 	services, err := h.useCase.ListByTenant(resolveRequestTenantID(r, nil))
 	if err != nil {
-		writeInternalError(w, "Nao foi possivel carregar os servicos.")
+		writeInternalError(w, "Could not load the services.")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"services": services})
@@ -29,7 +29,7 @@ func (h *ServiceHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *ServiceHandler) Get(w http.ResponseWriter, r *http.Request) {
 	service, err := h.useCase.GetByID(resolveRequestTenantID(r, nil), r.PathValue("serviceID"))
 	if err != nil {
-		writeNotFoundError(w, "not_found", "Servico nao encontrado.")
+		writeNotFoundError(w, "not_found", "Service not found.")
 		return
 	}
 	writeJSON(w, http.StatusOK, service)
@@ -38,7 +38,7 @@ func (h *ServiceHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *ServiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input servicedomain.Service
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do servico.")
+		writeInvalidPayload(w, "Could not read the service data.")
 		return
 	}
 	input.TenantID = resolveRequestTenantID(r, nil)
@@ -53,7 +53,7 @@ func (h *ServiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *ServiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	var input servicedomain.Service
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Nao foi possivel ler os dados do servico.")
+		writeInvalidPayload(w, "Could not read the service data.")
 		return
 	}
 	input.TenantID = resolveRequestTenantID(r, nil)
@@ -71,7 +71,7 @@ func (h *ServiceHandler) SetActive(w http.ResponseWriter, r *http.Request) {
 		Active bool `json:"active"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "Informe se o servico deve estar ativo.")
+		writeInvalidPayload(w, "Provide whether the service should be active.")
 		return
 	}
 	service, err := h.useCase.SetActive(resolveRequestTenantID(r, nil), r.PathValue("serviceID"), input.Active)
@@ -93,10 +93,10 @@ func (h *ServiceHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func writeServiceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, appservice.ErrServiceNotFound):
-		writeNotFoundError(w, "not_found", "Servico nao encontrado.")
+		writeNotFoundError(w, "not_found", "Service not found.")
 	case errors.Is(err, appservice.ErrInvalidService):
-		writeBadRequestError(w, "invalid_input", "Dados do servico invalidos.")
+		writeBadRequestError(w, "invalid_input", "Invalid service data.")
 	default:
-		writeInternalError(w, "Nao foi possivel processar o servico.")
+		writeInternalError(w, "Could not process the service.")
 	}
 }

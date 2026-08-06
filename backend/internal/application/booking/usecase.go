@@ -1,8 +1,11 @@
 package booking
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -16,12 +19,15 @@ import (
 )
 
 var (
-	ErrTenantNotFound    = errors.New("tenant not found")
-	ErrBookingDisabled   = errors.New("online booking disabled")
-	ErrInvalidBooking    = errors.New("invalid booking")
-	ErrSlotUnavailable   = errors.New("slot unavailable")
-	ErrNoAvailableSlots  = errors.New("no available slots")
-	ErrNoActiveProviders = errors.New("no active professionals")
+	ErrTenantNotFound      = errors.New("tenant not found")
+	ErrBookingDisabled     = errors.New("online booking disabled")
+	ErrInvalidBooking      = errors.New("invalid booking")
+	ErrSlotUnavailable     = errors.New("slot unavailable")
+	ErrNoAvailableSlots    = errors.New("no available slots")
+	ErrNoActiveProviders   = errors.New("no active professionals")
+	ErrInvalidCode         = errors.New("invalid management code")
+	ErrAppointmentDone     = errors.New("appointment can no longer be managed online")
+	ErrCancellationTooLate = errors.New("cancellation window has passed")
 )
 
 const (
@@ -50,8 +56,9 @@ type BookingInput struct {
 }
 
 type BookingResult struct {
-	Appointment appointmentdomain.Appointment `json:"appointment"`
-	Customer    customerdomain.Customer       `json:"customer"`
+	Appointment    appointmentdomain.Appointment `json:"appointment"`
+	Customer       customerdomain.Customer       `json:"customer"`
+	ManagementCode string                        `json:"managementCode"`
 }
 
 type UseCase struct {
@@ -169,12 +176,24 @@ func (u *UseCase) Availability(slug string, date string, serviceID string, profe
 		return map[string]any{"professionalId": strings.TrimSpace(professionalID), "slots": slots}, nil
 	}
 
+	allowed := map[string]bool{}
+	if strings.TrimSpace(serviceID) != "" {
+		if service, err := u.serviceRepo.GetByID(tenant.ID, strings.TrimSpace(serviceID)); err == nil {
+			for _, professionalID := range service.ProfessionalIDs {
+				allowed[professionalID] = true
+			}
+		}
+	}
+
 	professionals, err := u.ListActiveProfessionals(slug)
 	if err != nil {
 		return nil, err
 	}
 	grouped := make([]ProfessionalSlots, 0, len(professionals))
 	for _, professional := range professionals {
+		if len(allowed) > 0 && !allowed[professional.ID] {
+			continue
+		}
 		slots, err := u.availableSlots(tenant.ID, day, duration, configuration, professional.ID)
 		if err != nil {
 			return nil, err
@@ -244,16 +263,19 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 		}
 	}
 
+	managementCode := generateManagementCode()
 	appointment, err := u.appointments.Create(appointmentdomain.Appointment{
-		TenantID:       tenant.ID,
-		ProfessionalID: input.ProfessionalID,
-		ServiceID:      input.ServiceID,
-		CustomerID:     customer.ID,
-		StartsAt:       startsAt.Format(time.RFC3339),
-		EndsAt:         endsAt.Format(time.RFC3339),
-		Status:         appappointment.StatusScheduled,
-		Notes:          input.Notes,
-		CreatedBy:      createdByOnlineBooking,
+		TenantID:           tenant.ID,
+		ProfessionalID:     input.ProfessionalID,
+		ServiceID:          input.ServiceID,
+		CustomerID:         customer.ID,
+		StartsAt:           startsAt.Format(time.RFC3339),
+		EndsAt:             endsAt.Format(time.RFC3339),
+		Status:             appappointment.StatusScheduled,
+		Notes:              input.Notes,
+		CreatedBy:          createdByOnlineBooking,
+		ManagementCodeHash: hashManagementCode(managementCode),
+		Source:             "booking",
 	})
 	if err != nil {
 		if errors.Is(err, appappointment.ErrTimeConflict) {
@@ -262,7 +284,130 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 		return BookingResult{}, err
 	}
 
-	return BookingResult{Appointment: appointment, Customer: customer}, nil
+	return BookingResult{Appointment: appointment, Customer: customer, ManagementCode: managementCode}, nil
+}
+
+func (u *UseCase) GetByManagementCode(slug string, code string) (appointmentdomain.Appointment, error) {
+	tenant, err := u.ResolveTenantBySlug(slug)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	appointment, err := u.appointments.GetByManagementCode(tenant.ID, hashManagementCode(strings.ToUpper(strings.TrimSpace(code))))
+	if err != nil {
+		return appointmentdomain.Appointment{}, ErrInvalidCode
+	}
+	return appointment, nil
+}
+
+func (u *UseCase) CancelPublic(slug string, code string, reason string) (appointmentdomain.Appointment, error) {
+	tenant, err := u.ResolveTenantBySlug(slug)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	appointment, err := u.appointments.GetByManagementCode(tenant.ID, hashManagementCode(strings.ToUpper(strings.TrimSpace(code))))
+	if err != nil {
+		return appointmentdomain.Appointment{}, ErrInvalidCode
+	}
+	if appointment.Status == appappointment.StatusCancelled || appointment.Status == appappointment.StatusCompleted || appointment.Status == appappointment.StatusNoShow {
+		return appointmentdomain.Appointment{}, ErrAppointmentDone
+	}
+	configuration, err := u.configurationRepo.Get(tenant.ID)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	if configuration.CancellationPolicyHours > 0 {
+		startsAt, err := parseRFC3339(appointment.StartsAt)
+		if err != nil {
+			return appointmentdomain.Appointment{}, ErrInvalidCode
+		}
+		if time.Now().After(startsAt.Add(-time.Duration(configuration.CancellationPolicyHours) * time.Hour)) {
+			return appointmentdomain.Appointment{}, ErrCancellationTooLate
+		}
+	}
+	input := appointment
+	input.Status = appappointment.StatusCancelled
+	input.CancellationReason = strings.TrimSpace(reason)
+	updated, err := u.appointments.Update(input)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	return updated, nil
+}
+
+func (u *UseCase) ReschedulePublic(slug string, code string, newStartsAt string) (appointmentdomain.Appointment, error) {
+	tenant, err := u.ResolveTenantBySlug(slug)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	appointment, err := u.appointments.GetByManagementCode(tenant.ID, hashManagementCode(strings.ToUpper(strings.TrimSpace(code))))
+	if err != nil {
+		return appointmentdomain.Appointment{}, ErrInvalidCode
+	}
+	if appointment.Status == appappointment.StatusCancelled || appointment.Status == appappointment.StatusCompleted || appointment.Status == appappointment.StatusNoShow {
+		return appointmentdomain.Appointment{}, ErrAppointmentDone
+	}
+
+	configuration, err := u.configurationRepo.Get(tenant.ID)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	if !configuration.AllowOnlineBooking {
+		return appointmentdomain.Appointment{}, ErrBookingDisabled
+	}
+
+	duration := appointmentDurationMinutes(appointment)
+	startsAt, err := parseRFC3339(newStartsAt)
+	if err != nil {
+		return appointmentdomain.Appointment{}, ErrInvalidBooking
+	}
+	endsAt := startsAt.Add(time.Duration(duration) * time.Minute)
+
+	if err := u.validateSlotInWorkingHours(startsAt, endsAt, configuration); err != nil {
+		return appointmentdomain.Appointment{}, ErrSlotUnavailable
+	}
+	if !startsAt.After(time.Now().Add(-5 * time.Minute)) {
+		return appointmentdomain.Appointment{}, ErrSlotUnavailable
+	}
+
+	input := appointment
+	input.StartsAt = startsAt.Format(time.RFC3339)
+	input.EndsAt = endsAt.Format(time.RFC3339)
+	updated, err := u.appointments.Update(input)
+	if err != nil {
+		if errors.Is(err, appappointment.ErrTimeConflict) {
+			return appointmentdomain.Appointment{}, ErrSlotUnavailable
+		}
+		return appointmentdomain.Appointment{}, err
+	}
+	return updated, nil
+}
+
+func appointmentDurationMinutes(item appointmentdomain.Appointment) int {
+	startsAt, startErr := parseRFC3339(item.StartsAt)
+	endsAt, endErr := parseRFC3339(item.EndsAt)
+	if startErr != nil || endErr != nil || !endsAt.After(startsAt) {
+		return 30
+	}
+	minutes := int(endsAt.Sub(startsAt).Minutes())
+	if minutes <= 0 {
+		return 30
+	}
+	return minutes
+}
+
+func generateManagementCode() string {
+	const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	var builder strings.Builder
+	for index := 0; index < 4; index++ {
+		builder.WriteByte(letters[rand.Intn(len(letters))])
+	}
+	code := builder.String()
+	return fmt.Sprintf("%s-%s-%s", code[:2], code[2:3], code[3:])
+}
+
+func hashManagementCode(code string) string {
+	sum := sha256.Sum256([]byte(strings.ToUpper(strings.TrimSpace(code))))
+	return hex.EncodeToString(sum[:])
 }
 
 func (u *UseCase) resolveDuration(tenantID string, serviceID string) (int, error) {
@@ -291,6 +436,10 @@ func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, c
 		return nil, ErrInvalidBooking
 	}
 
+	if isClosedDay(configuration, day) {
+		return []Slot{}, nil
+	}
+
 	workingHours, err := workingHoursFor(configuration, int(day.Weekday()))
 	if err != nil {
 		return []Slot{}, nil
@@ -309,6 +458,10 @@ func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, c
 	if interval <= 0 {
 		interval = 30
 	}
+	buffer := configuration.BufferMinutes
+	if buffer < 0 {
+		buffer = 0
+	}
 	minStart := time.Now().Add(time.Duration(configuration.AdvanceNoticeHours) * time.Hour)
 
 	from := localMidnight(day)
@@ -323,7 +476,18 @@ func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, c
 		if appointment.Status == appappointment.StatusCancelled || appointment.Status == appappointment.StatusNoShow {
 			continue
 		}
-		busy = append(busy, Slot{StartsAt: appointment.StartsAt, EndsAt: appointment.EndsAt})
+		busyStart, err := parseRFC3339(appointment.StartsAt)
+		if err != nil {
+			continue
+		}
+		busyEnd, err := parseRFC3339(appointment.EndsAt)
+		if err != nil {
+			continue
+		}
+		busy = append(busy, Slot{
+			StartsAt: busyStart.Add(-time.Duration(buffer) * time.Minute).UTC().Format(time.RFC3339),
+			EndsAt:   busyEnd.Add(time.Duration(buffer) * time.Minute).UTC().Format(time.RFC3339),
+		})
 	}
 
 	slots := make([]Slot, 0)
@@ -347,6 +511,9 @@ func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, c
 }
 
 func (u *UseCase) validateSlotInWorkingHours(startsAt time.Time, endsAt time.Time, configuration configurationdomain.Configuration) error {
+	if isClosedDay(configuration, startsAt) {
+		return ErrSlotUnavailable
+	}
 	workingHours, err := workingHoursFor(configuration, int(startsAt.Local().Weekday()))
 	if err != nil {
 		return ErrSlotUnavailable
@@ -360,10 +527,20 @@ func (u *UseCase) validateSlotInWorkingHours(startsAt time.Time, endsAt time.Tim
 	if err != nil {
 		return ErrSlotUnavailable
 	}
-	if startsAt.Before(open) || endsAt.After(closeTime) {
+	if local.Before(open) || endsAt.Local().After(closeTime) {
 		return ErrSlotUnavailable
 	}
 	return nil
+}
+
+func isClosedDay(configuration configurationdomain.Configuration, day time.Time) bool {
+	target := day.Format("2006-01-02")
+	for _, closed := range configuration.ClosedDays {
+		if strings.TrimSpace(closed.Date) == target {
+			return true
+		}
+	}
+	return false
 }
 
 func workingHoursFor(configuration configurationdomain.Configuration, weekday int) (configurationdomain.WorkingHours, error) {
@@ -415,7 +592,7 @@ func parseRFC3339(value string) (time.Time, error) {
 	}
 	parsed, err := time.Parse(time.RFC3339, value)
 	if err != nil {
-		parsed, err = time.Parse("2006-01-02T15:04", value)
+		parsed, err = time.ParseInLocation("2006-01-02T15:04", value, time.Local)
 	}
 	return parsed, err
 }

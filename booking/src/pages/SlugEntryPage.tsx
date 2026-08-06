@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight } from 'lucide-react'
+import { BellRing, CalendarDays, ChevronRight, KeyRound } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -51,6 +51,37 @@ export function SlugEntryPage() {
             Continuar
           </Button>
         </Form>
+
+        <div className="mt-6 grid gap-2 border-t border-[var(--color-line)] pt-6">
+          <Button
+            className="justify-start"
+            icon={<KeyRound className="h-4 w-4" />}
+            onClick={() => {
+              if (slug.trim()) {
+                navigate(`/manage/${encodeURIComponent(slug.trim())}`)
+              } else {
+                setError('Informe o nome do estabelecimento para gerenciar um agendamento.')
+              }
+            }}
+            variant="secondary"
+          >
+            Já tenho um agendamento
+          </Button>
+          <Button
+            className="justify-start"
+            icon={<BellRing className="h-4 w-4" />}
+            onClick={() => {
+              if (slug.trim()) {
+                navigate(`/waiting-list/${encodeURIComponent(slug.trim())}`)
+              } else {
+                setError('Informe o nome do estabelecimento para entrar na lista de espera.')
+              }
+            }}
+            variant="secondary"
+          >
+            Lista de espera
+          </Button>
+        </div>
       </section>
     </main>
   )
