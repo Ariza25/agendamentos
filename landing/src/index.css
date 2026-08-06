@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #b42318;
+  --color-primary-strong: #8f241a;
+  --color-bg-base: #f7f2ea;
+  --color-bg-elevated: #fffdf8;
+  --color-bg-muted: #f2ece4;
+  --color-text: #201a16;
+  --color-text-muted: #6f655d;
+  --color-border: #e7ddd1;
+  --color-danger: #dc2626;
+  --color-danger-strong: #b91c1c;
+  --color-success: #0f766e;
+  --color-warning: #b45309;
+
+  --color-panel: var(--color-bg-base);
+  --color-panel-alt: var(--color-bg-muted);
+  --color-ink: var(--color-text);
+  --color-ink-soft: var(--color-text-muted);
+  --color-line: var(--color-border);
+  --font-headline: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-body);
+    background: var(--color-bg-base);
+    color: var(--color-text);
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background:
+      radial-gradient(circle at top left, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 32%),
+      radial-gradient(circle at bottom right, color-mix(in oklab, var(--color-success) 10%, transparent), transparent 32%),
+      linear-gradient(180deg, var(--color-bg-base) 0%, var(--color-bg-muted) 100%);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button,
+  a[href],
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  span {
+    min-width: 0;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+}

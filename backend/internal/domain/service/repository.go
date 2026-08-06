@@ -1,0 +1,23 @@
+package service
+
+type Service struct {
+	ID              string `json:"id"`
+	TenantID        string `json:"tenantId"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	DurationMinutes int    `json:"durationMinutes"`
+	PriceCents      int    `json:"priceCents"`
+	Color           string `json:"color"`
+	Active          bool   `json:"active"`
+	CreatedAt       string `json:"createdAt"`
+	UpdatedAt       string `json:"updatedAt"`
+}
+
+type Repository interface {
+	Create(input Service) (Service, error)
+	Update(input Service) (Service, error)
+	GetByID(tenantID string, id string) (Service, error)
+	ListByTenant(tenantID string) ([]Service, error)
+	SetActive(tenantID string, id string, active bool) (Service, error)
+	Delete(tenantID string, id string) error
+}

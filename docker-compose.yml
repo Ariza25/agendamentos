@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: erp
+      POSTGRES_DB: erpagendamentos
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp -d erpagendamentos"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      ERPAGENDAMENTOS_ENV: production
+      ERPAGENDAMENTOS_SKIP_DOTENV: "1"
+      DATABASE_URL: postgres://erp:erp@db:5432/erpagendamentos?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-jwt}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:-troque-esta-chave-mfa}
+      FEATURE_PRIVILEGED_MFA_ENFORCEMENT: ${FEATURE_PRIVILEGED_MFA_ENFORCEMENT:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      TZ: ${TZ:-America/Sao_Paulo}
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

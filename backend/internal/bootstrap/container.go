@@ -1,0 +1,238 @@
+package bootstrap
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	"erpagendamentos/backend/internal/application/appointment"
+	"erpagendamentos/backend/internal/application/auth"
+	"erpagendamentos/backend/internal/application/booking"
+	"erpagendamentos/backend/internal/application/configuration"
+	"erpagendamentos/backend/internal/application/customer"
+	"erpagendamentos/backend/internal/application/professional"
+	"erpagendamentos/backend/internal/application/service"
+	"erpagendamentos/backend/internal/application/tenant"
+	authdomain "erpagendamentos/backend/internal/domain/auth"
+	tenantdomain "erpagendamentos/backend/internal/domain/tenant"
+	"erpagendamentos/backend/internal/interfaces/http/rest"
+)
+
+type Container struct {
+	db                   *sql.DB
+	databaseRequired     bool
+	authUseCase          *auth.UseCase
+	tenantUseCase        *tenant.UseCase
+	professionalUseCase  *professional.UseCase
+	serviceUseCase       *service.UseCase
+	customerUseCase      *customer.UseCase
+	appointmentUseCase   *appointment.UseCase
+	configurationUseCase *configuration.UseCase
+	bookingUseCase       *booking.UseCase
+	authMaintenance      auth.MaintenanceConfig
+	router               *rest.Router
+}
+
+func NewContainer() *Container {
+	loadEnvFile(".env")
+
+	repositories, db, databaseRequired := initializeRepositories()
+	authRepository := repositories.auth
+
+	ensureDefaultTenant(repositories.tenant)
+	authComponents := buildAuthComponents(authRepository)
+
+	container := &Container{
+		db:                   db,
+		databaseRequired:     databaseRequired,
+		authUseCase:          authComponents.useCase,
+		tenantUseCase:        tenant.NewUseCase(repositories.tenant),
+		professionalUseCase:  professional.NewUseCase(repositories.professional),
+		serviceUseCase:       service.NewUseCase(repositories.service),
+		customerUseCase:      customer.NewUseCase(repositories.customer),
+		appointmentUseCase:   appointment.NewUseCase(repositories.appointment),
+		configurationUseCase: configuration.NewUseCase(repositories.configuration),
+		authMaintenance:      authComponents.maintenance,
+	}
+	container.bookingUseCase = booking.NewUseCase(
+		repositories.tenant,
+		repositories.configuration,
+		repositories.service,
+		repositories.professional,
+		repositories.customer,
+		container.appointmentUseCase,
+	)
+	return container
+}
+
+func isProductionEnv() bool {
+	value := deploymentEnvironment()
+	return value == "production" || value == "prod"
+}
+
+func deploymentEnvironment() string {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv("ERPAGENDAMENTOS_ENV")))
+	if value == "" {
+		value = strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	}
+	return value
+}
+
+func firstEnv(keys ...string) string {
+	for _, key := range keys {
+		if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func boolEnv(key string, defaultValue bool) bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if value == "" {
+		return defaultValue
+	}
+	switch value {
+	case "1", "true", "yes", "y", "on", "enabled":
+		return true
+	case "0", "false", "no", "n", "off", "disabled":
+		return false
+	default:
+		log.Printf(`{"level":"WARN","message":"invalid boolean env, using default","env":"%s","value":"%s","default":%t}`, key, value, defaultValue)
+		return defaultValue
+	}
+}
+
+func intEnv(key string, defaultValue int) int {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return defaultValue
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		log.Printf(`{"level":"WARN","message":"invalid integer env, using default","env":"%s","value":"%s","default":%d}`, key, value, defaultValue)
+		return defaultValue
+	}
+	return parsed
+}
+
+func durationSecondsEnv(key string, defaultValue time.Duration) time.Duration {
+	seconds := intEnv(key, int(defaultValue.Seconds()))
+	return time.Duration(seconds) * time.Second
+}
+
+func (c *Container) Router() *rest.Router {
+	if c.router != nil {
+		return c.router
+	}
+	c.router = rest.NewRouter(rest.RouterConfig{
+		AuthUseCase:           c.authUseCase,
+		AuthMaintenanceConfig: c.authMaintenance,
+		TenantUseCase:         c.tenantUseCase,
+		ProfessionalUseCase:   c.professionalUseCase,
+		ServiceUseCase:        c.serviceUseCase,
+		CustomerUseCase:       c.customerUseCase,
+		AppointmentUseCase:    c.appointmentUseCase,
+		ConfigurationUseCase:  c.configurationUseCase,
+		BookingUseCase:        c.bookingUseCase,
+	})
+	return c.router
+}
+
+func (c *Container) ReadinessCheck() error {
+	if c.databaseRequired {
+		if c.db == nil {
+			return fmt.Errorf("database is not connected")
+		}
+		if err := c.db.Ping(); err != nil {
+			return fmt.Errorf("database ping failed: %w", err)
+		}
+	}
+	return nil
+}
+
+func (c *Container) Close() error {
+	var closeErrors []error
+	if c.router != nil {
+		c.router.Close()
+	}
+	if c.db != nil {
+		if err := c.db.Close(); err != nil {
+			closeErrors = append(closeErrors, err)
+		}
+	}
+	return errors.Join(closeErrors...)
+}
+
+func ensureDefaultTenant(repository tenantdomain.Repository) {
+	_, err := repository.GetByID("default")
+	if err == nil {
+		return
+	}
+	if _, err := repository.Create(tenantdomain.Tenant{
+		ID:     "default",
+		Name:   "Estabelecimento Padrão",
+		Slug:   "default",
+		Active: true,
+	}); err != nil {
+		log.Printf(`{"level":"WARN","message":"default tenant seed skipped","error":"%v"}`, err)
+	}
+}
+
+func seedAdminAccount(repository authdomain.Repository, hasher auth.PasswordHasher) error {
+	email := strings.ToLower(strings.TrimSpace(os.Getenv("ADMIN_EMAIL")))
+	password := strings.TrimSpace(os.Getenv("ADMIN_PASSWORD"))
+	if email == "" || password == "" {
+		return nil
+	}
+
+	if existing, err := repository.GetStaffAccountByEmail(email); err == nil {
+		if existing.Role != "admin" {
+			updated, updateErr := repository.UpdateRole(existing.ID, "admin")
+			if updateErr != nil {
+				return fmt.Errorf("reconcile admin role: %w", updateErr)
+			}
+			existing = updated
+		}
+		if hasher.Compare(existing.PasswordHash, password) == nil {
+			return nil
+		}
+		passwordHash, hashErr := hasher.Hash(password)
+		if hashErr != nil {
+			return fmt.Errorf("hash admin password: %w", hashErr)
+		}
+		if updateErr := repository.UpdatePassword(existing.ID, passwordHash); updateErr != nil {
+			return fmt.Errorf("reconcile admin password: %w", updateErr)
+		}
+		return nil
+	}
+
+	name := strings.TrimSpace(os.Getenv("ADMIN_NAME"))
+	if name == "" {
+		name = "Administrador"
+	}
+
+	passwordHash, err := hasher.Hash(password)
+	if err != nil {
+		return fmt.Errorf("hash admin password: %w", err)
+	}
+
+	_, err = repository.CreateAccount(authdomain.Account{
+		Name:         name,
+		Email:        email,
+		Phone:        strings.TrimSpace(os.Getenv("ADMIN_PHONE")),
+		PasswordHash: passwordHash,
+		Role:         "admin",
+		TenantID:     "default",
+	})
+	if err != nil {
+		return fmt.Errorf("create admin account: %w", err)
+	}
+
+	return nil
+}
