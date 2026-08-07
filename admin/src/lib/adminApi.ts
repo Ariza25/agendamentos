@@ -14,6 +14,8 @@ import type {
   PackageCredit,
   Payment,
   Professional,
+  Resource,
+  Review,
   Service,
   Tenant,
   WaitingListEntry,
@@ -110,6 +112,50 @@ export async function deleteService(id: string): Promise<void> {
   const response = await adminFetch(`/api/v1/admin/services/${id}`, { method: 'DELETE' })
   await parseJson<{ status?: string } | null>(response)
   invalidateAdminGetCache('/api/v1/admin/services')
+}
+
+export async function fetchResources(): Promise<Resource[]> {
+  const data = await cachedAdminJson<{ resources: Resource[] }>('/api/v1/admin/resources')
+  return data.resources
+}
+
+export async function createResource(input: Partial<Resource>): Promise<Resource> {
+  const response = await adminFetch('/api/v1/admin/resources', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Resource>(response)
+  invalidateAdminGetCache('/api/v1/admin/resources', '/api/v1/admin/appointments')
+  return data
+}
+
+export async function updateResource(id: string, input: Partial<Resource>): Promise<Resource> {
+  const response = await adminFetch(`/api/v1/admin/resources/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Resource>(response)
+  invalidateAdminGetCache('/api/v1/admin/resources', '/api/v1/admin/appointments')
+  return data
+}
+
+export async function setResourceActive(id: string, active: boolean): Promise<Resource> {
+  const response = await adminFetch(`/api/v1/admin/resources/${id}/active`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active }),
+  })
+  const data = await parseJson<Resource>(response)
+  invalidateAdminGetCache('/api/v1/admin/resources', '/api/v1/admin/appointments')
+  return data
+}
+
+export async function deleteResource(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/resources/${id}`, { method: 'DELETE' })
+  await parseJson<{ status?: string } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/resources', '/api/v1/admin/appointments')
 }
 
 export async function fetchCustomers(search = ''): Promise<Customer[]> {
@@ -470,6 +516,29 @@ export async function deleteAppointment(id: string): Promise<void> {
   invalidateMutations()
 }
 
+export async function fetchReviews(status = ''): Promise<Review[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : ''
+  const data = await cachedAdminJson<{ reviews: Review[] }>(`/api/v1/admin/reviews${query}`)
+  return data.reviews
+}
+
+export async function downloadAdminCsv(path: string, fallbackName: string): Promise<void> {
+  const response = await adminFetch(path)
+  if (!response.ok) {
+    await parseJson<{ error?: string }>(response)
+    return
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = fallbackName
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
+
 export async function fetchConfiguration(): Promise<Configuration> {
   return cachedAdminJson<Configuration>('/api/v1/admin/configuration')
 }
@@ -521,6 +590,11 @@ export async function deleteAdminUser(id: string): Promise<void> {
   const response = await adminFetch(`/api/v1/admin/users/${id}`, { method: 'DELETE' })
   await parseJson<{ status?: string } | null>(response)
   invalidateAdminGetCache('/api/v1/admin/users')
+}
+
+export async function fetchCurrentTenant(): Promise<Tenant> {
+  const data = await cachedAdminJson<Tenant>('/api/v1/admin/tenant')
+  return data
 }
 
 export async function fetchTenants(): Promise<Tenant[]> {

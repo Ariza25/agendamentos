@@ -5,6 +5,7 @@ import "net/http"
 func registerTenantRoutes(mux *http.ServeMux, config RouterConfig) {
 	tenantHandler := NewTenantHandler(config.TenantUseCase)
 
+	mux.HandleFunc("GET /api/v1/admin/tenant", requireAdmin(config.AuthUseCase, tenantHandler.GetCurrent))
 	mux.HandleFunc("GET /api/v1/admin/tenants", requireMasterAdmin(config.AuthUseCase, tenantHandler.List))
 	mux.HandleFunc("POST /api/v1/admin/tenants", requireMasterAdmin(config.AuthUseCase, tenantHandler.Create))
 	mux.HandleFunc("GET /api/v1/admin/tenants/{tenantID}", requireMasterAdmin(config.AuthUseCase, tenantHandler.Get))
@@ -35,6 +36,17 @@ func registerServiceRoutes(mux *http.ServeMux, config RouterConfig) {
 	mux.HandleFunc("DELETE /api/v1/admin/services/{serviceID}", requireAdmin(config.AuthUseCase, handler.Delete))
 }
 
+func registerResourceRoutes(mux *http.ServeMux, config RouterConfig) {
+	handler := NewResourceHandler(config.ResourceUseCase)
+
+	mux.HandleFunc("GET /api/v1/admin/resources", requireAdmin(config.AuthUseCase, handler.List))
+	mux.HandleFunc("POST /api/v1/admin/resources", requireAdmin(config.AuthUseCase, handler.Create))
+	mux.HandleFunc("GET /api/v1/admin/resources/{resourceID}", requireAdmin(config.AuthUseCase, handler.Get))
+	mux.HandleFunc("PUT /api/v1/admin/resources/{resourceID}", requireAdmin(config.AuthUseCase, handler.Update))
+	mux.HandleFunc("PATCH /api/v1/admin/resources/{resourceID}/active", requireAdmin(config.AuthUseCase, handler.SetActive))
+	mux.HandleFunc("DELETE /api/v1/admin/resources/{resourceID}", requireAdmin(config.AuthUseCase, handler.Delete))
+}
+
 func registerCustomerRoutes(mux *http.ServeMux, config RouterConfig) {
 	handler := NewCustomerHandler(config.CustomerUseCase)
 
@@ -46,7 +58,7 @@ func registerCustomerRoutes(mux *http.ServeMux, config RouterConfig) {
 }
 
 func registerAppointmentRoutes(mux *http.ServeMux, config RouterConfig) {
-	handler := NewAppointmentHandler(config.AppointmentUseCase)
+	handler := NewAppointmentHandler(config.AppointmentUseCase, config.ReviewUseCase)
 
 	mux.HandleFunc("GET /api/v1/admin/appointments", requireAdmin(config.AuthUseCase, handler.List))
 	mux.HandleFunc("POST /api/v1/admin/appointments", requireAdmin(config.AuthUseCase, handler.Create))

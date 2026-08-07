@@ -14,6 +14,8 @@ import (
 	appnotification "erpagendamentos/backend/internal/application/notification"
 	apppayment "erpagendamentos/backend/internal/application/payment"
 	appprofessional "erpagendamentos/backend/internal/application/professional"
+	appresource "erpagendamentos/backend/internal/application/resource"
+	appreview "erpagendamentos/backend/internal/application/review"
 	appservice "erpagendamentos/backend/internal/application/service"
 	apptenant "erpagendamentos/backend/internal/application/tenant"
 	appwaitinglist "erpagendamentos/backend/internal/application/waitinglist"
@@ -34,6 +36,7 @@ type RouterConfig struct {
 	TenantUseCase         *apptenant.UseCase
 	ProfessionalUseCase   *appprofessional.UseCase
 	ServiceUseCase        *appservice.UseCase
+	ResourceUseCase       *appresource.UseCase
 	CustomerUseCase       *appcustomer.UseCase
 	AppointmentUseCase    *appappointment.UseCase
 	ConfigurationUseCase  *appconfiguration.UseCase
@@ -42,6 +45,7 @@ type RouterConfig struct {
 	PaymentUseCase        *apppayment.UseCase
 	WaitingListUseCase    *appwaitinglist.UseCase
 	CommerceUseCase       *appcommerce.UseCase
+	ReviewUseCase         *appreview.UseCase
 	CustomerRepository    customerdomain.Repository
 	ServiceRepository     servicedomain.Repository
 	ConfigurationRepo     configurationdomain.Repository
@@ -57,6 +61,7 @@ func NewRouter(config RouterConfig) *Router {
 	registerTenantRoutes(mux, config)
 	registerProfessionalRoutes(mux, config)
 	registerServiceRoutes(mux, config)
+	registerResourceRoutes(mux, config)
 	registerCustomerRoutes(mux, config)
 	registerAppointmentRoutes(mux, config)
 	registerConfigurationRoutes(mux, config)
@@ -66,6 +71,11 @@ func NewRouter(config RouterConfig) *Router {
 	registerWaitingListRoutes(mux, config)
 	registerCommerceRoutes(mux, config)
 	registerCalendarRoutes(mux, config)
+	registerReviewRoutes(mux, config)
+	registerExportRoutes(mux, config)
+
+	widgetHandler := NewWidgetHandler()
+	mux.HandleFunc("GET /widget.js", widgetHandler.ServeScript)
 
 	handler := withObservability(
 		withSecurityHeaders(

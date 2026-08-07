@@ -52,5 +52,6 @@ type Repository interface {
 	GetByID(tenantID string, id string) (Payment, error)
 	GetByAppointment(tenantID string, appointmentID string) (Payment, error)
 	ListByTenant(tenantID string, limit int) ([]Payment, error)
+	ListByTenantRange(tenantID string, from string, to string) ([]Payment, error)
 	UpdateStatus(tenantID string, id string, status string, providerPaymentID string) (Payment, error)
 }

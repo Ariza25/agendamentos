@@ -19,6 +19,8 @@ import (
 	"erpagendamentos/backend/internal/application/notification"
 	"erpagendamentos/backend/internal/application/payment"
 	"erpagendamentos/backend/internal/application/professional"
+	"erpagendamentos/backend/internal/application/resource"
+	"erpagendamentos/backend/internal/application/review"
 	"erpagendamentos/backend/internal/application/service"
 	"erpagendamentos/backend/internal/application/tenant"
 	"erpagendamentos/backend/internal/application/waitinglist"
@@ -40,6 +42,7 @@ type Container struct {
 	tenantUseCase           *tenant.UseCase
 	professionalUseCase     *professional.UseCase
 	serviceUseCase          *service.UseCase
+	resourceUseCase         *resource.UseCase
 	customerUseCase         *customer.UseCase
 	appointmentUseCase      *appointment.UseCase
 	configurationUseCase    *configuration.UseCase
@@ -48,6 +51,7 @@ type Container struct {
 	paymentUseCase          *payment.UseCase
 	waitingListUseCase      *waitinglist.UseCase
 	commerceUseCase         *commerce.UseCase
+	reviewUseCase           *review.UseCase
 	authMaintenance         auth.MaintenanceConfig
 	customerRepository      customerdomain.Repository
 	serviceRepository       servicedomain.Repository
@@ -64,7 +68,7 @@ func NewContainer() *Container {
 	ensureDefaultTenant(repositories.tenant)
 	authComponents := buildAuthComponents(authRepository)
 
-	appointmentUseCase := appointment.NewUseCase(repositories.appointment)
+	appointmentUseCase := appointment.NewUseCase(repositories.appointment, repositories.resource)
 	notificationUseCase := notification.NewUseCase(repositories.notification, notificationinfra.NewLogProvider())
 	paymentUseCase := payment.NewUseCase(repositories.payment, buildPaymentProvider())
 
@@ -75,12 +79,14 @@ func NewContainer() *Container {
 		tenantUseCase:        tenant.NewUseCase(repositories.tenant),
 		professionalUseCase:  professional.NewUseCase(repositories.professional),
 		serviceUseCase:       service.NewUseCase(repositories.service),
+		resourceUseCase:      resource.NewUseCase(repositories.resource),
 		customerUseCase:      customer.NewUseCase(repositories.customer),
 		appointmentUseCase:   appointmentUseCase,
 		configurationUseCase: configuration.NewUseCase(repositories.configuration),
 		notificationUseCase:  notificationUseCase,
 		paymentUseCase:       paymentUseCase,
 		waitingListUseCase:   waitinglist.NewUseCase(repositories.waitingList),
+		reviewUseCase:        review.NewUseCase(repositories.review),
 		commerceUseCase: commerce.NewUseCase(
 			repositories.packages,
 			repositories.packageCredits,
@@ -98,6 +104,7 @@ func NewContainer() *Container {
 		repositories.configuration,
 		repositories.service,
 		repositories.professional,
+		repositories.resource,
 		repositories.customer,
 		appointmentUseCase,
 	)
@@ -177,6 +184,7 @@ func (c *Container) Router() *rest.Router {
 		TenantUseCase:         c.tenantUseCase,
 		ProfessionalUseCase:   c.professionalUseCase,
 		ServiceUseCase:        c.serviceUseCase,
+		ResourceUseCase:       c.resourceUseCase,
 		CustomerUseCase:       c.customerUseCase,
 		AppointmentUseCase:    c.appointmentUseCase,
 		ConfigurationUseCase:  c.configurationUseCase,
@@ -185,6 +193,7 @@ func (c *Container) Router() *rest.Router {
 		PaymentUseCase:        c.paymentUseCase,
 		WaitingListUseCase:    c.waitingListUseCase,
 		CommerceUseCase:       c.commerceUseCase,
+		ReviewUseCase:         c.reviewUseCase,
 		CustomerRepository:    c.customerRepository,
 		ServiceRepository:     c.serviceRepository,
 		ConfigurationRepo:     c.configurationRepository,

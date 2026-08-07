@@ -14,6 +14,7 @@ import (
 	configurationdomain "erpagendamentos/backend/internal/domain/configuration"
 	customerdomain "erpagendamentos/backend/internal/domain/customer"
 	professionaldomain "erpagendamentos/backend/internal/domain/professional"
+	resourcedomain "erpagendamentos/backend/internal/domain/resource"
 	servicedomain "erpagendamentos/backend/internal/domain/service"
 	tenantdomain "erpagendamentos/backend/internal/domain/tenant"
 )
@@ -28,6 +29,8 @@ var (
 	ErrInvalidCode         = errors.New("invalid management code")
 	ErrAppointmentDone     = errors.New("appointment can no longer be managed online")
 	ErrCancellationTooLate = errors.New("cancellation window has passed")
+	ErrCustomerNotFound    = errors.New("customer not found for the given phone")
+	ErrAppointmentAccess   = errors.New("appointment not found for this customer")
 )
 
 const (
@@ -61,11 +64,40 @@ type BookingResult struct {
 	ManagementCode string                        `json:"managementCode"`
 }
 
+type PortalCustomer struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+	Email string `json:"email"`
+}
+
+type PortalAppointment struct {
+	ID                 string `json:"id"`
+	ServiceID          string `json:"serviceId"`
+	ServiceName        string `json:"serviceName"`
+	ProfessionalID     string `json:"professionalId"`
+	ProfessionalName   string `json:"professionalName"`
+	ResourceID         string `json:"resourceId,omitempty"`
+	ResourceName       string `json:"resourceName,omitempty"`
+	StartsAt           string `json:"startsAt"`
+	EndsAt             string `json:"endsAt"`
+	Status             string `json:"status"`
+	PriceCents         int    `json:"priceCents"`
+	CancellationReason string `json:"cancellationReason,omitempty"`
+	Source             string `json:"source,omitempty"`
+}
+
+type PortalResult struct {
+	Customer     PortalCustomer      `json:"customer"`
+	Appointments []PortalAppointment `json:"appointments"`
+}
+
 type UseCase struct {
 	tenantRepo        tenantdomain.Repository
 	configurationRepo configurationdomain.Repository
 	serviceRepo       servicedomain.Repository
 	professionalRepo  professionaldomain.Repository
+	resourceRepo      resourcedomain.Repository
 	customerRepo      customerdomain.Repository
 	appointments      *appappointment.UseCase
 }
@@ -75,6 +107,7 @@ func NewUseCase(
 	configurationRepo configurationdomain.Repository,
 	serviceRepo servicedomain.Repository,
 	professionalRepo professionaldomain.Repository,
+	resourceRepo resourcedomain.Repository,
 	customerRepo customerdomain.Repository,
 	appointments *appappointment.UseCase,
 ) *UseCase {
@@ -83,6 +116,7 @@ func NewUseCase(
 		configurationRepo: configurationRepo,
 		serviceRepo:       serviceRepo,
 		professionalRepo:  professionalRepo,
+		resourceRepo:      resourceRepo,
 		customerRepo:      customerRepo,
 		appointments:      appointments,
 	}
@@ -380,6 +414,169 @@ func (u *UseCase) ReschedulePublic(slug string, code string, newStartsAt string)
 		return appointmentdomain.Appointment{}, err
 	}
 	return updated, nil
+}
+
+func (u *UseCase) PortalLookup(slug string, phone string) (PortalResult, error) {
+	tenant, err := u.ResolveTenantBySlug(slug)
+	if err != nil {
+		return PortalResult{}, err
+	}
+	customer, err := u.customerRepo.FindByPhone(tenant.ID, strings.TrimSpace(phone))
+	if err != nil {
+		return PortalResult{}, ErrCustomerNotFound
+	}
+
+	appointments, err := u.appointments.ListByRange(
+		tenant.ID,
+		time.Now().AddDate(-2, 0, 0).Format(time.RFC3339),
+		time.Now().AddDate(0, 0, 730).Format(time.RFC3339),
+		"",
+		customer.ID,
+		"",
+	)
+	if err != nil {
+		return PortalResult{}, err
+	}
+
+	portalAppointments := make([]PortalAppointment, 0, len(appointments))
+	for _, item := range appointments {
+		portalAppointments = append(portalAppointments, u.toPortalAppointment(tenant.ID, item))
+	}
+	return PortalResult{
+		Customer: PortalCustomer{
+			ID:    customer.ID,
+			Name:  customer.Name,
+			Phone: customer.Phone,
+			Email: customer.Email,
+		},
+		Appointments: portalAppointments,
+	}, nil
+}
+
+func (u *UseCase) PortalCancel(slug string, phone string, appointmentID string, reason string) (appointmentdomain.Appointment, error) {
+	tenant, err := u.ResolveTenantBySlug(slug)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	customer, err := u.resolvePortalCustomer(tenant.ID, phone)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	appointment, err := u.appointments.GetByID(tenant.ID, strings.TrimSpace(appointmentID))
+	if err != nil || appointment.CustomerID != customer.ID {
+		return appointmentdomain.Appointment{}, ErrAppointmentAccess
+	}
+	if appointment.Status == appappointment.StatusCancelled || appointment.Status == appappointment.StatusCompleted || appointment.Status == appappointment.StatusNoShow {
+		return appointmentdomain.Appointment{}, ErrAppointmentDone
+	}
+	configuration, err := u.configurationRepo.Get(tenant.ID)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	if configuration.CancellationPolicyHours > 0 {
+		startsAt, err := parseRFC3339(appointment.StartsAt)
+		if err != nil {
+			return appointmentdomain.Appointment{}, ErrAppointmentAccess
+		}
+		if time.Now().After(startsAt.Add(-time.Duration(configuration.CancellationPolicyHours) * time.Hour)) {
+			return appointmentdomain.Appointment{}, ErrCancellationTooLate
+		}
+	}
+	input := appointment
+	input.Status = appappointment.StatusCancelled
+	input.CancellationReason = strings.TrimSpace(reason)
+	updated, err := u.appointments.Update(input)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	return updated, nil
+}
+
+func (u *UseCase) PortalReschedule(slug string, phone string, appointmentID string, newStartsAt string) (appointmentdomain.Appointment, error) {
+	tenant, err := u.ResolveTenantBySlug(slug)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	customer, err := u.resolvePortalCustomer(tenant.ID, phone)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	appointment, err := u.appointments.GetByID(tenant.ID, strings.TrimSpace(appointmentID))
+	if err != nil || appointment.CustomerID != customer.ID {
+		return appointmentdomain.Appointment{}, ErrAppointmentAccess
+	}
+	if appointment.Status == appappointment.StatusCancelled || appointment.Status == appappointment.StatusCompleted || appointment.Status == appappointment.StatusNoShow {
+		return appointmentdomain.Appointment{}, ErrAppointmentDone
+	}
+
+	configuration, err := u.configurationRepo.Get(tenant.ID)
+	if err != nil {
+		return appointmentdomain.Appointment{}, err
+	}
+	if !configuration.AllowOnlineBooking {
+		return appointmentdomain.Appointment{}, ErrBookingDisabled
+	}
+
+	duration := appointmentDurationMinutes(appointment)
+	startsAt, err := parseRFC3339(newStartsAt)
+	if err != nil {
+		return appointmentdomain.Appointment{}, ErrInvalidBooking
+	}
+	endsAt := startsAt.Add(time.Duration(duration) * time.Minute)
+
+	if err := u.validateSlotInWorkingHours(startsAt, endsAt, configuration); err != nil {
+		return appointmentdomain.Appointment{}, ErrSlotUnavailable
+	}
+	if !startsAt.After(time.Now().Add(-5 * time.Minute)) {
+		return appointmentdomain.Appointment{}, ErrSlotUnavailable
+	}
+
+	input := appointment
+	input.StartsAt = startsAt.Format(time.RFC3339)
+	input.EndsAt = endsAt.Format(time.RFC3339)
+	updated, err := u.appointments.Update(input)
+	if err != nil {
+		if errors.Is(err, appappointment.ErrTimeConflict) {
+			return appointmentdomain.Appointment{}, ErrSlotUnavailable
+		}
+		return appointmentdomain.Appointment{}, err
+	}
+	return updated, nil
+}
+
+func (u *UseCase) resolvePortalCustomer(tenantID string, phone string) (customerdomain.Customer, error) {
+	customer, err := u.customerRepo.FindByPhone(tenantID, strings.TrimSpace(phone))
+	if err != nil {
+		return customerdomain.Customer{}, ErrCustomerNotFound
+	}
+	return customer, nil
+}
+
+func (u *UseCase) toPortalAppointment(tenantID string, item appointmentdomain.Appointment) PortalAppointment {
+	portal := PortalAppointment{
+		ID:                 item.ID,
+		ServiceID:          item.ServiceID,
+		ProfessionalID:     item.ProfessionalID,
+		ResourceID:         item.ResourceID,
+		StartsAt:           item.StartsAt,
+		EndsAt:             item.EndsAt,
+		Status:             item.Status,
+		CancellationReason: item.CancellationReason,
+		Source:             item.Source,
+	}
+	if service, err := u.serviceRepo.GetByID(tenantID, item.ServiceID); err == nil {
+		portal.ServiceName = service.Name
+		portal.PriceCents = service.PriceCents
+	}
+	if professional, err := u.professionalRepo.GetByID(tenantID, item.ProfessionalID); err == nil {
+		portal.ProfessionalName = professional.Name
+	}
+	if item.ResourceID != "" && u.resourceRepo != nil {
+		if resource, err := u.resourceRepo.GetByID(tenantID, item.ResourceID); err == nil {
+			portal.ResourceName = resource.Name
+		}
+	}
+	return portal
 }
 
 func appointmentDurationMinutes(item appointmentdomain.Appointment) int {

@@ -180,3 +180,78 @@ export function signUpWaitingList(
     'Nao foi possivel entrar na lista de espera.',
   )
 }
+
+export type PublicReview = {
+  id: string
+  status: string
+  rating: number
+  comment: string
+  invitedAt: string
+  submittedAt?: string
+}
+
+export function fetchPublicReview(slug: string, reviewId: string): Promise<PublicReview> {
+  return publicFetch<PublicReview>(
+    `/api/v1/public/${encodeURIComponent(slug)}/reviews/${encodeURIComponent(reviewId)}`,
+    undefined,
+    'Nao foi possivel localizar a avaliacao.',
+  )
+}
+
+export function submitPublicReview(slug: string, reviewId: string, rating: number, comment: string): Promise<PublicReview> {
+  return publicFetch<PublicReview>(
+    `/api/v1/public/${encodeURIComponent(slug)}/reviews/${encodeURIComponent(reviewId)}`,
+    { method: 'POST', body: JSON.stringify({ rating, comment }) },
+    'Nao foi possivel enviar a avaliacao.',
+  )
+}
+
+export type PortalAppointment = {
+  id: string
+  serviceId: string
+  serviceName: string
+  professionalId: string
+  professionalName: string
+  resourceId?: string
+  resourceName?: string
+  startsAt: string
+  endsAt: string
+  status: string
+  priceCents: number
+  cancellationReason?: string
+  source?: string
+}
+
+export type PortalResult = {
+  customer: {
+    id: string
+    name: string
+    phone: string
+    email: string
+  }
+  appointments: PortalAppointment[]
+}
+
+export function portalLookup(slug: string, phone: string): Promise<PortalResult> {
+  return publicFetch<PortalResult>(
+    `/api/v1/public/${encodeURIComponent(slug)}/portal/lookup`,
+    { method: 'POST', body: JSON.stringify({ phone }) },
+    'Nao foi possivel consultar seus agendamentos.',
+  )
+}
+
+export function portalCancelAppointment(slug: string, phone: string, appointmentId: string, reason: string): Promise<PublicAppointment> {
+  return publicFetch<PublicAppointment>(
+    `/api/v1/public/${encodeURIComponent(slug)}/portal/appointments/${encodeURIComponent(appointmentId)}/cancel`,
+    { method: 'POST', body: JSON.stringify({ phone, reason }) },
+    'Nao foi possivel cancelar o agendamento.',
+  )
+}
+
+export function portalRescheduleAppointment(slug: string, phone: string, appointmentId: string, startsAt: string): Promise<PublicAppointment> {
+  return publicFetch<PublicAppointment>(
+    `/api/v1/public/${encodeURIComponent(slug)}/portal/appointments/${encodeURIComponent(appointmentId)}/reschedule`,
+    { method: 'POST', body: JSON.stringify({ phone, startsAt }) },
+    'Nao foi possivel reagendar. Tente novamente.',
+  )
+}

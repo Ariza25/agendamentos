@@ -26,6 +26,10 @@ func (u *UseCase) ListByTenant(tenantID string, limit int) ([]domain.Payment, er
 	return u.repository.ListByTenant(strings.TrimSpace(tenantID), limit)
 }
 
+func (u *UseCase) ListByRange(tenantID string, from string, to string) ([]domain.Payment, error) {
+	return u.repository.ListByTenantRange(strings.TrimSpace(tenantID), strings.TrimSpace(from), strings.TrimSpace(to))
+}
+
 func (u *UseCase) GetByID(tenantID string, id string) (domain.Payment, error) {
 	item, err := u.repository.GetByID(strings.TrimSpace(tenantID), strings.TrimSpace(id))
 	if err != nil {

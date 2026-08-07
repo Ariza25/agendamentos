@@ -1,6 +1,7 @@
 package booking
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -31,8 +32,8 @@ func newTestUseCase() *UseCase {
 	})
 
 	appointmentRepo := memory.NewAppointmentRepository()
-	appointments := appappointment.NewUseCase(appointmentRepo)
-	return NewUseCase(tenantRepo, configurationRepo, serviceRepo, professionalRepo, customerRepo, appointments)
+	appointments := appappointment.NewUseCase(appointmentRepo, memory.NewResourceRepository())
+	return NewUseCase(tenantRepo, configurationRepo, serviceRepo, professionalRepo, memory.NewResourceRepository(), customerRepo, appointments)
 }
 
 func TestCreateBookingGeneratesManagementCode(t *testing.T) {
@@ -154,5 +155,135 @@ func TestManagementCodeNormalization(t *testing.T) {
 	}
 	if hashManagementCode(raw) == hashManagementCode("ZZ-CDE-12") {
 		t.Fatalf("different codes should produce different hashes")
+	}
+}
+
+func TestPortalLookup(t *testing.T) {
+	useCase := newTestUseCase()
+	future := time.Now().Add(24 * time.Hour)
+	day := future.Format("2006-01-02")
+	_, _ = useCase.configurationRepo.Update(configurationdomain.Configuration{
+		TenantID:                   "default",
+		EstablishmentName:          "Teste",
+		AllowOnlineBooking:         true,
+		WorkingHours:               []configurationdomain.WorkingHours{{DayOfWeek: int(future.Weekday()), OpenTime: "09:00", CloseTime: "18:00", Enabled: true}},
+		AppointmentIntervalMinutes: 30,
+		DefaultDurationMinutes:     30,
+	})
+
+	professional, _ := useCase.professionalRepo.ListByTenant("default")
+
+	result, err := useCase.CreateBooking("default", BookingInput{
+		ProfessionalID: professional[0].ID,
+		ServiceID:      "",
+		StartsAt:       day + "T10:00",
+		Name:           "Portal Cliente",
+		Phone:          "11988887777",
+	})
+	if err != nil {
+		t.Fatalf("create booking: %v", err)
+	}
+
+	portal, err := useCase.PortalLookup("default", "11988887777")
+	if err != nil {
+		t.Fatalf("portal lookup: %v", err)
+	}
+	if portal.Customer.Phone != "11988887777" {
+		t.Fatalf("expected phone match, got %s", portal.Customer.Phone)
+	}
+	if len(portal.Appointments) != 1 {
+		t.Fatalf("expected 1 appointment, got %d", len(portal.Appointments))
+	}
+	if portal.Appointments[0].ID != result.Appointment.ID {
+		t.Fatalf("expected appointment %s, got %s", result.Appointment.ID, portal.Appointments[0].ID)
+	}
+	if portal.Appointments[0].ProfessionalName != "Dra. Ana" {
+		t.Fatalf("expected professional name, got %q", portal.Appointments[0].ProfessionalName)
+	}
+
+	if _, err := useCase.PortalLookup("default", "11900001111"); err == nil {
+		t.Fatalf("expected error for unknown phone")
+	}
+}
+
+func TestPortalCancelValidatesOwnership(t *testing.T) {
+	useCase := newTestUseCase()
+	future := time.Now().Add(48 * time.Hour)
+	day := future.Format("2006-01-02")
+	_, _ = useCase.configurationRepo.Update(configurationdomain.Configuration{
+		TenantID:                   "default",
+		EstablishmentName:          "Teste",
+		AllowOnlineBooking:         true,
+		WorkingHours:               []configurationdomain.WorkingHours{{DayOfWeek: int(future.Weekday()), OpenTime: "09:00", CloseTime: "18:00", Enabled: true}},
+		AppointmentIntervalMinutes: 30,
+		DefaultDurationMinutes:     30,
+	})
+
+	professional, _ := useCase.professionalRepo.ListByTenant("default")
+
+	result, err := useCase.CreateBooking("default", BookingInput{
+		ProfessionalID: professional[0].ID,
+		StartsAt:       day + "T11:00",
+		Name:           "Dona",
+		Phone:          "11966665555",
+	})
+	if err != nil {
+		t.Fatalf("create booking: %v", err)
+	}
+
+	cancelled, err := useCase.PortalCancel("default", "11966665555", result.Appointment.ID, "imprevisto")
+	if err != nil {
+		t.Fatalf("portal cancel: %v", err)
+	}
+	if cancelled.Status != "cancelled" {
+		t.Fatalf("expected cancelled, got %s", cancelled.Status)
+	}
+
+	if _, err := useCase.PortalCancel("default", "11900001111", result.Appointment.ID, ""); !errors.Is(err, ErrCustomerNotFound) {
+		t.Fatalf("expected customer not found, got %v", err)
+	}
+	if _, err := useCase.PortalCancel("default", "11966665555", "00000000-0000-0000-0000-000000000000", ""); !errors.Is(err, ErrAppointmentAccess) {
+		t.Fatalf("expected appointment access error, got %v", err)
+	}
+	if _, err := useCase.PortalCancel("default", "11966665555", result.Appointment.ID, ""); !errors.Is(err, ErrAppointmentDone) {
+		t.Fatalf("expected appointment done error, got %v", err)
+	}
+}
+
+func TestPortalReschedule(t *testing.T) {
+	useCase := newTestUseCase()
+	future := time.Now().Add(72 * time.Hour)
+	day := future.Format("2006-01-02")
+	_, _ = useCase.configurationRepo.Update(configurationdomain.Configuration{
+		TenantID:                   "default",
+		EstablishmentName:          "Teste",
+		AllowOnlineBooking:         true,
+		WorkingHours:               []configurationdomain.WorkingHours{{DayOfWeek: int(future.Weekday()), OpenTime: "09:00", CloseTime: "18:00", Enabled: true}},
+		AppointmentIntervalMinutes: 30,
+		DefaultDurationMinutes:     30,
+	})
+
+	professional, _ := useCase.professionalRepo.ListByTenant("default")
+
+	result, err := useCase.CreateBooking("default", BookingInput{
+		ProfessionalID: professional[0].ID,
+		StartsAt:       day + "T09:00",
+		Name:           "Sr. Fulano",
+		Phone:          "11955554444",
+	})
+	if err != nil {
+		t.Fatalf("create booking: %v", err)
+	}
+
+	updated, err := useCase.PortalReschedule("default", "11955554444", result.Appointment.ID, day+"T14:00")
+	if err != nil {
+		t.Fatalf("portal reschedule: %v", err)
+	}
+	if updated.StartsAt[:16] != day+"T14:00" && updated.StartsAt[:10] != day {
+		t.Fatalf("expected rescheduled time, got %s", updated.StartsAt)
+	}
+
+	if _, err := useCase.PortalReschedule("default", "11955554444", result.Appointment.ID, day+"T14:30"); err != nil {
+		t.Fatalf("portal reschedule of an active appointment should be allowed, got %v", err)
 	}
 }

@@ -32,6 +32,7 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   cancellation_window: 'O prazo para cancelar ou reagendar este agendamento já passou.',
   invalid_management_code: 'Código de agendamento inválido ou não encontrado.',
   notification_failed: 'Não foi possível entregar a notificação.',
+  review_submitted: 'Esta avaliação já foi enviada.',
 }
 
 export const FIELD_ERROR_MESSAGES: Record<string, string> = {

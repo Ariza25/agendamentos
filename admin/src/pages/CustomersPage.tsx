@@ -1,8 +1,8 @@
-import { Plus, Search, Users } from 'lucide-react'
+import { Download, Plus, Search, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { createCustomer, deleteCustomer, fetchCustomers, updateCustomer } from '../lib/adminApi'
+import { createCustomer, deleteCustomer, downloadAdminCsv, fetchCustomers, updateCustomer } from '../lib/adminApi'
 import { Button } from '../shared/components/Button'
 import { ConfirmModal } from '../shared/components/ConfirmModal'
 import { EmptyState } from '../shared/components/EmptyState'
@@ -23,6 +23,7 @@ export function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   function loadCustomers(query = search) {
     setLoading(true)
@@ -59,19 +60,35 @@ export function CustomersPage() {
     }
   }
 
+  async function handleExport() {
+    setExporting(true)
+    try {
+      await downloadAdminCsv('/api/v1/admin/export/customers.csv', 'clientes.csv')
+    } catch (error) {
+      showToast({ message: (error as Error).message, tone: 'error' })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <PageContainer>
       <Section
         actions={
-          <Button
-            icon={<Plus className="h-4 w-4" />}
-            onClick={() => {
-              setEditingCustomer(null)
-              setIsFormOpen(true)
-            }}
-          >
-            Novo cliente
-          </Button>
+          <>
+            <Button disabled={exporting} icon={<Download className="h-4 w-4" />} loading={exporting} onClick={() => void handleExport()}>
+              Exportar CSV
+            </Button>
+            <Button
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => {
+                setEditingCustomer(null)
+                setIsFormOpen(true)
+              }}
+            >
+              Novo cliente
+            </Button>
+          </>
         }
         subtitle="Cadastre e gerencie os clientes do estabelecimento."
         title="Clientes"

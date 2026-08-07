@@ -1,8 +1,9 @@
-import { Save, Trash2 } from 'lucide-react'
+import { Check, Copy, Save, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { fetchConfiguration, updateConfiguration } from '../lib/adminApi'
+import { buildApiUrl } from '../lib/apiBase'
 import { DAY_LABELS } from '../lib/format'
 import { Button } from '../shared/components/Button'
 import { Checkbox, Field, Form, Input, Select } from '../shared/components/FormControls'
@@ -44,6 +45,9 @@ export function ConfigurationPage() {
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const icsUrl = buildApiUrl('/api/v1/admin/calendar/export.ics')
 
   useEffect(() => {
     let active = true
@@ -105,6 +109,16 @@ export function ConfigurationPage() {
 
   function removeClosedDay(index: number) {
     setClosedDays((current) => current.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  async function copyIcsUrl() {
+    try {
+      await navigator.clipboard.writeText(icsUrl)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      showToast({ message: 'Não foi possível copiar o link.', tone: 'error' })
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -441,6 +455,27 @@ export function ConfigurationPage() {
             <Checkbox checked={calendarSyncEnabled} onChange={(event) => setCalendarSyncEnabled(event.target.checked)} />
             <span className="ml-2 text-sm font-bold text-[var(--color-ink)]">Habilitar exportação de agenda (.ics)</span>
           </div>
+          {calendarSyncEnabled ? (
+            <div className="mt-3 grid gap-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] px-4 py-3">
+              <p className="text-sm font-bold text-[var(--color-ink)]">Link de assinatura (.ics)</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="min-w-0 flex-1 truncate rounded-lg bg-[var(--color-bg)] px-3 py-2 text-xs font-semibold text-[var(--color-ink)]">
+                  {icsUrl}
+                </code>
+                <Button
+                  icon={copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  onClick={() => void copyIcsUrl()}
+                  size="sm"
+                  variant="secondary"
+                >
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </Button>
+              </div>
+              <p className="text-xs font-semibold text-[var(--color-ink-soft)]">
+                Cole o link em "Adicionar por URL" do Google Calendar ou abra-o no navegador para baixar o arquivo .ics.
+              </p>
+            </div>
+          ) : null}
         </Section>
 
         {error ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p> : null}

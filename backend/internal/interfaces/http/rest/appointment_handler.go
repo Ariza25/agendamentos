@@ -6,15 +6,17 @@ import (
 	"net/http"
 
 	appappointment "erpagendamentos/backend/internal/application/appointment"
+	appreview "erpagendamentos/backend/internal/application/review"
 	appointmentdomain "erpagendamentos/backend/internal/domain/appointment"
 )
 
 type AppointmentHandler struct {
-	useCase *appappointment.UseCase
+	useCase       *appappointment.UseCase
+	reviewUseCase *appreview.UseCase
 }
 
-func NewAppointmentHandler(useCase *appappointment.UseCase) *AppointmentHandler {
-	return &AppointmentHandler{useCase: useCase}
+func NewAppointmentHandler(useCase *appappointment.UseCase, reviewUseCase *appreview.UseCase) *AppointmentHandler {
+	return &AppointmentHandler{useCase: useCase, reviewUseCase: reviewUseCase}
 }
 
 func (h *AppointmentHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -91,6 +93,9 @@ func (h *AppointmentHandler) UpdateStatus(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		writeAppointmentError(w, err)
 		return
+	}
+	if appointment.Status == appappointment.StatusCompleted && h.reviewUseCase != nil && appointment.CustomerID != "" {
+		_, _ = h.reviewUseCase.CreateInvitation(appointment.TenantID, appointment.ID, appointment.CustomerID)
 	}
 	writeJSON(w, http.StatusOK, appointment)
 }

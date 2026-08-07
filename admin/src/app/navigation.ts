@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarDays,
   CalendarClock,
+  Code2,
   CreditCard,
   Gift,
   History,
@@ -15,6 +16,8 @@ import {
   UserCog,
   Scissors,
   Clock3,
+  Star,
+  DoorOpen,
 } from 'lucide-react'
 
 import type { AdminAreaKey } from '../lib/adminPermissions'
@@ -33,6 +36,7 @@ export const navigationItems: AdminNavigationItem[] = [
   { to: '/appointments', label: 'Agendamentos', icon: CalendarClock, area: 'appointments' },
   { to: '/customers', label: 'Clientes', icon: Users, area: 'customers' },
   { to: '/services', label: 'Serviços', icon: Scissors, area: 'services' },
+  { to: '/resources', label: 'Recursos e salas', icon: DoorOpen, area: 'resources' },
   { to: '/professionals', label: 'Profissionais', icon: UserCog, area: 'professionals' },
   { to: '/analytics', label: 'Dashboard', icon: LineChart, area: 'analytics' },
   { to: '/payments', label: 'Pagamentos', icon: CreditCard, area: 'payments' },
@@ -40,7 +44,9 @@ export const navigationItems: AdminNavigationItem[] = [
   { to: '/gift-cards', label: 'Gift cards', icon: Gift, area: 'gift-cards' },
   { to: '/memberships', label: 'Assinaturas', icon: RefreshCcw, area: 'memberships' },
   { to: '/waiting-list', label: 'Lista de espera', icon: Clock3, area: 'waiting-list' },
+  { to: '/reviews', label: 'Avaliações', icon: Star, area: 'reviews' },
   { to: '/notifications', label: 'Notificações', icon: History, area: 'notifications' },
+  { to: '/widget', label: 'Widget', icon: Code2, area: 'widget' },
   { to: '/configuration', label: 'Configuração', icon: SlidersHorizontal, area: 'configuration' },
   { to: '/team', label: 'Equipe', icon: Settings, area: 'team' },
   { to: '/tenants', label: 'Estabelecimentos', icon: Building2, area: 'tenants', masterOnly: true },
@@ -53,14 +59,14 @@ export const navigationGroups = [
   },
   {
     label: 'Cadastro',
-    paths: ['/customers', '/services', '/professionals'],
+    paths: ['/customers', '/services', '/resources', '/professionals'],
   },
   {
     label: 'Gestão',
-    paths: ['/analytics', '/payments', '/packages', '/gift-cards', '/memberships', '/waiting-list', '/notifications'],
+    paths: ['/analytics', '/payments', '/packages', '/gift-cards', '/memberships', '/waiting-list', '/reviews', '/notifications'],
   },
   {
     label: 'Administração',
-    paths: ['/configuration', '/team', '/tenants'],
+    paths: ['/configuration', '/widget', '/team', '/tenants'],
   },
 ]

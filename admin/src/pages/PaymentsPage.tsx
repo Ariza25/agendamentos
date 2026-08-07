@@ -1,8 +1,8 @@
-import { CreditCard, Plus } from 'lucide-react'
+import { CreditCard, Download, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { createPayment, fetchPayments, markPaymentPaid, refundPayment } from '../lib/adminApi'
+import { createPayment, downloadAdminCsv, fetchPayments, markPaymentPaid, refundPayment } from '../lib/adminApi'
 import { formatDateTime, formatMoney } from '../lib/format'
 import { Badge } from '../shared/components/Badge'
 import { Button } from '../shared/components/Button'
@@ -45,6 +45,7 @@ export function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   function loadPayments() {
     setLoading(true)
@@ -78,13 +79,29 @@ export function PaymentsPage() {
     }
   }
 
+  async function handleExport() {
+    setExporting(true)
+    try {
+      await downloadAdminCsv('/api/v1/admin/export/payments.csv', 'pagamentos.csv')
+    } catch (error) {
+      showToast({ message: (error as Error).message, tone: 'error' })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <PageContainer>
       <Section
         actions={
-          <Button icon={<Plus className="h-4 w-4" />} onClick={() => setIsFormOpen(true)}>
-            Registrar pagamento
-          </Button>
+          <>
+            <Button disabled={exporting} icon={<Download className="h-4 w-4" />} loading={exporting} onClick={() => void handleExport()}>
+              Exportar CSV
+            </Button>
+            <Button icon={<Plus className="h-4 w-4" />} onClick={() => setIsFormOpen(true)}>
+              Registrar pagamento
+            </Button>
+          </>
         }
         subtitle="Pagamentos, depósitos e estornos registrados para os agendamentos."
         title="Pagamentos"

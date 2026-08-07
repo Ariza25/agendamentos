@@ -23,9 +23,9 @@ func (r *AppointmentRepository) Create(input appointment.Appointment) (appointme
 	item := input
 	item.ID = uuid.NewString()
 	_, err := r.db.Exec(`
-		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, customer_id, starts_at, ends_at, status, notes, created_by, management_code_hash, series_id, payment_status, no_show_fee_cents, source, cancellation_reason)
-		VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy, nullIfEmpty(item.ManagementCodeHash), item.SeriesID, item.PaymentStatus, item.NoShowFeeCents, item.Source, item.CancellationReason)
+		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by, management_code_hash, series_id, payment_status, no_show_fee_cents, source, cancellation_reason)
+		VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8::timestamptz, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.ResourceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy, nullIfEmpty(item.ManagementCodeHash), item.SeriesID, item.PaymentStatus, item.NoShowFeeCents, item.Source, item.CancellationReason)
 	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("insert appointment: %w", err)
 	}
@@ -37,22 +37,23 @@ func (r *AppointmentRepository) Update(input appointment.Appointment) (appointme
 		UPDATE catalog.appointments
 		SET professional_id = $3,
 		    service_id = COALESCE(NULLIF($4, ''), service_id),
-		    customer_id = $5,
-		    starts_at = $6::timestamptz,
-		    ends_at = $7::timestamptz,
-		    status = $8,
-		    notes = COALESCE(NULLIF($9, ''), notes),
-		    management_code_hash = COALESCE(NULLIF($10, ''), management_code_hash),
-		    series_id = COALESCE(NULLIF($11, ''), series_id),
-		    payment_status = COALESCE(NULLIF($12, ''), payment_status),
-		    no_show_fee_cents = $13,
-		    source = COALESCE(NULLIF($14, ''), source),
-		    cancellation_reason = COALESCE(NULLIF($15, ''), cancellation_reason),
-		    check_in_at = $16,
-		    no_show_at = $17,
+		    resource_id = COALESCE(NULLIF($5, ''), resource_id),
+		    customer_id = $6,
+		    starts_at = $7::timestamptz,
+		    ends_at = $8::timestamptz,
+		    status = $9,
+		    notes = COALESCE(NULLIF($10, ''), notes),
+		    management_code_hash = COALESCE(NULLIF($11, ''), management_code_hash),
+		    series_id = COALESCE(NULLIF($12, ''), series_id),
+		    payment_status = COALESCE(NULLIF($13, ''), payment_status),
+		    no_show_fee_cents = $14,
+		    source = COALESCE(NULLIF($15, ''), source),
+		    cancellation_reason = COALESCE(NULLIF($16, ''), cancellation_reason),
+		    check_in_at = $17,
+		    no_show_at = $18,
 		    updated_at = NOW()
 		WHERE id = $1 AND tenant_id = $2
-	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes), nullIfEmpty(input.ManagementCodeHash), input.SeriesID, input.PaymentStatus, input.NoShowFeeCents, input.Source, input.CancellationReason, nullIfEmpty(input.CheckInAt), nullIfEmpty(input.NoShowAt))
+	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.ResourceID, input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes), nullIfEmpty(input.ManagementCodeHash), input.SeriesID, input.PaymentStatus, input.NoShowFeeCents, input.Source, input.CancellationReason, nullIfEmpty(input.CheckInAt), nullIfEmpty(input.NoShowAt))
 	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("update appointment: %w", err)
 	}
@@ -223,6 +224,28 @@ func (r *AppointmentRepository) HasConflict(tenantID string, professionalID stri
 	return exists, nil
 }
 
+func (r *AppointmentRepository) CountResourceOverlaps(tenantID string, resourceID string, startsAt string, endsAt string, excludeID string) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM catalog.appointments
+		WHERE tenant_id = $1
+		  AND resource_id = $2
+		  AND status NOT IN ('cancelled', 'no_show')
+		  AND $3::timestamptz < ends_at
+		  AND $4::timestamptz > starts_at
+	`
+	args := []any{strings.TrimSpace(tenantID), strings.TrimSpace(resourceID), startsAt, endsAt}
+	if excludeID = strings.TrimSpace(excludeID); excludeID != "" {
+		query += " AND id <> $5"
+		args = append(args, excludeID)
+	}
+	var count int
+	if err := r.db.QueryRow(query, args...).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count resource overlaps: %w", err)
+	}
+	return count, nil
+}
+
 func (r *AppointmentRepository) CountByStatus(tenantID string, from string, to string) ([]appointment.StatusCount, error) {
 	rows, err := r.db.Query(`
 		SELECT status, COUNT(*) AS count
@@ -381,7 +404,7 @@ func scanAppointmentRow(scanner appointmentScanner) (appointment.Appointment, er
 
 func appointmentSelectColumns() string {
 	return `
-		SELECT id, tenant_id, professional_id, service_id, customer_id, starts_at, ends_at, status, notes, created_by,
+		SELECT id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by,
 		       management_code_hash, series_id, payment_status, no_show_fee_cents, source, cancellation_reason,
 		       check_in_at, no_show_at, reminder_sent_at, created_at, updated_at`
 }
@@ -390,7 +413,7 @@ func scanAppointmentRows(scanner appointmentScanner) (appointment.Appointment, e
 	var item appointment.Appointment
 	var startsAt, endsAt, createdAt, updatedAt time.Time
 	var checkInAt, noShowAt, reminderSentAt sql.NullTime
-	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &item.ManagementCodeHash, &item.SeriesID, &item.PaymentStatus, &item.NoShowFeeCents, &item.Source, &item.CancellationReason, &checkInAt, &noShowAt, &reminderSentAt, &createdAt, &updatedAt); err != nil {
+	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.ResourceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &item.ManagementCodeHash, &item.SeriesID, &item.PaymentStatus, &item.NoShowFeeCents, &item.Source, &item.CancellationReason, &checkInAt, &noShowAt, &reminderSentAt, &createdAt, &updatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return appointment.Appointment{}, fmt.Errorf("appointment not found")
 		}

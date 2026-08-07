@@ -110,6 +110,53 @@ func (h *BookingHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, appointment)
 }
 
+func (h *BookingHandler) PortalLookup(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Phone string `json:"phone"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeInvalidPayload(w, "Provide the customer phone number.")
+		return
+	}
+	result, err := h.useCase.PortalLookup(r.PathValue("slug"), input.Phone)
+	if err != nil {
+		writeBookingError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *BookingHandler) PortalCancel(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Phone  string `json:"phone"`
+		Reason string `json:"reason"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&input)
+	appointment, err := h.useCase.PortalCancel(r.PathValue("slug"), input.Phone, r.PathValue("appointmentID"), input.Reason)
+	if err != nil {
+		writeBookingError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, appointment)
+}
+
+func (h *BookingHandler) PortalReschedule(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Phone    string `json:"phone"`
+		StartsAt string `json:"startsAt"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeInvalidPayload(w, "Provide the new appointment time.")
+		return
+	}
+	appointment, err := h.useCase.PortalReschedule(r.PathValue("slug"), input.Phone, r.PathValue("appointmentID"), input.StartsAt)
+	if err != nil {
+		writeBookingError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, appointment)
+}
+
 func writeBookingError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, appbooking.ErrTenantNotFound):
@@ -128,6 +175,10 @@ func writeBookingError(w http.ResponseWriter, err error) {
 		writeConflictError(w, "appointment_done", "This appointment can no longer be managed online.")
 	case errors.Is(err, appbooking.ErrCancellationTooLate):
 		writeConflictError(w, "cancellation_window", "The cancellation window for this appointment has passed.")
+	case errors.Is(err, appbooking.ErrCustomerNotFound):
+		writeNotFoundError(w, "customer_not_found", "No customer found for this phone number.")
+	case errors.Is(err, appbooking.ErrAppointmentAccess):
+		writeNotFoundError(w, "not_found", "Appointment not found for this customer.")
 	default:
 		writeInternalError(w, "Could not process the online appointment.")
 	}

@@ -93,6 +93,32 @@ func (r *PaymentRepository) ListByTenant(tenantID string, limit int) ([]payment.
 	return items, nil
 }
 
+func (r *PaymentRepository) ListByTenantRange(tenantID string, from string, to string) ([]payment.Payment, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	from = strings.TrimSpace(from)
+	to = strings.TrimSpace(to)
+	items := []payment.Payment{}
+	for _, item := range r.payments {
+		if item.TenantID != tenantID {
+			continue
+		}
+		if from != "" && item.CreatedAt < from {
+			continue
+		}
+		if to != "" && item.CreatedAt > to {
+			continue
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].CreatedAt > items[j].CreatedAt
+	})
+	return items, nil
+}
+
 func (r *PaymentRepository) UpdateStatus(tenantID string, id string, status string, providerPaymentID string) (payment.Payment, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

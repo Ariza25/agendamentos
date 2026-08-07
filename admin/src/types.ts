@@ -11,6 +11,7 @@ export type Appointment = {
   tenantId: string
   professionalId: string
   serviceId: string
+  resourceId?: string
   customerId: string
   startsAt: string
   endsAt: string
@@ -93,6 +94,18 @@ export type Professional = {
   updatedAt: string
 }
 
+export type Resource = {
+  id: string
+  tenantId: string
+  name: string
+  type: string
+  capacity: number
+  active: boolean
+  notes: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type WorkingHours = {
   dayOfWeek: number
   openTime: string
@@ -157,6 +170,21 @@ export type Payment = {
   status: string
   description?: string
   paidAt?: string
+  createdAt: string
+}
+
+export type Review = {
+  id: string
+  tenantId: string
+  tenantSlug?: string
+  appointmentId?: string
+  customerId?: string
+  customerName?: string
+  status: string
+  rating: number
+  comment: string
+  invitedAt: string
+  submittedAt?: string
   createdAt: string
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	domain "erpagendamentos/backend/internal/domain/appointment"
+	resourcedomain "erpagendamentos/backend/internal/domain/resource"
 )
 
 const (
@@ -37,7 +38,8 @@ var allowedStatuses = map[string]bool{
 }
 
 type UseCase struct {
-	repository domain.Repository
+	repository   domain.Repository
+	resourceRepo resourcedomain.Repository
 }
 
 type RecurrenceInput struct {
@@ -45,8 +47,8 @@ type RecurrenceInput struct {
 	Count     int    `json:"count"`
 }
 
-func NewUseCase(repository domain.Repository) *UseCase {
-	return &UseCase{repository: repository}
+func NewUseCase(repository domain.Repository, resourceRepo resourcedomain.Repository) *UseCase {
+	return &UseCase{repository: repository, resourceRepo: resourceRepo}
 }
 
 func (u *UseCase) ListByRange(tenantID string, from string, to string, professionalID string, customerID string, status string) ([]domain.Appointment, error) {
@@ -115,6 +117,12 @@ func (u *UseCase) Create(input domain.Appointment) (domain.Appointment, error) {
 	if conflict {
 		return domain.Appointment{}, ErrTimeConflict
 	}
+
+	resourceID, err := u.resolveResource(input.TenantID, input.ResourceID, input.StartsAt, input.EndsAt, "")
+	if err != nil {
+		return domain.Appointment{}, err
+	}
+	input.ResourceID = resourceID
 
 	input.ID = uuid.NewString()
 	return u.repository.Create(input)
@@ -270,6 +278,12 @@ func (u *UseCase) Update(input domain.Appointment) (domain.Appointment, error) {
 		return domain.Appointment{}, ErrTimeConflict
 	}
 
+	resourceID, err := u.resolveResource(tenantID, input.ResourceID, input.StartsAt, input.EndsAt, id)
+	if err != nil {
+		return domain.Appointment{}, err
+	}
+	input.ResourceID = resourceID
+
 	return u.repository.Update(input)
 }
 
@@ -335,6 +349,49 @@ func parseRFC3339(value string) (time.Time, error) {
 		parsed, err = time.ParseInLocation("2006-01-02T15:04", value, time.Local)
 	}
 	return parsed, err
+}
+
+func (u *UseCase) resolveResource(tenantID string, resourceID string, startsAt string, endsAt string, excludeID string) (string, error) {
+	if u.resourceRepo == nil {
+		return strings.TrimSpace(resourceID), nil
+	}
+	resources, err := u.resourceRepo.ListByTenant(tenantID)
+	if err != nil {
+		return "", err
+	}
+	resourceID = strings.TrimSpace(resourceID)
+	if resourceID != "" {
+		for _, resource := range resources {
+			if resource.ID != resourceID {
+				continue
+			}
+			if !resource.Active {
+				return "", ErrInvalidAppointment
+			}
+			overlaps, err := u.repository.CountResourceOverlaps(tenantID, resourceID, startsAt, endsAt, excludeID)
+			if err != nil {
+				return "", err
+			}
+			if overlaps >= resource.Capacity {
+				return "", ErrTimeConflict
+			}
+			return resourceID, nil
+		}
+		return "", ErrInvalidAppointment
+	}
+	for _, resource := range resources {
+		if !resource.Active {
+			continue
+		}
+		overlaps, err := u.repository.CountResourceOverlaps(tenantID, resource.ID, startsAt, endsAt, excludeID)
+		if err != nil {
+			return "", err
+		}
+		if overlaps < resource.Capacity {
+			return resource.ID, nil
+		}
+	}
+	return "", nil
 }
 
 func validStatusChange(from string, to string) bool {

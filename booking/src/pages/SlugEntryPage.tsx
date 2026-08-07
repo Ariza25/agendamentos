@@ -1,4 +1,4 @@
-import { BellRing, CalendarDays, ChevronRight, KeyRound } from 'lucide-react'
+import { BellRing, CalendarDays, ChevronRight, KeyRound, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -53,6 +53,20 @@ export function SlugEntryPage() {
         </Form>
 
         <div className="mt-6 grid gap-2 border-t border-[var(--color-line)] pt-6">
+          <Button
+            className="justify-start"
+            icon={<UserRound className="h-4 w-4" />}
+            onClick={() => {
+              if (slug.trim()) {
+                navigate(`/portal/${encodeURIComponent(slug.trim())}`)
+              } else {
+                setError('Informe o nome do estabelecimento para acessar seu portal.')
+              }
+            }}
+            variant="secondary"
+          >
+            Meu portal
+          </Button>
           <Button
             className="justify-start"
             icon={<KeyRound className="h-4 w-4" />}

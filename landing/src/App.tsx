@@ -4,6 +4,7 @@ import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { HeroSection } from './components/HeroSection'
 import { HowItWorksSection } from './components/HowItWorksSection'
+import { WidgetDemoSection } from './components/WidgetDemoSection'
 
 export function App() {
   return (
@@ -13,6 +14,7 @@ export function App() {
         <HeroSection />
         <FeaturesSection />
         <HowItWorksSection />
+        <WidgetDemoSection />
         <CtaSection />
       </main>
       <Footer />

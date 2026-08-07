@@ -8,7 +8,7 @@ import { Button } from '../../../shared/components/Button'
 import { Checkbox, Field, Form, Input, Select, Textarea } from '../../../shared/components/FormControls'
 import { Modal } from '../../../shared/components/Modal'
 import { useToast } from '../../../shared/components/toast/ToastProvider'
-import type { Appointment, Customer, Professional, Service, AppointmentStatus } from '../../../types'
+import type { Appointment, Customer, Professional, Resource, Service, AppointmentStatus } from '../../../types'
 
 type AppointmentFormModalProps = {
   open: boolean
@@ -16,6 +16,7 @@ type AppointmentFormModalProps = {
   onSaved: () => void
   professionals: Professional[]
   services: Service[]
+  resources: Resource[]
   customers: Customer[]
   defaultProfessionalId?: string
   defaultDate?: string
@@ -29,6 +30,7 @@ export function AppointmentFormModal({
   onSaved,
   professionals,
   services,
+  resources,
   customers,
   defaultProfessionalId,
   defaultDate,
@@ -36,6 +38,7 @@ export function AppointmentFormModal({
   const { showToast } = useToast()
   const [professionalId, setProfessionalId] = useState(defaultProfessionalId ?? '')
   const [serviceId, setServiceId] = useState('')
+  const [resourceId, setResourceId] = useState('')
   const [customerId, setCustomerId] = useState('')
   const [isCreatingNewCustomer, setIsCreatingNewCustomer] = useState(false)
   const [newCustomerName, setNewCustomerName] = useState('')
@@ -52,6 +55,7 @@ export function AppointmentFormModal({
     }
     setProfessionalId(defaultProfessionalId ?? '')
     setServiceId('')
+    setResourceId('')
     setCustomerId('')
     setIsCreatingNewCustomer(false)
     setNewCustomerName('')
@@ -109,6 +113,7 @@ export function AppointmentFormModal({
       await createAppointment({
         professionalId,
         serviceId: serviceId || '',
+        resourceId: resourceId || '',
         customerId: resolvedCustomerId,
         startsAt: toRFC3339(startsAt),
         endsAt: computeEndsAt(startsAt),
@@ -211,6 +216,17 @@ export function AppointmentFormModal({
               type="datetime-local"
               value={startsAt}
             />
+          </Field>
+
+          <Field hint="Deixe vazio para alocar automaticamente." label="Recurso (opcional)">
+            <Select className="mt-2" onChange={(event) => setResourceId(event.target.value)} value={resourceId}>
+              <option value="">Alocar automaticamente</option>
+              {resources.filter((resource) => resource.active).map((resource) => (
+                <option key={resource.id} value={resource.id}>
+                  {resource.name}
+                </option>
+              ))}
+            </Select>
           </Field>
 
           <Field label="Status">

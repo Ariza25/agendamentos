@@ -77,6 +77,39 @@ func (r *PaymentRepository) ListByTenant(tenantID string, limit int) ([]payment.
 	return items, rows.Err()
 }
 
+func (r *PaymentRepository) ListByTenantRange(tenantID string, from string, to string) ([]payment.Payment, error) {
+	query := `
+		SELECT id, tenant_id, appointment_id, amount_cents, method, provider, provider_payment_id, status, description, paid_at, created_at
+		FROM catalog.payments
+		WHERE tenant_id = $1`
+	args := []any{strings.TrimSpace(tenantID)}
+	if from = strings.TrimSpace(from); from != "" {
+		args = append(args, from)
+		query += fmt.Sprintf(" AND created_at >= $%d", len(args))
+	}
+	if to = strings.TrimSpace(to); to != "" {
+		args = append(args, to)
+		query += fmt.Sprintf(" AND created_at <= $%d", len(args))
+	}
+	query += " ORDER BY created_at DESC"
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query payments: %w", err)
+	}
+	defer rows.Close()
+
+	items := []payment.Payment{}
+	for rows.Next() {
+		item, err := scanPaymentRows(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (r *PaymentRepository) UpdateStatus(tenantID string, id string, status string, providerPaymentID string) (payment.Payment, error) {
 	result, err := r.db.Exec(`
 		UPDATE catalog.payments

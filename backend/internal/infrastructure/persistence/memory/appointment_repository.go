@@ -210,6 +210,46 @@ func (r *AppointmentRepository) HasConflict(tenantID string, professionalID stri
 	return false, nil
 }
 
+func (r *AppointmentRepository) CountResourceOverlaps(tenantID string, resourceID string, startsAt string, endsAt string, excludeID string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	resourceID = strings.TrimSpace(resourceID)
+	excludeID = strings.TrimSpace(excludeID)
+	if resourceID == "" {
+		return 0, nil
+	}
+	starts, err := time.Parse(time.RFC3339, startsAt)
+	if err != nil {
+		return 0, fmt.Errorf("invalid appointment start time")
+	}
+	ends, err := time.Parse(time.RFC3339, endsAt)
+	if err != nil {
+		return 0, fmt.Errorf("invalid appointment end time")
+	}
+	count := 0
+	for _, item := range r.appointments {
+		if item.TenantID != tenantID || item.ResourceID != resourceID {
+			continue
+		}
+		if excludeID != "" && item.ID == excludeID {
+			continue
+		}
+		if item.Status == "cancelled" || item.Status == "no_show" {
+			continue
+		}
+		itemStart, itemEnd, ok := parseAppointmentInterval(item)
+		if !ok {
+			continue
+		}
+		if starts.Before(itemEnd) && ends.After(itemStart) {
+			count++
+		}
+	}
+	return count, nil
+}
+
 func (r *AppointmentRepository) CountByStatus(tenantID string, from string, to string) ([]appointment.StatusCount, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

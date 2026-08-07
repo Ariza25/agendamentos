@@ -1,9 +1,10 @@
-import { CalendarClock, Plus, Search } from 'lucide-react'
+import { CalendarClock, Download, Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import {
   checkInAppointment,
   deleteAppointment,
+  downloadAdminCsv,
   fetchAppointments,
   markAppointmentNoShow,
   updateAppointmentStatus,
@@ -34,6 +35,7 @@ export function AppointmentsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   function loadAppointments() {
     setLoading(true)
@@ -51,6 +53,20 @@ export function AppointmentsPage() {
   }
 
   useEffect(loadAppointments, [date, professionalId, status])
+
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const params = new URLSearchParams({ from: `${date}T00:00:00`, to: `${date}T23:59:59` })
+      if (professionalId) params.set('professionalId', professionalId)
+      if (status) params.set('status', status)
+      await downloadAdminCsv(`/api/v1/admin/export/appointments.csv?${params.toString()}`, 'agendamentos.csv')
+    } catch (error) {
+      showToast({ message: (error as Error).message, tone: 'error' })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   async function handleStatusChange(appointment: Appointment, nextStatus: string) {
     try {
@@ -103,9 +119,14 @@ export function AppointmentsPage() {
     <PageContainer>
       <Section
         actions={
-          <Button icon={<Plus className="h-4 w-4" />} onClick={() => setIsFormOpen(true)}>
-            Novo agendamento
-          </Button>
+          <>
+            <Button disabled={exporting} icon={<Download className="h-4 w-4" />} loading={exporting} onClick={() => void handleExport()}>
+              Exportar CSV
+            </Button>
+            <Button icon={<Plus className="h-4 w-4" />} onClick={() => setIsFormOpen(true)}>
+              Novo agendamento
+            </Button>
+          </>
         }
         subtitle="Filtre os agendamentos do dia e gerencie os horários."
         title="Agendamentos"
@@ -162,6 +183,7 @@ export function AppointmentsPage() {
               const customer = referenceData.byId.customer.get(appointment.customerId)
               const service = referenceData.byId.service.get(appointment.serviceId)
               const professional = referenceData.byId.professional.get(appointment.professionalId)
+              const resource = appointment.resourceId ? referenceData.byId.resource.get(appointment.resourceId) : undefined
               const nextStatuses = nextStatusesFor(appointment.status)
               return (
                 <li
@@ -190,6 +212,7 @@ export function AppointmentsPage() {
                       {service?.name ?? 'Serviço não informado'}
                       {service?.durationMinutes ? ` · ${service.durationMinutes} min` : ''}
                       {professional ? ` · ${professional.name}` : ''}
+                      {resource ? ` · ${resource.name}` : ''}
                     </p>
                     {appointment.notes ? <p className="mt-1 truncate text-xs italic text-[var(--color-ink-soft)]">{appointment.notes}</p> : null}
                   </div>
@@ -236,6 +259,7 @@ export function AppointmentsPage() {
         onSaved={loadAppointments}
         open={isFormOpen}
         professionals={referenceData.professionals}
+        resources={referenceData.resources}
         services={referenceData.services}
       />
 

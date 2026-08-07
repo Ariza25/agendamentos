@@ -36,6 +36,15 @@ func (h *TenantHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tenant)
 }
 
+func (h *TenantHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
+	tenant, err := h.useCase.GetTenant(resolveRequestTenantID(r, nil))
+	if err != nil {
+		writeNotFoundError(w, "not_found", "Establishment not found.")
+		return
+	}
+	writeJSON(w, http.StatusOK, tenant)
+}
+
 func (h *TenantHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input tenantdomain.Tenant
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {

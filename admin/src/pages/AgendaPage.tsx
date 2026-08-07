@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { fetchAppointments, fetchAppointmentSummary } from '../lib/adminApi'
+import { checkInAppointment, fetchAppointments, fetchAppointmentSummary, markAppointmentNoShow } from '../lib/adminApi'
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_TONES } from '../lib/appointmentStatus'
 import { formatDate, formatTime, todayKey } from '../lib/format'
 import { useReferenceData } from '../shared/hooks/useReferenceData'
@@ -11,39 +11,56 @@ import { EmptyState } from '../shared/components/EmptyState'
 import { PageContainer } from '../shared/components/PageContainer'
 import { Section } from '../shared/components/Section'
 import { Spinner } from '../shared/components/Spinner'
+import { useToast } from '../shared/components/toast/ToastProvider'
 import type { Appointment, AppointmentSummary, AppointmentStatus, Professional } from '../types'
 
 const SUMMARY_ORDER: AppointmentStatus[] = ['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show']
 
 export function AgendaPage() {
+  const { showToast } = useToast()
   const [date, setDate] = useState(todayKey())
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [summary, setSummary] = useState<AppointmentSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const referenceData = useReferenceData()
 
-  useEffect(() => {
-    let active = true
+  function load() {
     setLoading(true)
 
     Promise.all([fetchAppointments({ from: `${date}T00:00:00`, to: `${date}T23:59:59` }), fetchAppointmentSummary(date)])
       .then(([items, summaryData]) => {
-        if (!active) {
-          return
-        }
         setAppointments(items)
         setSummary(summaryData)
       })
-      .finally(() => {
-        if (active) {
-          setLoading(false)
-        }
+      .catch(() => {
+        showToast({ message: 'Não foi possível carregar a agenda.', tone: 'error' })
       })
+      .finally(() => {
+        setLoading(false)
+      })
+  }
 
-    return () => {
-      active = false
+  useEffect(load, [date])
+
+  async function handleCheckIn(appointment: Appointment) {
+    try {
+      await checkInAppointment(appointment.id)
+      showToast({ message: 'Cliente fez check-in.', tone: 'success' })
+      load()
+    } catch (error) {
+      showToast({ message: (error as Error).message, tone: 'error' })
     }
-  }, [date])
+  }
+
+  async function handleNoShow(appointment: Appointment) {
+    try {
+      await markAppointmentNoShow(appointment.id)
+      showToast({ message: 'Agendamento marcado como não comparecimento.', tone: 'success' })
+      load()
+    } catch (error) {
+      showToast({ message: (error as Error).message, tone: 'error' })
+    }
+  }
 
   const groups: Array<{ professional: Professional | null; items: Appointment[] }> = referenceData.professionals
     .map((professional) => ({
@@ -132,22 +149,41 @@ export function AgendaPage() {
                 {items.map((appointment) => {
                   const customer = referenceData.byId.customer.get(appointment.customerId)
                   const service = referenceData.byId.service.get(appointment.serviceId)
+                  const resource = appointment.resourceId ? referenceData.byId.resource.get(appointment.resourceId) : undefined
                   return (
                     <li
-                      className="flex items-center gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] px-4 py-3"
+                      className="flex flex-col gap-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] px-4 py-3 md:flex-row md:items-center"
                       key={appointment.id}
                     >
-                      <span className="shrink-0 rounded-xl bg-[var(--color-primary)] px-2.5 py-1 font-headline text-sm font-black text-white">
-                        {formatTime(appointment.startsAt)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-bold text-[var(--color-ink)]">{customer?.name ?? 'Cliente desconhecido'}</p>
-                        <p className="truncate text-sm text-[var(--color-ink-soft)]">
-                          {service?.name ?? 'Serviço não informado'}
-                          {service?.durationMinutes ? ` · ${service.durationMinutes} min` : ''}
-                        </p>
+                      <div className="flex min-w-0 flex-1 items-center gap-4">
+                        <span className="shrink-0 rounded-xl bg-[var(--color-primary)] px-2.5 py-1 font-headline text-sm font-black text-white">
+                          {formatTime(appointment.startsAt)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-bold text-[var(--color-ink)]">{customer?.name ?? 'Cliente desconhecido'}</p>
+                          <p className="truncate text-sm text-[var(--color-ink-soft)]">
+                            {service?.name ?? 'Serviço não informado'}
+                            {service?.durationMinutes ? ` · ${service.durationMinutes} min` : ''}
+                            {resource ? ` · ${resource.name}` : ''}
+                          </p>
+                        </div>
                       </div>
-                      <Badge tone={APPOINTMENT_STATUS_TONES[appointment.status]}>{APPOINTMENT_STATUS_LABELS[appointment.status]}</Badge>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        {appointment.checkInAt ? <Badge tone="success">Check-in realizado</Badge> : null}
+                        <Badge tone={APPOINTMENT_STATUS_TONES[appointment.status]}>
+                          {APPOINTMENT_STATUS_LABELS[appointment.status]}
+                        </Badge>
+                        {appointment.status === 'confirmed' || appointment.status === 'in_progress' ? (
+                          <Button onClick={() => void handleCheckIn(appointment)} size="sm" variant="secondary">
+                            Check-in
+                          </Button>
+                        ) : null}
+                        {appointment.status === 'scheduled' || appointment.status === 'confirmed' ? (
+                          <Button onClick={() => void handleNoShow(appointment)} size="sm" variant="danger">
+                            No-show
+                          </Button>
+                        ) : null}
+                      </div>
                     </li>
                   )
                 })}

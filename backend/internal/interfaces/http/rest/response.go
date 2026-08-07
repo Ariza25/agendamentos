@@ -1,7 +1,9 @@
 package rest
 
 import (
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -9,6 +11,19 @@ type errorResponse struct {
 	Error       string            `json:"error"`
 	Code        string            `json:"code"`
 	FieldErrors map[string]string `json:"fieldErrors,omitempty"`
+}
+
+func writeCSV(w http.ResponseWriter, filename string, headers []string, rows [][]string) {
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("\uFEFF"))
+	writer := csv.NewWriter(w)
+	_ = writer.Write(headers)
+	for _, row := range rows {
+		_ = writer.Write(row)
+	}
+	writer.Flush()
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {

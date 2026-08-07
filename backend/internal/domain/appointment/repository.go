@@ -5,6 +5,7 @@ type Appointment struct {
 	TenantID           string `json:"tenantId"`
 	ProfessionalID     string `json:"professionalId"`
 	ServiceID          string `json:"serviceId"`
+	ResourceID         string `json:"resourceId,omitempty"`
 	CustomerID         string `json:"customerId"`
 	StartsAt           string `json:"startsAt"`
 	EndsAt             string `json:"endsAt"`
@@ -71,6 +72,7 @@ type Repository interface {
 	UpdateStatus(tenantID string, id string, status string, updatedBy string) (Appointment, error)
 	SetReminderSent(tenantID string, id string) error
 	HasConflict(tenantID string, professionalID string, startsAt string, endsAt string, excludeID string) (bool, error)
+	CountResourceOverlaps(tenantID string, resourceID string, startsAt string, endsAt string, excludeID string) (int, error)
 	CountByStatus(tenantID string, from string, to string) ([]StatusCount, error)
 	Analytics(tenantID string, from string, to string) (Analytics, error)
 	Delete(tenantID string, id string) error
