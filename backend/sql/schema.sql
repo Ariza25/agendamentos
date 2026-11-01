@@ -696,3 +696,4 @@ VALUES
   ('demo-cust-rafael', 'default', 'Rafael Almeida', '(11) 98888-0005', 'rafael.almeida@demo.local', '1988-09-12', ''),
   ('demo-cust-juliana', 'default', 'Juliana Rocha', '(11) 98888-0006', 'juliana.rocha@demo.local', '1993-05-08', '')
 ON CONFLICT (id) DO NOTHING;
+

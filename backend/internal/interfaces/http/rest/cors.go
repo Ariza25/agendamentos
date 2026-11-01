@@ -69,6 +69,9 @@ func withCORS(next http.Handler) http.Handler {
 func resolveAllowedOrigins() []string {
 	raw := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS"))
 	if raw == "" {
+		raw = strings.TrimSpace(os.Getenv("CORS_ALLOWED_ORIGINS"))
+	}
+	if raw == "" {
 		return defaultAllowedOrigins
 	}
 
@@ -95,7 +98,7 @@ func isOriginAllowed(origin string, allowedOrigins []string) bool {
 	}
 
 	for _, allowedOrigin := range allowedOrigins {
-		if origin == allowedOrigin {
+		if allowedOrigin == "*" || origin == allowedOrigin {
 			return true
 		}
 	}

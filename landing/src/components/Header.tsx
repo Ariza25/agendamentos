@@ -5,6 +5,7 @@ import { APP_LINKS, SECTION_LINKS } from '../lib/links'
 const NAV_ITEMS = [
   { label: 'Funcionalidades', href: SECTION_LINKS.features },
   { label: 'Como funciona', href: SECTION_LINKS.howItWorks },
+  { label: 'Planos & Preços', href: SECTION_LINKS.pricing },
 ]
 
 export function Header() {
