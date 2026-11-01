@@ -13,12 +13,14 @@ type CommissionRepository struct {
 	mu      sync.RWMutex
 	rules   map[string]commission.CommissionRule
 	records map[string]commission.CommissionRecord
+	payouts map[string]commission.Payout
 }
 
 func NewCommissionRepository() *CommissionRepository {
 	return &CommissionRepository{
 		rules:   make(map[string]commission.CommissionRule),
 		records: make(map[string]commission.CommissionRecord),
+		payouts: make(map[string]commission.Payout),
 	}
 }
 
@@ -193,6 +195,56 @@ func (r *CommissionRepository) GetSummaries(tenantID string) ([]commission.Summa
 	var result []commission.Summary
 	for _, s := range summaries {
 		result = append(result, *s)
+	}
+	return result, nil
+}
+
+func (r *CommissionRepository) CreatePayout(payout commission.Payout, recordIDs []string) (commission.Payout, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if payout.ID == "" {
+		payout.ID = uuid.NewString()
+	}
+	now := time.Now().UTC().Format(time.RFC3339)
+	payout.PaidAt = now
+	payout.CreatedAt = now
+
+	targetIDs := make(map[string]bool)
+	for _, id := range recordIDs {
+		targetIDs[id] = true
+	}
+
+	for key, rec := range r.records {
+		if rec.TenantID == payout.TenantID && rec.ProfessionalID == payout.ProfessionalID {
+			if len(targetIDs) > 0 && !targetIDs[rec.ID] {
+				continue
+			}
+			if rec.Status == "pending" {
+				rec.Status = "paid"
+				rec.SettledAt = now
+				rec.PayoutID = payout.ID
+				r.records[key] = rec
+			}
+		}
+	}
+
+	r.payouts[payout.TenantID+":"+payout.ID] = payout
+	return payout, nil
+}
+
+func (r *CommissionRepository) ListPayouts(tenantID string, professionalID string) ([]commission.Payout, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var result []commission.Payout
+	for _, p := range r.payouts {
+		if p.TenantID == tenantID {
+			if professionalID != "" && p.ProfessionalID != professionalID {
+				continue
+			}
+			result = append(result, p)
+		}
 	}
 	return result, nil
 }

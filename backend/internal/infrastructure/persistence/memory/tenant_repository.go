@@ -22,6 +22,13 @@ func NewTenantRepository() *TenantRepository {
 	}
 }
 
+func defaultModules() []string {
+	return []string{
+		"agenda", "appointments", "customers", "services", "professionals",
+		"finance", "commissions", "inventory", "pos_cashregister", "notifications", "reviews",
+	}
+}
+
 func (r *TenantRepository) Create(input tenant.Tenant) (tenant.Tenant, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -41,6 +48,18 @@ func (r *TenantRepository) Create(input tenant.Tenant) (tenant.Tenant, error) {
 	item.Slug = slug
 	if item.Segment == "" {
 		item.Segment = "general"
+	}
+	if item.Plan == "" {
+		item.Plan = "trial"
+	}
+	if item.SubscriptionStatus == "" {
+		item.SubscriptionStatus = "trialing"
+	}
+	if len(item.ActiveModules) == 0 {
+		item.ActiveModules = defaultModules()
+	}
+	if item.MaxProfessionals <= 0 {
+		item.MaxProfessionals = 5
 	}
 	item.CreatedAt = time.Now().Format(time.RFC3339)
 	item.UpdatedAt = item.CreatedAt
@@ -116,6 +135,29 @@ func (r *TenantRepository) SetActive(id string, active bool) (tenant.Tenant, err
 		return tenant.Tenant{}, fmt.Errorf("tenant not found")
 	}
 	current.Active = active
+	current.UpdatedAt = time.Now().Format(time.RFC3339)
+	r.tenants[id] = current
+	return current, nil
+}
+
+func (r *TenantRepository) UpdateSubscription(id string, input tenant.UpdateSubscriptionInput) (tenant.Tenant, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current, exists := r.tenants[id]
+	if !exists {
+		return tenant.Tenant{}, fmt.Errorf("tenant not found")
+	}
+	current.Plan = input.Plan
+	current.SubscriptionStatus = input.SubscriptionStatus
+	current.TrialEndsAt = input.TrialEndsAt
+	current.SubscriptionExpiresAt = input.SubscriptionExpiresAt
+	if len(input.ActiveModules) > 0 {
+		current.ActiveModules = input.ActiveModules
+	}
+	if input.MaxProfessionals > 0 {
+		current.MaxProfessionals = input.MaxProfessionals
+	}
 	current.UpdatedAt = time.Now().Format(time.RFC3339)
 	r.tenants[id] = current
 	return current, nil

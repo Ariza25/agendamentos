@@ -90,6 +90,21 @@ func (h *TenantHandler) SetActive(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tenant)
 }
 
+func (h *TenantHandler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
+	var input tenantdomain.UpdateSubscriptionInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeInvalidPayload(w, "Could not read subscription update data.")
+		return
+	}
+	tenantID := r.PathValue("tenantID")
+	updated, err := h.useCase.UpdateSubscription(tenantID, input)
+	if err != nil {
+		writeTenantError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, updated)
+}
+
 func (h *TenantHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if err := h.useCase.DeleteTenant(r.PathValue("tenantID")); err != nil {
 		writeTenantError(w, err)

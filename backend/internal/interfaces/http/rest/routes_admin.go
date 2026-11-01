@@ -11,6 +11,7 @@ func registerTenantRoutes(mux *http.ServeMux, config RouterConfig) {
 	mux.HandleFunc("GET /api/v1/admin/tenants/{tenantID}", requireMasterAdmin(config.AuthUseCase, tenantHandler.Get))
 	mux.HandleFunc("PUT /api/v1/admin/tenants/{tenantID}", requireMasterAdmin(config.AuthUseCase, tenantHandler.Update))
 	mux.HandleFunc("PATCH /api/v1/admin/tenants/{tenantID}/active", requireMasterAdmin(config.AuthUseCase, tenantHandler.SetActive))
+	mux.HandleFunc("PUT /api/v1/admin/tenants/{tenantID}/subscription", requireMasterAdmin(config.AuthUseCase, tenantHandler.UpdateSubscription))
 	mux.HandleFunc("DELETE /api/v1/admin/tenants/{tenantID}", requireMasterAdmin(config.AuthUseCase, tenantHandler.Delete))
 }
 

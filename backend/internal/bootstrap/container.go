@@ -88,7 +88,7 @@ func NewContainer() *Container {
 
 	eventBroker := rest.NewEventBroker()
 	stockUseCase := stock.NewUseCase(repositories.stock)
-	commissionUseCase := commission.NewUseCase(repositories.commission)
+	commissionUseCase := commission.NewUseCase(repositories.commission, repositories.finance, repositories.professional)
 	financeUseCase := finance.NewUseCase(repositories.finance)
 	calendarUseCase := calendar.NewUseCase(repositories.calendar)
 	jobQueue := job.NewQueue(repositories.job)

@@ -303,13 +303,58 @@ export type AdminInviteResponse = {
   temporaryPassword?: string
 }
 
+export type TenantPlan = 'trial' | 'starter' | 'pro' | 'enterprise' | 'custom'
+export type TenantSubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled'
+
 export type Tenant = {
   id: string
   name: string
   slug: string
+  segment?: string
   active: boolean
+  plan: TenantPlan
+  subscriptionStatus: TenantSubscriptionStatus
+  trialEndsAt?: string
+  subscriptionExpiresAt?: string
+  activeModules: string[]
+  maxProfessionals: number
   createdAt: string
   updatedAt: string
+}
+
+export type UpdateTenantSubscriptionInput = {
+  plan: TenantPlan
+  subscriptionStatus: TenantSubscriptionStatus
+  trialEndsAt?: string
+  subscriptionExpiresAt?: string
+  activeModules: string[]
+  maxProfessionals: number
+}
+
+export type CommissionPayout = {
+  id: string
+  tenantId: string
+  professionalId: string
+  professionalName?: string
+  totalCents: number
+  recordsCount: number
+  fromDate?: string
+  toDate?: string
+  paymentMethod: string
+  notes?: string
+  financialTransactionId?: string
+  createdByUserId?: string
+  paidAt: string
+  createdAt: string
+}
+
+export type CreateCommissionPayoutInput = {
+  professionalId: string
+  recordIds?: string[]
+  fromDate?: string
+  toDate?: string
+  paymentMethod: string
+  notes?: string
 }
 
 // --- ERP Inventory & Supplies ---
@@ -370,16 +415,23 @@ export type CommissionRule = {
   createdAt: string
 }
 
-export type CommissionRecordStatus = 'pending' | 'settled'
+export type CommissionRecordStatus = 'pending' | 'settled' | 'paid' | 'cancelled'
 
 export type CommissionRecord = {
   id: string
   tenantId: string
   appointmentId: string
   professionalId: string
-  amountCents: number
+  professionalName?: string
+  serviceId?: string
+  serviceName?: string
+  baseAmountCents?: number
+  commissionAmountCents?: number
+  amountCents?: number
   status: CommissionRecordStatus
+  payoutId?: string
   settledAt?: string
+  notes?: string
   createdAt: string
 }
 

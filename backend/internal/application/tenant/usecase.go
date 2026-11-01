@@ -104,6 +104,17 @@ func (u *UseCase) SetActive(id string, active bool) (domain.Tenant, error) {
 	return u.repository.SetActive(id, active)
 }
 
+func (u *UseCase) UpdateSubscription(id string, input domain.UpdateSubscriptionInput) (domain.Tenant, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return domain.Tenant{}, ErrTenantNotFound
+	}
+	if _, err := u.repository.GetByID(id); err != nil {
+		return domain.Tenant{}, ErrTenantNotFound
+	}
+	return u.repository.UpdateSubscription(id, input)
+}
+
 func (u *UseCase) DeleteTenant(id string) error {
 	id = strings.TrimSpace(id)
 	if id == "" || id == "default" {

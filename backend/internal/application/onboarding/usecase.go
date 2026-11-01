@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	appauth "erpagendamentos/backend/internal/application/auth"
 	authdomain "erpagendamentos/backend/internal/domain/auth"
@@ -96,14 +97,23 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 		return authdomain.Session{}, tenantdomain.Tenant{}, ErrSlugAlreadyTaken
 	}
 
-	// 2. Create Tenant
+	// 2. Create Tenant with 14-Day Free Trial
 	tenantID := uuid.NewString()
+	trialEnds := time.Now().Add(14 * 24 * time.Hour).Format(time.RFC3339)
 	createdTenant, err := u.tenantRepo.Create(tenantdomain.Tenant{
-		ID:      tenantID,
-		Name:    businessName,
-		Slug:    slug,
-		Segment: segment,
-		Active:  true,
+		ID:                 tenantID,
+		Name:               businessName,
+		Slug:               slug,
+		Segment:            segment,
+		Active:             true,
+		Plan:               "trial",
+		SubscriptionStatus: "trialing",
+		TrialEndsAt:        trialEnds,
+		ActiveModules: []string{
+			"agenda", "appointments", "customers", "services", "professionals",
+			"finance", "commissions", "inventory", "pos_cashregister", "notifications", "reviews",
+		},
+		MaxProfessionals: 5,
 	})
 	if err != nil {
 		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("create tenant: %w", err)

@@ -10,10 +10,12 @@ import type {
   CashRegisterEntryType,
   CheckoutInput,
   CheckoutResult,
+  CommissionPayout,
   CommissionRecord,
   CommissionRule,
   CommissionSummary,
   Configuration,
+  CreateCommissionPayoutInput,
   CurrentCashRegisterResponse,
   Customer,
   FinancialSummary,
@@ -33,6 +35,7 @@ import type {
   ServiceSupply,
   StockMovement,
   Tenant,
+  UpdateTenantSubscriptionInput,
   WaitingListEntry,
 } from '../types'
 import { adminFetch, cachedAdminJson, parseJson, invalidateAdminGetCache } from './adminHttp'
@@ -656,6 +659,20 @@ export async function deleteTenant(id: string): Promise<void> {
   invalidateAdminGetCache('/api/v1/admin/tenants')
 }
 
+export async function updateTenantSubscription(
+  id: string,
+  input: UpdateTenantSubscriptionInput
+): Promise<Tenant> {
+  const response = await adminFetch(`/api/v1/admin/tenants/${id}/subscription`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Tenant>(response)
+  invalidateAdminGetCache('/api/v1/admin/tenants', '/api/v1/admin/tenant')
+  return data
+}
+
 // ==========================================
 // Stock / Inventory & Supplies
 // ==========================================
@@ -788,6 +805,33 @@ export async function settleCommissions(professionalId: string, recordIds: strin
 export async function fetchCommissionSummaries(): Promise<CommissionSummary[]> {
   const data = await cachedAdminJson<{ summaries: CommissionSummary[] }>('/api/v1/admin/commissions/summaries')
   return data.summaries || []
+}
+
+export async function createCommissionPayout(
+  input: CreateCommissionPayoutInput
+): Promise<CommissionPayout> {
+  const response = await adminFetch('/api/v1/admin/commissions/payout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<CommissionPayout>(response)
+  invalidateAdminGetCache(
+    '/api/v1/admin/commissions',
+    '/api/v1/admin/commissions/summaries',
+    '/api/v1/admin/commissions/payouts',
+    '/api/v1/admin/finance/transactions',
+    '/api/v1/admin/finance/summary'
+  )
+  return data
+}
+
+export async function fetchCommissionPayouts(professionalId?: string): Promise<CommissionPayout[]> {
+  const params = new URLSearchParams()
+  if (professionalId) params.set('professionalId', professionalId)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const data = await cachedAdminJson<{ payouts: CommissionPayout[] }>(`/api/v1/admin/commissions/payouts${query}`)
+  return data.payouts || []
 }
 
 // ==========================================

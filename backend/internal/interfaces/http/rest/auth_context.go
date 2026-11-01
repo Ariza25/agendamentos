@@ -177,7 +177,7 @@ func requireMasterAdmin(authUseCase *appauth.UseCase, next http.HandlerFunc) htt
 			writeUnauthorized(w)
 			return
 		}
-		if account.Role != "admin" || (strings.TrimSpace(account.TenantID) != "" && strings.TrimSpace(account.TenantID) != "default") {
+		if (account.Role != "admin" && account.Role != "superadmin") || (strings.TrimSpace(account.TenantID) != "" && strings.TrimSpace(account.TenantID) != "default") {
 			writeForbidden(w)
 			return
 		}

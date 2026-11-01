@@ -258,3 +258,115 @@ func (r *CommissionRepository) GetSummaries(tenantID string) ([]commission.Summa
 	return summaries, nil
 }
 
+func (r *CommissionRepository) CreatePayout(payout commission.Payout, recordIDs []string) (commission.Payout, error) {
+	if payout.ID == "" {
+		payout.ID = uuid.NewString()
+	}
+	now := time.Now().UTC()
+	var fromDate, toDate *time.Time
+	if payout.FromDate != "" {
+		if t, err := time.Parse(time.RFC3339, payout.FromDate); err == nil {
+			fromDate = &t
+		}
+	}
+	if payout.ToDate != "" {
+		if t, err := time.Parse(time.RFC3339, payout.ToDate); err == nil {
+			toDate = &t
+		}
+	}
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return commission.Payout{}, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	err = tx.QueryRow(`
+		INSERT INTO catalog.commission_payouts (
+			id, tenant_id, professional_id, total_cents, records_count,
+			from_date, to_date, payment_method, notes, financial_transaction_id,
+			created_by_user_id, paid_at, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		RETURNING paid_at, created_at
+	`, payout.ID, payout.TenantID, payout.ProfessionalID, payout.TotalCents, payout.RecordsCount,
+		fromDate, toDate, payout.PaymentMethod, payout.Notes, payout.FinancialTransactionID,
+		payout.CreatedByUserID, now, now,
+	).Scan(&payout.PaidAt, &payout.CreatedAt)
+	if err != nil {
+		return commission.Payout{}, fmt.Errorf("insert commission payout: %w", err)
+	}
+
+	// Update records
+	if len(recordIDs) > 0 {
+		_, err = tx.Exec(`
+			UPDATE catalog.commission_records
+			SET status = 'paid', settled_at = $1, payout_id = $2
+			WHERE tenant_id = $3 AND id = ANY($4)
+		`, now, payout.ID, payout.TenantID, recordIDs)
+	} else {
+		_, err = tx.Exec(`
+			UPDATE catalog.commission_records
+			SET status = 'paid', settled_at = $1, payout_id = $2
+			WHERE tenant_id = $3 AND professional_id = $4 AND status = 'pending'
+		`, now, payout.ID, payout.TenantID, payout.ProfessionalID)
+	}
+	if err != nil {
+		return commission.Payout{}, fmt.Errorf("update settled commission records: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return commission.Payout{}, fmt.Errorf("commit payout tx: %w", err)
+	}
+	return payout, nil
+}
+
+func (r *CommissionRepository) ListPayouts(tenantID string, professionalID string) ([]commission.Payout, error) {
+	query := `
+		SELECT cp.id, cp.tenant_id, cp.professional_id, p.name, cp.total_cents, cp.records_count,
+		       cp.from_date, cp.to_date, cp.payment_method, COALESCE(cp.notes, ''),
+		       COALESCE(cp.financial_transaction_id, ''), COALESCE(cp.created_by_user_id, ''),
+		       cp.paid_at, cp.created_at
+		FROM catalog.commission_payouts cp
+		JOIN catalog.professionals p ON cp.professional_id = p.id
+		WHERE cp.tenant_id = $1
+	`
+	args := []any{tenantID}
+	if professionalID != "" {
+		args = append(args, professionalID)
+		query += fmt.Sprintf(" AND cp.professional_id = $%d", len(args))
+	}
+	query += " ORDER BY cp.created_at DESC"
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list commission payouts: %w", err)
+	}
+	defer rows.Close()
+
+	var payouts []commission.Payout
+	for rows.Next() {
+		var item commission.Payout
+		var fromDate, toDate *time.Time
+		var paidAt, createdAt time.Time
+		if err := rows.Scan(
+			&item.ID, &item.TenantID, &item.ProfessionalID, &item.ProfessionalName,
+			&item.TotalCents, &item.RecordsCount,
+			&fromDate, &toDate, &item.PaymentMethod, &item.Notes,
+			&item.FinancialTransactionID, &item.CreatedByUserID,
+			&paidAt, &createdAt,
+		); err != nil {
+			return nil, err
+		}
+		if fromDate != nil {
+			item.FromDate = fromDate.Format(time.RFC3339)
+		}
+		if toDate != nil {
+			item.ToDate = toDate.Format(time.RFC3339)
+		}
+		item.PaidAt = paidAt.Format(time.RFC3339)
+		item.CreatedAt = createdAt.Format(time.RFC3339)
+		payouts = append(payouts, item)
+	}
+	return payouts, nil
+}
+

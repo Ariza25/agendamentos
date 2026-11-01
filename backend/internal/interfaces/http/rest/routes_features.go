@@ -92,6 +92,8 @@ func registerCommissionRoutes(mux *http.ServeMux, config RouterConfig) {
 
 	mux.HandleFunc("GET /api/v1/admin/commissions", requireAdmin(config.AuthUseCase, handler.ListRecords))
 	mux.HandleFunc("POST /api/v1/admin/commissions/settle", requireAdmin(config.AuthUseCase, handler.SettleCommissions))
+	mux.HandleFunc("POST /api/v1/admin/commissions/payout", requireAdmin(config.AuthUseCase, handler.Payout))
+	mux.HandleFunc("GET /api/v1/admin/commissions/payouts", requireAdmin(config.AuthUseCase, handler.ListPayouts))
 	mux.HandleFunc("GET /api/v1/admin/commissions/summaries", requireAdmin(config.AuthUseCase, handler.GetSummaries))
 }
 

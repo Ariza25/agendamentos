@@ -121,3 +121,33 @@ func (h *CommissionHandler) GetSummaries(w http.ResponseWriter, r *http.Request)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"summaries": summaries})
 }
+
+func (h *CommissionHandler) Payout(w http.ResponseWriter, r *http.Request) {
+	tenantID := resolveRequestTenantID(r, nil)
+	var input commission.PayoutInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeInvalidPayload(w, "invalid request body")
+		return
+	}
+	if claims, ok := resolveAuthClaims(r, nil); ok {
+		input.CreatedByUserID = claims.UserID
+	}
+
+	payout, err := h.commissionUseCase.ExecutePayout(tenantID, input)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, "payout_failed", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, payout)
+}
+
+func (h *CommissionHandler) ListPayouts(w http.ResponseWriter, r *http.Request) {
+	tenantID := resolveRequestTenantID(r, nil)
+	professionalID := r.URL.Query().Get("professionalId")
+	payouts, err := h.commissionUseCase.ListPayouts(tenantID, professionalID)
+	if err != nil {
+		writeInternalError(w, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"payouts": payouts})
+}
