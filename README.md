@@ -34,7 +34,7 @@ erpagendamentos/
 │   │   ├── interfaces/http/rest/  # rotas, handlers, auth
 │   │   ├── infrastructure/   # Postgres, memória, segurança
 │   │   └── bootstrap/        # wiring e composition root
-│   └── sql/          # migrations e catalog
+│   └── sql/          # schema unificado (schema.sql)
 ├── admin/            # painel de gestão
 ├── booking/          # página pública de agendamento
 ├── landing/          # landing page do produto
@@ -118,10 +118,9 @@ rápido com MFA desabilitado, defina `FEATURE_PRIVILEGED_MFA_ENFORCEMENT=false`.
 
 **Health**: `GET /health`, `GET /ready`
 
-## Migrations
+## Banco de Dados & Schema
 
-- `backend/sql/migrations/` — alterações de schema versionadas, aplicadas na inicialização.
-- `backend/sql/catalog/` — schema de referência atual.
+- `backend/sql/schema.sql` — schema canônico único com todas as tabelas, índices e dados iniciais aplicados de forma idempotente na inicialização.
 
 ## CI
 

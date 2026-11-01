@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -16,11 +20,6 @@ func main() {
 	}
 
 	handler := newLazyAppHandler()
-	defer func() {
-		if err := handler.Close(); err != nil {
-			log.Printf("error closing container: %v", err)
-		}
-	}()
 
 	addr := ":" + port
 	log.Printf("backend listening on %s", addr)
@@ -33,9 +32,38 @@ func main() {
 		IdleTimeout:       resolveDurationEnv("HTTP_IDLE_TIMEOUT", 60*time.Second),
 		MaxHeaderBytes:    resolvePositiveIntEnv("HTTP_MAX_HEADER_BYTES", 1<<20),
 	}
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+
+	// Capture interrupt and termination signals for zero-downtime / graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	serverErr := make(chan error, 1)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+		}
+	}()
+
+	select {
+	case err := <-serverErr:
+		log.Fatalf("server failed to start: %v", err)
+	case <-ctx.Done():
+		log.Println("shutdown signal received, initiating graceful termination...")
 	}
+
+	shutdownTimeout := resolveDurationEnv("SHUTDOWN_TIMEOUT", 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("server forced to shutdown: %v", err)
+	}
+
+	if err := handler.Close(); err != nil {
+		log.Printf("error closing container resources: %v", err)
+	}
+
+	log.Println("backend gracefully terminated")
 }
 
 func resolvePositiveIntEnv(key string, fallback int) int {

@@ -18,10 +18,10 @@
     "semantic_hash": "8500c2f93199d457c452b0f843029fa9"
   },
   "admin/src/app/AdminShell.tsx": {
-    "mtime": 1793538916.3165834,
-    "seen": 1793539025.920394,
+    "mtime": 1793542700.803998,
+    "seen": 1793542746.7232463,
     "ast_hash": "8a22503a6fef080c2a5b6764be819b9b",
-    "semantic_hash": ""
+    "semantic_hash": "8a22503a6fef080c2a5b6764be819b9b"
   },
   "admin/src/app/navigation.ts": {
     "mtime": 1793494969.762066,
@@ -49,9 +49,9 @@
   },
   "admin/src/lib/adminApi.ts": {
     "mtime": 1793538680.7668598,
-    "seen": 1793539025.920394,
+    "seen": 1793542746.7246048,
     "ast_hash": "171eb8a60d4890555000ad0e5b5ab13c",
-    "semantic_hash": ""
+    "semantic_hash": "171eb8a60d4890555000ad0e5b5ab13c"
   },
   "admin/src/lib/adminAuth.ts": {
     "mtime": 1793501676.605816,
@@ -204,10 +204,10 @@
     "semantic_hash": "e0af3809c13d7d378a91f09fca8eee3f"
   },
   "admin/src/pages/TenantsPage.tsx": {
-    "mtime": 1793538746.2181861,
-    "seen": 1793539025.920394,
+    "mtime": 1793542700.986838,
+    "seen": 1793542746.727142,
     "ast_hash": "72d8c88026d7ab951bf4ec447790b449",
-    "semantic_hash": ""
+    "semantic_hash": "72d8c88026d7ab951bf4ec447790b449"
   },
   "admin/src/pages/WaitingListPage.tsx": {
     "mtime": 1786045368.7722075,
@@ -288,10 +288,10 @@
     "semantic_hash": "ca9b2efd354341b78521480f91de0b03"
   },
   "admin/src/types.ts": {
-    "mtime": 1793538803.6097517,
-    "seen": 1793539025.920394,
+    "mtime": 1793542701.017763,
+    "seen": 1793542746.7292006,
     "ast_hash": "6f9aba2d93189fb5098974d4b594ec56",
-    "semantic_hash": ""
+    "semantic_hash": "6f9aba2d93189fb5098974d4b594ec56"
   },
   "admin/src/vite-env.d.ts": {
     "mtime": 1786039043.229699,
@@ -318,10 +318,10 @@
     "semantic_hash": "2dac8a4341f6fa5741b69a59ebbd4f54"
   },
   "backend/cmd/api/main.go": {
-    "mtime": 1786036649.8946114,
-    "seen": 1793490652.5440502,
-    "ast_hash": "fb2443e699f2d9cebc351133cf3c714b",
-    "semantic_hash": "fb2443e699f2d9cebc351133cf3c714b"
+    "mtime": 1793543204.3209355,
+    "seen": 1793543261.276917,
+    "ast_hash": "1e5c64ed58e4b71b4dd55368b5147ca5",
+    "semantic_hash": ""
   },
   "backend/go.mod": {
     "mtime": 1786036647.2601256,
@@ -445,9 +445,9 @@
   },
   "backend/internal/application/tenant/usecase.go": {
     "mtime": 1793538256.8002222,
-    "seen": 1793539025.920394,
+    "seen": 1793542746.7332032,
     "ast_hash": "29ced28ba57cf6ffd1bd22738b750fc1",
-    "semantic_hash": ""
+    "semantic_hash": "29ced28ba57cf6ffd1bd22738b750fc1"
   },
   "backend/internal/application/waitinglist/usecase.go": {
     "mtime": 1786044207.4006317,
@@ -462,16 +462,16 @@
     "semantic_hash": "cd8f4470bb5d570f8a61da5852d4b4dd"
   },
   "backend/internal/bootstrap/container.go": {
-    "mtime": 1793538493.0286837,
-    "seen": 1793539025.920394,
+    "mtime": 1793542701.3014517,
+    "seen": 1793542746.7341163,
     "ast_hash": "e1ab90882bbfd14caf08a635a61816be",
-    "semantic_hash": ""
+    "semantic_hash": "e1ab90882bbfd14caf08a635a61816be"
   },
   "backend/internal/bootstrap/database_migrations.go": {
-    "mtime": 1786036878.6951487,
-    "seen": 1793490652.5440502,
-    "ast_hash": "325313a8dee0831490a0a3dea2b15863",
-    "semantic_hash": "325313a8dee0831490a0a3dea2b15863"
+    "mtime": 1793543156.674438,
+    "seen": 1793543261.276917,
+    "ast_hash": "43a0788602349108c7b15916ccedb81d",
+    "semantic_hash": ""
   },
   "backend/internal/bootstrap/env.go": {
     "mtime": 1786036874.4766335,
@@ -558,10 +558,10 @@
     "semantic_hash": "274b906dffa9e845af56bdf9b0585436"
   },
   "backend/internal/domain/tenant/repository.go": {
-    "mtime": 1793538125.2408423,
-    "seen": 1793539025.920394,
+    "mtime": 1793542701.3530033,
+    "seen": 1793542746.7361197,
     "ast_hash": "375053cff5bf64d5d01d71fe7f78b67c",
-    "semantic_hash": ""
+    "semantic_hash": "375053cff5bf64d5d01d71fe7f78b67c"
   },
   "backend/internal/domain/waitinglist/repository.go": {
     "mtime": 1786044043.2975335,
@@ -667,9 +667,9 @@
   },
   "backend/internal/infrastructure/persistence/memory/tenant_repository.go": {
     "mtime": 1793538238.263908,
-    "seen": 1793539025.9218957,
+    "seen": 1793542746.73867,
     "ast_hash": "dc33e66990a393b3b30097b87a1b32b2",
-    "semantic_hash": ""
+    "semantic_hash": "dc33e66990a393b3b30097b87a1b32b2"
   },
   "backend/internal/infrastructure/persistence/memory/waitinglist_repository.go": {
     "mtime": 1786044062.1477313,
@@ -702,10 +702,10 @@
     "semantic_hash": "71074c6309b364588ee319e958f6fbca"
   },
   "backend/internal/infrastructure/persistence/postgres/connection.go": {
-    "mtime": 1786037328.7420847,
-    "seen": 1793490652.5440502,
-    "ast_hash": "9f8b7a85f9361f3a065b73af576409eb",
-    "semantic_hash": "9f8b7a85f9361f3a065b73af576409eb"
+    "mtime": 1793543185.844123,
+    "seen": 1793543261.276917,
+    "ast_hash": "69ea1defc97632ee1fc013ede272b241",
+    "semantic_hash": ""
   },
   "backend/internal/infrastructure/persistence/postgres/customer_repository.go": {
     "mtime": 1786038421.36077,
@@ -756,10 +756,10 @@
     "semantic_hash": "176f91e63af22983f135974af4ad2182"
   },
   "backend/internal/infrastructure/persistence/postgres/tenant_repository.go": {
-    "mtime": 1793538214.839653,
-    "seen": 1793539025.9218957,
+    "mtime": 1793542701.3932338,
+    "seen": 1793542746.7406702,
     "ast_hash": "5c63b707c977dbe8ecdb11b003c944de",
-    "semantic_hash": ""
+    "semantic_hash": "5c63b707c977dbe8ecdb11b003c944de"
   },
   "backend/internal/infrastructure/persistence/postgres/waitinglist_repository.go": {
     "mtime": 1786044054.0955968,
@@ -792,10 +792,10 @@
     "semantic_hash": "0c3af710be2c8b8edd8e43863a17df28"
   },
   "backend/internal/interfaces/http/rest/auth_context.go": {
-    "mtime": 1793538302.60201,
-    "seen": 1793539025.9218957,
+    "mtime": 1793542701.4372635,
+    "seen": 1793542746.7406702,
     "ast_hash": "a09462a758dc15e33e2768ba2f75dc79",
-    "semantic_hash": ""
+    "semantic_hash": "a09462a758dc15e33e2768ba2f75dc79"
   },
   "backend/internal/interfaces/http/rest/auth_cookie.go": {
     "mtime": 1786037004.3497963,
@@ -943,9 +943,9 @@
   },
   "backend/internal/interfaces/http/rest/routes_admin.go": {
     "mtime": 1793538289.01802,
-    "seen": 1793539025.9218957,
+    "seen": 1793542746.744448,
     "ast_hash": "677d83715ac2874e1ad90f36b041a2cb",
-    "semantic_hash": ""
+    "semantic_hash": "677d83715ac2874e1ad90f36b041a2cb"
   },
   "backend/internal/interfaces/http/rest/routes_auth.go": {
     "mtime": 1786037058.2234056,
@@ -961,9 +961,9 @@
   },
   "backend/internal/interfaces/http/rest/routes_features.go": {
     "mtime": 1793538528.5934896,
-    "seen": 1793539025.9218957,
+    "seen": 1793542746.744448,
     "ast_hash": "b85f5a905059cdfa37aed51ecc77b7f6",
-    "semantic_hash": ""
+    "semantic_hash": "b85f5a905059cdfa37aed51ecc77b7f6"
   },
   "backend/internal/interfaces/http/rest/routes_reviews.go": {
     "mtime": 1786064279.6102984,
@@ -985,9 +985,9 @@
   },
   "backend/internal/interfaces/http/rest/tenant_handler.go": {
     "mtime": 1793538276.8140092,
-    "seen": 1793539025.9218957,
+    "seen": 1793542746.744448,
     "ast_hash": "b3c22aecb3f5c7ed65f866a582dc25f6",
-    "semantic_hash": ""
+    "semantic_hash": "b3c22aecb3f5c7ed65f866a582dc25f6"
   },
   "backend/internal/interfaces/http/rest/waitinglist_handler.go": {
     "mtime": 1786044487.255245,
@@ -1000,42 +1000,6 @@
     "seen": 1793490652.5440502,
     "ast_hash": "a4b17f39979a4caae7962b70ef3a86d4",
     "semantic_hash": "a4b17f39979a4caae7962b70ef3a86d4"
-  },
-  "backend/sql/catalog/001_schema.sql": {
-    "mtime": 1786037423.663081,
-    "seen": 1793490652.5440502,
-    "ast_hash": "372fbac1bda034996cb82d8915dd0756",
-    "semantic_hash": "372fbac1bda034996cb82d8915dd0756"
-  },
-  "backend/sql/migrations/001_baseline.sql": {
-    "mtime": 1786037432.483907,
-    "seen": 1793490652.5440502,
-    "ast_hash": "cf97d6889dd5052ca49e8d6d104f5bfe",
-    "semantic_hash": "cf97d6889dd5052ca49e8d6d104f5bfe"
-  },
-  "backend/sql/migrations/002_features.sql": {
-    "mtime": 1786043811.8253243,
-    "seen": 1793490652.5440502,
-    "ast_hash": "6eb7f457285ff9ad8ffc185b36104ee8",
-    "semantic_hash": "6eb7f457285ff9ad8ffc185b36104ee8"
-  },
-  "backend/sql/migrations/003_seed.sql": {
-    "mtime": 1786048782.7319205,
-    "seen": 1793490652.5440502,
-    "ast_hash": "66d31d16a272f4f37d415f762e793612",
-    "semantic_hash": "66d31d16a272f4f37d415f762e793612"
-  },
-  "backend/sql/migrations/004_reviews.sql": {
-    "mtime": 1786049648.927318,
-    "seen": 1793490652.5440502,
-    "ast_hash": "dc2750bf3ba8c98c3ea3862439b487eb",
-    "semantic_hash": "dc2750bf3ba8c98c3ea3862439b487eb"
-  },
-  "backend/sql/migrations/005_resources.sql": {
-    "mtime": 1786064102.0130992,
-    "seen": 1793490652.5440502,
-    "ast_hash": "ab6689cff8655919b2cbb418f5ee4ac7",
-    "semantic_hash": "ab6689cff8655919b2cbb418f5ee4ac7"
   },
   "booking/package.json": {
     "mtime": 1786039101.5937307,
@@ -1254,10 +1218,10 @@
     "semantic_hash": "5c83e1cec8dd00c74bd9ffe0bb471829"
   },
   "admin/src/pages/CommissionsPage.tsx": {
-    "mtime": 1793538983.0921404,
-    "seen": 1793539025.920394,
+    "mtime": 1793542700.925956,
+    "seen": 1793542746.7262912,
     "ast_hash": "c1b5ccf25c2e7c4a0934aa8bd635e42c",
-    "semantic_hash": ""
+    "semantic_hash": "c1b5ccf25c2e7c4a0934aa8bd635e42c"
   },
   "admin/src/pages/FinancePage.tsx": {
     "mtime": 1793536255.7904298,
@@ -1290,16 +1254,16 @@
     "semantic_hash": "1b50dc2152f8624a3a950893140e4cbb"
   },
   "backend/internal/application/commission/usecase.go": {
-    "mtime": 1793538580.2962368,
-    "seen": 1793539025.920394,
+    "mtime": 1793542701.1857274,
+    "seen": 1793542746.7319212,
     "ast_hash": "4bc6a13a3e52767a8a76483379174d93",
-    "semantic_hash": ""
+    "semantic_hash": "4bc6a13a3e52767a8a76483379174d93"
   },
   "backend/internal/application/commission/usecase_test.go": {
     "mtime": 1793538588.4029799,
-    "seen": 1793539025.920394,
+    "seen": 1793542746.7319212,
     "ast_hash": "ddefda99fc11e97e6e79e8c3ad956ff4",
-    "semantic_hash": ""
+    "semantic_hash": "ddefda99fc11e97e6e79e8c3ad956ff4"
   },
   "backend/internal/application/finance/usecase.go": {
     "mtime": 1793493573.6195214,
@@ -1344,10 +1308,10 @@
     "semantic_hash": "03cefed30b05b046439bd1a905245a2e"
   },
   "backend/internal/domain/commission/repository.go": {
-    "mtime": 1793538149.6842651,
-    "seen": 1793539025.920394,
+    "mtime": 1793542701.3323555,
+    "seen": 1793542746.735133,
     "ast_hash": "95bab6a938814a1688585ee7a646efd9",
-    "semantic_hash": ""
+    "semantic_hash": "95bab6a938814a1688585ee7a646efd9"
   },
   "backend/internal/domain/finance/repository.go": {
     "mtime": 1793536255.9812741,
@@ -1375,9 +1339,9 @@
   },
   "backend/internal/infrastructure/persistence/memory/commission_repository.go": {
     "mtime": 1793538443.271587,
-    "seen": 1793539025.9218957,
+    "seen": 1793542746.7376707,
     "ast_hash": "0483574a104b7eed1b41defb4b3d25e3",
-    "semantic_hash": ""
+    "semantic_hash": "0483574a104b7eed1b41defb4b3d25e3"
   },
   "backend/internal/infrastructure/persistence/memory/finance_repository.go": {
     "mtime": 1793494970.5596821,
@@ -1405,9 +1369,9 @@
   },
   "backend/internal/infrastructure/persistence/postgres/commission_repository.go": {
     "mtime": 1793538414.239529,
-    "seen": 1793539025.9218957,
+    "seen": 1793542746.73867,
     "ast_hash": "98ad25047b665c4eebb2a34d4781eee2",
-    "semantic_hash": ""
+    "semantic_hash": "98ad25047b665c4eebb2a34d4781eee2"
   },
   "backend/internal/infrastructure/persistence/postgres/finance_repository.go": {
     "mtime": 1793536256.1144845,
@@ -1435,9 +1399,9 @@
   },
   "backend/internal/interfaces/http/rest/commission_handler.go": {
     "mtime": 1793538514.699586,
-    "seen": 1793539025.9218957,
+    "seen": 1793542746.7421732,
     "ast_hash": "ea6be69326ba50b7806971c4ad326cc7",
-    "semantic_hash": ""
+    "semantic_hash": "ea6be69326ba50b7806971c4ad326cc7"
   },
   "backend/internal/interfaces/http/rest/events.go": {
     "mtime": 1793494970.8991468,
@@ -1463,24 +1427,6 @@
     "ast_hash": "b1dda8f293226a54d1aee5a2ce51b704",
     "semantic_hash": "b1dda8f293226a54d1aee5a2ce51b704"
   },
-  "backend/sql/migrations/006_erp_finance_stock_commissions.sql": {
-    "mtime": 1793493579.1452122,
-    "seen": 1793496391.4050212,
-    "ast_hash": "b6d860b6712127275f110a86231b01e3",
-    "semantic_hash": "b6d860b6712127275f110a86231b01e3"
-  },
-  "backend/sql/migrations/007_jobs_and_calendar_sync.sql": {
-    "mtime": 1793493579.2813773,
-    "seen": 1793496391.4050212,
-    "ast_hash": "b7e9d8cdebf8cce146d4c9401bed3990",
-    "semantic_hash": "b7e9d8cdebf8cce146d4c9401bed3990"
-  },
-  "backend/sql/migrations/008_service_capacity_and_recurrence.sql": {
-    "mtime": 1793493579.412631,
-    "seen": 1793496391.4050212,
-    "ast_hash": "ae0a0aa535eca6a61cacba34849921d4",
-    "semantic_hash": "ae0a0aa535eca6a61cacba34849921d4"
-  },
   ".agents/rules/graphify.md": {
     "mtime": 1793490682.3075266,
     "seen": 1793493492.447306,
@@ -1500,9 +1446,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1786040707.2884784,
-    "seen": 1793493492.447306,
-    "ast_hash": "fa716b5233cce8f8340422e3948db8a1",
+    "mtime": 1793543232.2796016,
+    "seen": 1793543261.276917,
+    "ast_hash": "215832cdd6d882d06aef579c5823b4ba",
     "semantic_hash": ""
   },
   "admin/index.html": {
@@ -1554,10 +1500,10 @@
     "semantic_hash": "e83c65a083285f0d6630e79b90ed13e2"
   },
   "backend/internal/application/onboarding/usecase.go": {
-    "mtime": 1793538348.3975656,
-    "seen": 1793539025.920394,
+    "mtime": 1793542701.2551808,
+    "seen": 1793542746.732345,
     "ast_hash": "f8e5cede4c5912beeb6e5dfaae3b8670",
-    "semantic_hash": ""
+    "semantic_hash": "f8e5cede4c5912beeb6e5dfaae3b8670"
   },
   "backend/internal/application/onboarding/usecase_test.go": {
     "mtime": 1793502093.8268673,
@@ -1582,12 +1528,6 @@
     "seen": 1793533003.1552384,
     "ast_hash": "9c8dc733b1fc50be6ea5003557b66077",
     "semantic_hash": "9c8dc733b1fc50be6ea5003557b66077"
-  },
-  "backend/sql/migrations/009_mercadopago_pix_and_signup.sql": {
-    "mtime": 1793502094.4633677,
-    "seen": 1793533003.1572382,
-    "ast_hash": "8dc88b23bcbe17e86f12c3a794acd1f6",
-    "semantic_hash": "8dc88b23bcbe17e86f12c3a794acd1f6"
   },
   "nginx/ssl/generate-certs.sh": {
     "mtime": 1793502095.4736946,
@@ -1661,16 +1601,10 @@
     "ast_hash": "698fe412e21c8226ea10f49fd8e3a324",
     "semantic_hash": "698fe412e21c8226ea10f49fd8e3a324"
   },
-  "backend/sql/migrations/010_branding_pos_and_cash_registers.sql": {
-    "mtime": 1793535463.973353,
-    "seen": 1793536269.864751,
-    "ast_hash": "4c6c1dd33c20758e9d4c109020af222a",
-    "semantic_hash": "4c6c1dd33c20758e9d4c109020af222a"
-  },
-  "backend/sql/migrations/011_saas_monetization_and_payouts.sql": {
-    "mtime": 1793538103.993844,
-    "seen": 1793539025.9218957,
-    "ast_hash": "709bdff1f541ef6a9c1bafeed8b94649",
+  "backend/sql/schema.sql": {
+    "mtime": 1793543141.0499704,
+    "seen": 1793543261.276917,
+    "ast_hash": "4e167fa5cbe7f6ae8730781cd1a2f88a",
     "semantic_hash": ""
   }
 }
