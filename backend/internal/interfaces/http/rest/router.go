@@ -9,6 +9,8 @@ import (
 	appauth "erpagendamentos/backend/internal/application/auth"
 	appbooking "erpagendamentos/backend/internal/application/booking"
 	appcalendar "erpagendamentos/backend/internal/application/calendar"
+	appcashregister "erpagendamentos/backend/internal/application/cashregister"
+	appcheckout "erpagendamentos/backend/internal/application/checkout"
 	appcommerce "erpagendamentos/backend/internal/application/commerce"
 	appcommission "erpagendamentos/backend/internal/application/commission"
 	appconfiguration "erpagendamentos/backend/internal/application/configuration"
@@ -56,6 +58,8 @@ type RouterConfig struct {
 	FinanceUseCase        *appfinance.UseCase
 	CalendarSyncUseCase   *appcalendar.UseCase
 	OnboardingUseCase     *apponboarding.UseCase
+	CashRegisterUseCase   *appcashregister.UseCase
+	CheckoutUseCase       *appcheckout.UseCase
 	EventBroker           *EventBroker
 	CustomerRepository    customerdomain.Repository
 	ServiceRepository     servicedomain.Repository
@@ -90,6 +94,8 @@ func NewRouter(config RouterConfig) *Router {
 	registerCalendarSyncRoutes(mux, config)
 	registerWebhookRoutes(mux, config)
 	registerOnboardingRoutes(mux, config)
+	registerCashRegisterRoutes(mux, config)
+	registerCheckoutRoutes(mux, config)
 
 	// Prometheus metrics
 	mux.HandleFunc("GET /metrics", HandleMetrics)

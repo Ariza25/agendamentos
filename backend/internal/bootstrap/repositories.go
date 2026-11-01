@@ -9,6 +9,7 @@ import (
 	appointmentdomain "erpagendamentos/backend/internal/domain/appointment"
 	authdomain "erpagendamentos/backend/internal/domain/auth"
 	calendardomain "erpagendamentos/backend/internal/domain/calendar"
+	cashregisterdomain "erpagendamentos/backend/internal/domain/cashregister"
 	commercedomain "erpagendamentos/backend/internal/domain/commerce"
 	commissiondomain "erpagendamentos/backend/internal/domain/commission"
 	configurationdomain "erpagendamentos/backend/internal/domain/configuration"
@@ -51,6 +52,7 @@ type repositorySet struct {
 	finance        financedomain.Repository
 	calendar       calendardomain.Repository
 	job            jobdomain.Repository
+	cashRegister   cashregisterdomain.Repository
 }
 
 func initializeRepositories() (repositorySet, *sql.DB, bool) {
@@ -111,6 +113,7 @@ func memoryRepositories() repositorySet {
 		finance:        memory.NewFinanceRepository(),
 		calendar:       memory.NewCalendarRepository(),
 		job:            memory.NewJobRepository(),
+		cashRegister:   memory.NewCashRegisterRepository(),
 	}
 }
 
@@ -138,5 +141,6 @@ func postgresRepositories(db *sql.DB) repositorySet {
 		finance:        postgres.NewFinanceRepository(db),
 		calendar:       postgres.NewCalendarRepository(db),
 		job:            postgres.NewJobRepository(db),
+		cashRegister:   postgres.NewCashRegisterRepository(db),
 	}
 }

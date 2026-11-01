@@ -35,6 +35,20 @@ export type PublicConfiguration = {
   defaultDurationMinutes: number
   allowOnlineBooking: boolean
   advanceNoticeHours: number
+  logoUrl?: string
+  primaryColor?: string
+  address?: string
+  addressNumber?: string
+  neighborhood?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  contactPhone?: string
+  contactWhatsApp?: string
+  instagram?: string
+  facebook?: string
+  website?: string
+  description?: string
 }
 
 export type PublicInfo = {

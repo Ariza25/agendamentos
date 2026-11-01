@@ -35,6 +35,20 @@ type Configuration struct {
 	NoShowFeeCents             int            `json:"noShowFeeCents"`
 	CancellationPolicyHours    int            `json:"cancellationPolicyHours"`
 	CalendarSyncEnabled        bool           `json:"calendarSyncEnabled"`
+	LogoURL                    string         `json:"logoUrl,omitempty"`
+	PrimaryColor               string         `json:"primaryColor,omitempty"`
+	Address                    string         `json:"address,omitempty"`
+	AddressNumber              string         `json:"addressNumber,omitempty"`
+	Neighborhood               string         `json:"neighborhood,omitempty"`
+	City                       string         `json:"city,omitempty"`
+	State                      string         `json:"state,omitempty"`
+	PostalCode                 string         `json:"postalCode,omitempty"`
+	ContactPhone               string         `json:"contactPhone,omitempty"`
+	ContactWhatsApp            string         `json:"contactWhatsApp,omitempty"`
+	Instagram                  string         `json:"instagram,omitempty"`
+	Facebook                   string         `json:"facebook,omitempty"`
+	Website                    string         `json:"website,omitempty"`
+	Description                string         `json:"description,omitempty"`
 	UpdatedAt                  string         `json:"updatedAt"`
 }
 

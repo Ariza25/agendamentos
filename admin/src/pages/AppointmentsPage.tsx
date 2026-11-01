@@ -1,4 +1,4 @@
-import { CalendarClock, Download, Plus, Search } from 'lucide-react'
+import { CalendarClock, Download, Plus, Receipt, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import {
@@ -12,6 +12,7 @@ import {
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_TONES, nextStatusesFor } from '../lib/appointmentStatus'
 import { formatDate, formatTime, todayKey } from '../lib/format'
 import { AppointmentFormModal } from '../features/appointments/components/AppointmentFormModal'
+import { CheckoutComandaModal } from '../features/appointments/components/CheckoutComandaModal'
 import { useReferenceData } from '../shared/hooks/useReferenceData'
 import { Badge } from '../shared/components/Badge'
 import { Button } from '../shared/components/Button'
@@ -36,6 +37,7 @@ export function AppointmentsPage() {
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [checkoutAppointment, setCheckoutAppointment] = useState<Appointment | null>(null)
 
   function loadAppointments() {
     setLoading(true)
@@ -217,6 +219,16 @@ export function AppointmentsPage() {
                     {appointment.notes ? <p className="mt-1 truncate text-xs italic text-[var(--color-ink-soft)]">{appointment.notes}</p> : null}
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {appointment.status !== 'completed' && appointment.status !== 'cancelled' ? (
+                      <Button
+                        onClick={() => setCheckoutAppointment(appointment)}
+                        size="sm"
+                        className="bg-emerald-600 text-white hover:bg-emerald-700"
+                        icon={<Receipt className="h-3.5 w-3.5" />}
+                      >
+                        Fechar Comanda
+                      </Button>
+                    ) : null}
                     {appointment.status === 'confirmed' || appointment.status === 'in_progress' ? (
                       <Button onClick={() => void handleCheckIn(appointment)} size="sm" variant="secondary">
                         Check-in
@@ -261,6 +273,16 @@ export function AppointmentsPage() {
         professionals={referenceData.professionals}
         resources={referenceData.resources}
         services={referenceData.services}
+      />
+
+      <CheckoutComandaModal
+        open={Boolean(checkoutAppointment)}
+        onClose={() => setCheckoutAppointment(null)}
+        appointment={checkoutAppointment}
+        customer={checkoutAppointment ? referenceData.byId.customer.get(checkoutAppointment.customerId) : undefined}
+        service={checkoutAppointment ? referenceData.byId.service.get(checkoutAppointment.serviceId) : undefined}
+        professional={checkoutAppointment ? referenceData.byId.professional.get(checkoutAppointment.professionalId) : undefined}
+        onSuccess={loadAppointments}
       />
 
       <ConfirmModal

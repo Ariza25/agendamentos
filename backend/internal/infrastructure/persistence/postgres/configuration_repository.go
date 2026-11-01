@@ -28,10 +28,23 @@ func (r *ConfigurationRepository) Get(tenantID string) (configuration.Configurat
 		SELECT tenant_id, establishment_name, working_hours, appointment_interval_minutes, default_duration_minutes,
 		       allow_online_booking, advance_notice_hours, buffer_minutes, closed_days, notifications_enabled,
 		       notification_reminder_hours, notification_channel, deposit_enabled, deposit_type, deposit_amount_cents,
-		       deposit_percentage, no_show_fee_cents, cancellation_policy_hours, calendar_sync_enabled, updated_at
+		       deposit_percentage, no_show_fee_cents, cancellation_policy_hours, calendar_sync_enabled,
+		       COALESCE(logo_url, ''), COALESCE(primary_color, '#b42318'), COALESCE(address, ''), COALESCE(address_number, ''),
+		       COALESCE(neighborhood, ''), COALESCE(city, ''), COALESCE(state, ''), COALESCE(postal_code, ''),
+		       COALESCE(contact_phone, ''), COALESCE(contact_whatsapp, ''), COALESCE(instagram, ''), COALESCE(facebook, ''),
+		       COALESCE(website, ''), COALESCE(description, ''), updated_at
 		FROM catalog.configurations
 		WHERE tenant_id = $1
-	`, tenantID).Scan(&item.TenantID, &item.EstablishmentName, &workingHoursRaw, &item.AppointmentIntervalMinutes, &item.DefaultDurationMinutes, &item.AllowOnlineBooking, &item.AdvanceNoticeHours, &item.BufferMinutes, &closedDaysRaw, &item.NotificationsEnabled, &item.NotificationReminderHours, &item.NotificationChannel, &item.DepositEnabled, &item.DepositType, &item.DepositAmountCents, &item.DepositPercentage, &item.NoShowFeeCents, &item.CancellationPolicyHours, &item.CalendarSyncEnabled, &updatedAt)
+	`, tenantID).Scan(
+		&item.TenantID, &item.EstablishmentName, &workingHoursRaw, &item.AppointmentIntervalMinutes, &item.DefaultDurationMinutes,
+		&item.AllowOnlineBooking, &item.AdvanceNoticeHours, &item.BufferMinutes, &closedDaysRaw, &item.NotificationsEnabled,
+		&item.NotificationReminderHours, &item.NotificationChannel, &item.DepositEnabled, &item.DepositType, &item.DepositAmountCents,
+		&item.DepositPercentage, &item.NoShowFeeCents, &item.CancellationPolicyHours, &item.CalendarSyncEnabled,
+		&item.LogoURL, &item.PrimaryColor, &item.Address, &item.AddressNumber,
+		&item.Neighborhood, &item.City, &item.State, &item.PostalCode,
+		&item.ContactPhone, &item.ContactWhatsApp, &item.Instagram, &item.Facebook,
+		&item.Website, &item.Description, &updatedAt,
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return r.defaultConfiguration(tenantID), nil
@@ -97,9 +110,19 @@ func (r *ConfigurationRepository) Update(input configuration.Configuration) (con
 	if err != nil {
 		return configuration.Configuration{}, fmt.Errorf("marshal closed days: %w", err)
 	}
+	if input.PrimaryColor == "" {
+		input.PrimaryColor = "#b42318"
+	}
 	if _, err := r.db.Exec(`
-		INSERT INTO catalog.configurations (tenant_id, establishment_name, working_hours, appointment_interval_minutes, default_duration_minutes, allow_online_booking, advance_notice_hours, buffer_minutes, closed_days, notifications_enabled, notification_reminder_hours, notification_channel, deposit_enabled, deposit_type, deposit_amount_cents, deposit_percentage, no_show_fee_cents, cancellation_policy_hours, calendar_sync_enabled, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
+		INSERT INTO catalog.configurations (
+			tenant_id, establishment_name, working_hours, appointment_interval_minutes, default_duration_minutes,
+			allow_online_booking, advance_notice_hours, buffer_minutes, closed_days, notifications_enabled,
+			notification_reminder_hours, notification_channel, deposit_enabled, deposit_type, deposit_amount_cents,
+			deposit_percentage, no_show_fee_cents, cancellation_policy_hours, calendar_sync_enabled,
+			logo_url, primary_color, address, address_number, neighborhood, city, state, postal_code,
+			contact_phone, contact_whatsapp, instagram, facebook, website, description, updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, NOW())
 		ON CONFLICT (tenant_id) DO UPDATE SET
 			establishment_name = EXCLUDED.establishment_name,
 			working_hours = EXCLUDED.working_hours,
@@ -119,8 +142,22 @@ func (r *ConfigurationRepository) Update(input configuration.Configuration) (con
 			no_show_fee_cents = EXCLUDED.no_show_fee_cents,
 			cancellation_policy_hours = EXCLUDED.cancellation_policy_hours,
 			calendar_sync_enabled = EXCLUDED.calendar_sync_enabled,
+			logo_url = EXCLUDED.logo_url,
+			primary_color = EXCLUDED.primary_color,
+			address = EXCLUDED.address,
+			address_number = EXCLUDED.address_number,
+			neighborhood = EXCLUDED.neighborhood,
+			city = EXCLUDED.city,
+			state = EXCLUDED.state,
+			postal_code = EXCLUDED.postal_code,
+			contact_phone = EXCLUDED.contact_phone,
+			contact_whatsapp = EXCLUDED.contact_whatsapp,
+			instagram = EXCLUDED.instagram,
+			facebook = EXCLUDED.facebook,
+			website = EXCLUDED.website,
+			description = EXCLUDED.description,
 			updated_at = NOW()
-	`, tenantID, strings.TrimSpace(input.EstablishmentName), workingHoursRaw, input.AppointmentIntervalMinutes, input.DefaultDurationMinutes, input.AllowOnlineBooking, input.AdvanceNoticeHours, input.BufferMinutes, closedDaysRaw, input.NotificationsEnabled, input.NotificationReminderHours, input.NotificationChannel, input.DepositEnabled, input.DepositType, input.DepositAmountCents, input.DepositPercentage, input.NoShowFeeCents, input.CancellationPolicyHours, input.CalendarSyncEnabled); err != nil {
+	`, tenantID, strings.TrimSpace(input.EstablishmentName), workingHoursRaw, input.AppointmentIntervalMinutes, input.DefaultDurationMinutes, input.AllowOnlineBooking, input.AdvanceNoticeHours, input.BufferMinutes, closedDaysRaw, input.NotificationsEnabled, input.NotificationReminderHours, input.NotificationChannel, input.DepositEnabled, input.DepositType, input.DepositAmountCents, input.DepositPercentage, input.NoShowFeeCents, input.CancellationPolicyHours, input.CalendarSyncEnabled, strings.TrimSpace(input.LogoURL), strings.TrimSpace(input.PrimaryColor), strings.TrimSpace(input.Address), strings.TrimSpace(input.AddressNumber), strings.TrimSpace(input.Neighborhood), strings.TrimSpace(input.City), strings.TrimSpace(input.State), strings.TrimSpace(input.PostalCode), strings.TrimSpace(input.ContactPhone), strings.TrimSpace(input.ContactWhatsApp), strings.TrimSpace(input.Instagram), strings.TrimSpace(input.Facebook), strings.TrimSpace(input.Website), strings.TrimSpace(input.Description)); err != nil {
 		return configuration.Configuration{}, fmt.Errorf("update configuration: %w", err)
 	}
 	return r.Get(tenantID)

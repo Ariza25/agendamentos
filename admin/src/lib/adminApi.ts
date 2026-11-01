@@ -5,10 +5,16 @@ import type {
   AppointmentAnalytics,
   AppointmentSummary,
   CalendarConnection,
+  CashRegister,
+  CashRegisterEntry,
+  CashRegisterEntryType,
+  CheckoutInput,
+  CheckoutResult,
   CommissionRecord,
   CommissionRule,
   CommissionSummary,
   Configuration,
+  CurrentCashRegisterResponse,
   Customer,
   FinancialSummary,
   FinancialTransaction,
@@ -864,4 +870,81 @@ export async function disconnectCalendar(id: string): Promise<void> {
   const response = await adminFetch(`/api/v1/admin/calendar/connections/${id}`, { method: 'DELETE' })
   await parseJson<{ ok?: boolean } | null>(response)
   invalidateAdminGetCache('/api/v1/admin/calendar/connections')
+}
+
+// ==========================================
+// Cash Register & POS
+// ==========================================
+
+export async function fetchCurrentCashRegister(): Promise<CurrentCashRegisterResponse> {
+  return cachedAdminJson<CurrentCashRegisterResponse>('/api/v1/admin/cash-register/current')
+}
+
+export async function openCashRegister(initialBalanceCents: number, notes?: string): Promise<CashRegister> {
+  const response = await adminFetch('/api/v1/admin/cash-register/open', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initialBalanceCents, notes: notes || '' }),
+  })
+  const data = await parseJson<CashRegister>(response)
+  invalidateAdminGetCache('/api/v1/admin/cash-register/current', '/api/v1/admin/cash-register/history')
+  return data
+}
+
+export async function createCashRegisterEntry(
+  type: CashRegisterEntryType,
+  amountCents: number,
+  reason: string
+): Promise<CashRegisterEntry> {
+  const response = await adminFetch('/api/v1/admin/cash-register/entry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, amountCents, reason }),
+  })
+  const data = await parseJson<CashRegisterEntry>(response)
+  invalidateAdminGetCache(
+    '/api/v1/admin/cash-register/current',
+    '/api/v1/admin/finance/transactions',
+    '/api/v1/admin/finance/summary'
+  )
+  return data
+}
+
+export async function closeCashRegister(closingBalanceCents: number, notes?: string): Promise<CashRegister> {
+  const response = await adminFetch('/api/v1/admin/cash-register/close', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ closingBalanceCents, notes: notes || '' }),
+  })
+  const data = await parseJson<CashRegister>(response)
+  invalidateAdminGetCache('/api/v1/admin/cash-register/current', '/api/v1/admin/cash-register/history')
+  return data
+}
+
+export async function fetchCashRegisterHistory(): Promise<CashRegister[]> {
+  const data = await cachedAdminJson<{ history: CashRegister[] }>('/api/v1/admin/cash-register/history')
+  return data.history || []
+}
+
+// ==========================================
+// Checkout / Fechar Comanda
+// ==========================================
+
+export async function checkoutAppointment(input: CheckoutInput): Promise<CheckoutResult> {
+  const response = await adminFetch('/api/v1/admin/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<CheckoutResult>(response)
+  invalidateMutations(
+    '/api/v1/admin/appointments',
+    '/api/v1/admin/cash-register/current',
+    '/api/v1/admin/finance/transactions',
+    '/api/v1/admin/finance/summary',
+    '/api/v1/admin/stock/products',
+    '/api/v1/admin/commissions/records',
+    '/api/v1/admin/commissions/summary'
+  )
+  return data
 }

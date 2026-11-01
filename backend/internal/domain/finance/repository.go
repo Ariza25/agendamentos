@@ -7,8 +7,10 @@ type Transaction struct {
 	Category    string `json:"category"` // "service_sale", "product_sale", "rent", "supplies", "commission_payment", "salary", "utility", "marketing", "other"
 	AmountCents int    `json:"amountCents"`
 	Description string `json:"description"`
-	ReferenceID string `json:"referenceId,omitempty"`
-	DueDate     string `json:"dueDate"`
+	ReferenceID    string `json:"referenceId,omitempty"`
+	CashRegisterID string `json:"cashRegisterId,omitempty"`
+	PaymentMethod  string `json:"paymentMethod,omitempty"`
+	DueDate        string `json:"dueDate"`
 	PaidAt      string `json:"paidAt,omitempty"`
 	Status      string `json:"status"` // "pending", "paid", "cancelled"
 	CreatedAt   string `json:"createdAt"`

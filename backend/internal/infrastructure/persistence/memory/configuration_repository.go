@@ -69,6 +69,7 @@ func defaultMemoryConfiguration(tenantID string) configuration.Configuration {
 		NoShowFeeCents:             0,
 		CancellationPolicyHours:    0,
 		CalendarSyncEnabled:        false,
+		PrimaryColor:               "#b42318",
 		UpdatedAt:                  time.Now().Format(time.RFC3339),
 	}
 }

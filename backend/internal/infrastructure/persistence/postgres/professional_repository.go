@@ -25,9 +25,9 @@ func (r *ProfessionalRepository) Create(input professional.Professional) (profes
 	item.Name = strings.TrimSpace(item.Name)
 	item.Email = strings.ToLower(strings.TrimSpace(item.Email))
 	if _, err := r.db.Exec(`
-		INSERT INTO catalog.professionals (id, tenant_id, user_id, name, email, phone, color, active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, item.ID, item.TenantID, item.UserID, item.Name, item.Email, item.Phone, item.Color, item.Active); err != nil {
+		INSERT INTO catalog.professionals (id, tenant_id, user_id, name, email, phone, color, commission_percentage, active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`, item.ID, item.TenantID, item.UserID, item.Name, item.Email, item.Phone, item.Color, item.CommissionPercentage, item.Active); err != nil {
 		return professional.Professional{}, fmt.Errorf("insert professional: %w", err)
 	}
 	return r.GetByID(item.TenantID, item.ID)
@@ -41,10 +41,11 @@ func (r *ProfessionalRepository) Update(input professional.Professional) (profes
 		    phone = $5,
 		    color = COALESCE(NULLIF($6, ''), color),
 		    user_id = COALESCE(NULLIF($7, ''), user_id),
-		    active = $8,
+		    commission_percentage = $8,
+		    active = $9,
 		    updated_at = NOW()
 		WHERE id = $1 AND tenant_id = $2
-	`, input.ID, input.TenantID, strings.TrimSpace(input.Name), strings.TrimSpace(input.Email), strings.TrimSpace(input.Phone), strings.TrimSpace(input.Color), strings.TrimSpace(input.UserID), input.Active)
+	`, input.ID, input.TenantID, strings.TrimSpace(input.Name), strings.TrimSpace(input.Email), strings.TrimSpace(input.Phone), strings.TrimSpace(input.Color), strings.TrimSpace(input.UserID), input.CommissionPercentage, input.Active)
 	if err != nil {
 		return professional.Professional{}, fmt.Errorf("update professional: %w", err)
 	}
@@ -60,7 +61,7 @@ func (r *ProfessionalRepository) Update(input professional.Professional) (profes
 
 func (r *ProfessionalRepository) GetByID(tenantID string, id string) (professional.Professional, error) {
 	item, err := scanProfessionalRow(r.db.QueryRow(`
-		SELECT id, tenant_id, user_id, name, email, phone, color, active, created_at, updated_at
+		SELECT id, tenant_id, user_id, name, email, phone, color, COALESCE(commission_percentage, 0), active, created_at, updated_at
 		FROM catalog.professionals
 		WHERE id = $1 AND tenant_id = $2
 	`, strings.TrimSpace(id), strings.TrimSpace(tenantID)))
@@ -72,7 +73,7 @@ func (r *ProfessionalRepository) GetByID(tenantID string, id string) (profession
 
 func (r *ProfessionalRepository) ListByTenant(tenantID string) ([]professional.Professional, error) {
 	rows, err := r.db.Query(`
-		SELECT id, tenant_id, user_id, name, email, phone, color, active, created_at, updated_at
+		SELECT id, tenant_id, user_id, name, email, phone, color, COALESCE(commission_percentage, 0), active, created_at, updated_at
 		FROM catalog.professionals
 		WHERE tenant_id = $1
 		ORDER BY name ASC
@@ -141,7 +142,7 @@ func scanProfessionalRow(scanner professionalScanner) (professional.Professional
 func scanProfessionalRows(scanner professionalScanner) (professional.Professional, error) {
 	var item professional.Professional
 	var createdAt, updatedAt time.Time
-	if err := scanner.Scan(&item.ID, &item.TenantID, &item.UserID, &item.Name, &item.Email, &item.Phone, &item.Color, &item.Active, &createdAt, &updatedAt); err != nil {
+	if err := scanner.Scan(&item.ID, &item.TenantID, &item.UserID, &item.Name, &item.Email, &item.Phone, &item.Color, &item.CommissionPercentage, &item.Active, &createdAt, &updatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return professional.Professional{}, fmt.Errorf("professional not found")
 		}

@@ -7,8 +7,9 @@ type Professional struct {
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	Phone     string `json:"phone"`
-	Color     string `json:"color"`
-	Active    bool   `json:"active"`
+	Color                string  `json:"color"`
+	CommissionPercentage float64 `json:"commissionPercentage,omitempty"`
+	Active               bool    `json:"active"`
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`
 }

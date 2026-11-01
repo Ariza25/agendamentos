@@ -140,3 +140,24 @@ func registerOnboardingRoutes(mux *http.ServeMux, config RouterConfig) {
 	handler := NewOnboardingHandler(config.OnboardingUseCase)
 	mux.HandleFunc("POST /api/v1/auth/signup", handler.Signup)
 }
+
+func registerCashRegisterRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.CashRegisterUseCase == nil {
+		return
+	}
+	handler := NewCashRegisterHandler(config.CashRegisterUseCase)
+
+	mux.HandleFunc("GET /api/v1/admin/cash-register/current", requireAdmin(config.AuthUseCase, handler.Current))
+	mux.HandleFunc("POST /api/v1/admin/cash-register/open", requireAdmin(config.AuthUseCase, handler.Open))
+	mux.HandleFunc("POST /api/v1/admin/cash-register/entry", requireAdmin(config.AuthUseCase, handler.Entry))
+	mux.HandleFunc("POST /api/v1/admin/cash-register/close", requireAdmin(config.AuthUseCase, handler.Close))
+	mux.HandleFunc("GET /api/v1/admin/cash-register/history", requireAdmin(config.AuthUseCase, handler.History))
+}
+
+func registerCheckoutRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.CheckoutUseCase == nil {
+		return
+	}
+	handler := NewCheckoutHandler(config.CheckoutUseCase, config.EventBroker)
+	mux.HandleFunc("POST /api/v1/admin/checkout", requireAdmin(config.AuthUseCase, handler.Checkout))
+}

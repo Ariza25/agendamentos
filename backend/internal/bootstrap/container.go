@@ -14,6 +14,8 @@ import (
 	"erpagendamentos/backend/internal/application/auth"
 	"erpagendamentos/backend/internal/application/booking"
 	"erpagendamentos/backend/internal/application/calendar"
+	"erpagendamentos/backend/internal/application/cashregister"
+	"erpagendamentos/backend/internal/application/checkout"
 	"erpagendamentos/backend/internal/application/commerce"
 	"erpagendamentos/backend/internal/application/commission"
 	"erpagendamentos/backend/internal/application/configuration"
@@ -64,6 +66,8 @@ type Container struct {
 	financeUseCase          *finance.UseCase
 	calendarUseCase         *calendar.UseCase
 	onboardingUseCase       *onboarding.UseCase
+	cashRegisterUseCase     *cashregister.UseCase
+	checkoutUseCase         *checkout.UseCase
 	jobQueue                *job.Queue
 	eventBroker             *rest.EventBroker
 	authMaintenance         auth.MaintenanceConfig
@@ -121,6 +125,16 @@ func NewContainer() *Container {
 		financeUseCase:       financeUseCase,
 		calendarUseCase:      calendarUseCase,
 		onboardingUseCase:    onboardingUseCase,
+		cashRegisterUseCase:  cashregister.NewUseCase(repositories.cashRegister, repositories.finance),
+		checkoutUseCase: checkout.NewUseCase(
+			repositories.appointment,
+			repositories.service,
+			repositories.professional,
+			repositories.stock,
+			repositories.commission,
+			repositories.finance,
+			repositories.cashRegister,
+		),
 		jobQueue:             jobQueue,
 		eventBroker:          eventBroker,
 		commerceUseCase: commerce.NewUseCase(
@@ -254,6 +268,8 @@ func (c *Container) Router() *rest.Router {
 		FinanceUseCase:        c.financeUseCase,
 		CalendarSyncUseCase:   c.calendarUseCase,
 		OnboardingUseCase:     c.onboardingUseCase,
+		CashRegisterUseCase:   c.cashRegisterUseCase,
+		CheckoutUseCase:       c.checkoutUseCase,
 		EventBroker:           c.eventBroker,
 		CustomerRepository:    c.customerRepository,
 		ServiceRepository:     c.serviceRepository,

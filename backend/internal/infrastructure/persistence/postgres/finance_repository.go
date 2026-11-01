@@ -31,11 +31,15 @@ func (r *FinanceRepository) Create(tx finance.Transaction) (finance.Transaction,
 		paidAt = &now
 	}
 
+	if tx.PaymentMethod == "" {
+		tx.PaymentMethod = "other"
+	}
+
 	err := r.db.QueryRow(`
-		INSERT INTO catalog.financial_transactions (id, tenant_id, type, category, amount_cents, description, reference_id, due_date, paid_at, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		INSERT INTO catalog.financial_transactions (id, tenant_id, type, category, amount_cents, description, reference_id, cash_register_id, payment_method, due_date, paid_at, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING created_at, updated_at
-	`, tx.ID, tx.TenantID, tx.Type, tx.Category, tx.AmountCents, tx.Description, tx.ReferenceID, tx.DueDate, paidAt, tx.Status, now, now).Scan(&tx.CreatedAt, &tx.UpdatedAt)
+	`, tx.ID, tx.TenantID, tx.Type, tx.Category, tx.AmountCents, tx.Description, tx.ReferenceID, tx.CashRegisterID, tx.PaymentMethod, tx.DueDate, paidAt, tx.Status, now, now).Scan(&tx.CreatedAt, &tx.UpdatedAt)
 	if err != nil {
 		return finance.Transaction{}, fmt.Errorf("create transaction: %w", err)
 	}
@@ -61,9 +65,9 @@ func (r *FinanceRepository) Update(tx finance.Transaction) (finance.Transaction,
 
 	result, err := r.db.Exec(`
 		UPDATE catalog.financial_transactions
-		SET type = $1, category = $2, amount_cents = $3, description = $4, reference_id = $5, due_date = $6, paid_at = $7, status = $8, updated_at = $9
-		WHERE tenant_id = $10 AND id = $11
-	`, tx.Type, tx.Category, tx.AmountCents, tx.Description, tx.ReferenceID, tx.DueDate, paidAt, tx.Status, now, tx.TenantID, tx.ID)
+		SET type = $1, category = $2, amount_cents = $3, description = $4, reference_id = $5, cash_register_id = $6, payment_method = $7, due_date = $8, paid_at = $9, status = $10, updated_at = $11
+		WHERE tenant_id = $12 AND id = $13
+	`, tx.Type, tx.Category, tx.AmountCents, tx.Description, tx.ReferenceID, tx.CashRegisterID, tx.PaymentMethod, tx.DueDate, paidAt, tx.Status, now, tx.TenantID, tx.ID)
 	if err != nil {
 		return finance.Transaction{}, fmt.Errorf("update transaction: %w", err)
 	}
@@ -83,10 +87,10 @@ func (r *FinanceRepository) GetByID(tenantID string, id string) (finance.Transac
 	var paidAt *time.Time
 	var created, updated time.Time
 	err := r.db.QueryRow(`
-		SELECT id, tenant_id, type, category, amount_cents, description, reference_id, due_date, paid_at, status, created_at, updated_at
+		SELECT id, tenant_id, type, category, amount_cents, description, reference_id, COALESCE(cash_register_id, ''), COALESCE(payment_method, 'other'), due_date, paid_at, status, created_at, updated_at
 		FROM catalog.financial_transactions
 		WHERE tenant_id = $1 AND id = $2
-	`, tenantID, id).Scan(&tx.ID, &tx.TenantID, &tx.Type, &tx.Category, &tx.AmountCents, &tx.Description, &tx.ReferenceID, &tx.DueDate, &paidAt, &tx.Status, &created, &updated)
+	`, tenantID, id).Scan(&tx.ID, &tx.TenantID, &tx.Type, &tx.Category, &tx.AmountCents, &tx.Description, &tx.ReferenceID, &tx.CashRegisterID, &tx.PaymentMethod, &tx.DueDate, &paidAt, &tx.Status, &created, &updated)
 	if err != nil {
 		return finance.Transaction{}, fmt.Errorf("get transaction: %w", err)
 	}
@@ -100,7 +104,7 @@ func (r *FinanceRepository) GetByID(tenantID string, id string) (finance.Transac
 
 func (r *FinanceRepository) List(tenantID string, txType string, status string, fromDate string, toDate string) ([]finance.Transaction, error) {
 	query := `
-		SELECT id, tenant_id, type, category, amount_cents, description, reference_id, due_date, paid_at, status, created_at, updated_at
+		SELECT id, tenant_id, type, category, amount_cents, description, reference_id, COALESCE(cash_register_id, ''), COALESCE(payment_method, 'other'), due_date, paid_at, status, created_at, updated_at
 		FROM catalog.financial_transactions
 		WHERE tenant_id = $1
 	`
@@ -134,7 +138,7 @@ func (r *FinanceRepository) List(tenantID string, txType string, status string, 
 		var tx finance.Transaction
 		var paidAt *time.Time
 		var created, updated time.Time
-		if err := rows.Scan(&tx.ID, &tx.TenantID, &tx.Type, &tx.Category, &tx.AmountCents, &tx.Description, &tx.ReferenceID, &tx.DueDate, &paidAt, &tx.Status, &created, &updated); err != nil {
+		if err := rows.Scan(&tx.ID, &tx.TenantID, &tx.Type, &tx.Category, &tx.AmountCents, &tx.Description, &tx.ReferenceID, &tx.CashRegisterID, &tx.PaymentMethod, &tx.DueDate, &paidAt, &tx.Status, &created, &updated); err != nil {
 			return nil, err
 		}
 		tx.CreatedAt = created.Format(time.RFC3339)

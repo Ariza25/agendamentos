@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, Check, Clock, Copy, ShieldCheck, User, Users, X } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Check, Clock, Copy, Globe, Instagram, MapPin, MessageCircle, Phone, ShieldCheck, User, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -70,6 +70,12 @@ export function BookingPage() {
   }
 
   useEffect(loadAll, [slug])
+
+  useEffect(() => {
+    if (info?.configuration?.primaryColor) {
+      document.documentElement.style.setProperty('--color-primary', info.configuration.primaryColor)
+    }
+  }, [info])
 
   useEffect(() => {
     if (!service || !professional || !selectedDateKey) {
@@ -262,13 +268,79 @@ export function BookingPage() {
     <main className="flex min-h-dvh justify-center px-4 py-8">
       <div className="w-full max-w-2xl">
         <header className="mb-6 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white">
-            <CalendarDays className="h-7 w-7" />
-          </span>
+          {info.configuration?.logoUrl ? (
+            <img
+              alt={info.tenant.name}
+              className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-sm border border-[var(--color-line)]"
+              src={info.configuration.logoUrl}
+            />
+          ) : (
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white shadow-sm">
+              <CalendarDays className="h-8 w-8" />
+            </span>
+          )}
           <h1 className="mt-3 font-headline text-2xl font-extrabold text-[var(--color-ink)]">{info.tenant.name}</h1>
           <p className="mt-1 text-sm font-semibold text-[var(--color-ink-soft)]">
-            Agende seu horário em poucos passos.
+            {info.configuration?.description || 'Agende seu horário em poucos passos.'}
           </p>
+
+          {(info.configuration?.address || info.configuration?.contactWhatsApp || info.configuration?.instagram) && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-[var(--color-ink-soft)]">
+              {info.configuration.address && (
+                <a
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--color-bg-muted)] px-3 py-1 hover:text-[var(--color-primary)] transition"
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `${info.configuration.address}, ${info.configuration.addressNumber || ''} ${info.configuration.city || ''}`,
+                  )}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-[var(--color-primary)]" />
+                  <span>
+                    {info.configuration.address}
+                    {info.configuration.addressNumber ? `, ${info.configuration.addressNumber}` : ''}
+                    {info.configuration.city ? ` - ${info.configuration.city}` : ''}
+                  </span>
+                </a>
+              )}
+
+              {info.configuration.contactWhatsApp && (
+                <a
+                  className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 hover:bg-emerald-100 transition"
+                  href={`https://wa.me/55${info.configuration.contactWhatsApp.replace(/\D/g, '')}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  <span>WhatsApp</span>
+                </a>
+              )}
+
+              {info.configuration.instagram && (
+                <a
+                  className="inline-flex items-center gap-1 rounded-full bg-pink-50 text-pink-700 px-3 py-1 hover:bg-pink-100 transition"
+                  href={`https://instagram.com/${info.configuration.instagram.replace('@', '')}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <Instagram className="h-3.5 w-3.5" />
+                  <span>Instagram</span>
+                </a>
+              )}
+
+              {info.configuration.website && (
+                <a
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--color-bg-muted)] px-3 py-1 hover:text-[var(--color-primary)] transition"
+                  href={info.configuration.website}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>Site</span>
+                </a>
+              )}
+            </div>
+          )}
         </header>
 
         <StepProgress labels={STEP_LABELS} steps={STEP_ORDER} currentStep={step} />

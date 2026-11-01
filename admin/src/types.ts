@@ -93,6 +93,7 @@ export type Professional = {
   email: string
   phone: string
   color: string
+  commissionPercentage?: number
   active: boolean
   maxCapacity?: number
   createdAt: string
@@ -146,6 +147,20 @@ export type Configuration = {
   noShowFeeCents: number
   cancellationPolicyHours: number
   calendarSyncEnabled: boolean
+  logoUrl?: string
+  primaryColor?: string
+  address?: string
+  addressNumber?: string
+  neighborhood?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  contactPhone?: string
+  contactWhatsApp?: string
+  instagram?: string
+  facebook?: string
+  website?: string
+  description?: string
   updatedAt: string
 }
 
@@ -424,4 +439,75 @@ export type CalendarConnection = {
   active: boolean
   lastSyncAt?: string
   createdAt: string
+}
+
+// --- Cash Register & POS ---
+export type CashRegisterStatus = 'open' | 'closed'
+export type CashRegisterEntryType = 'sangria' | 'suprimento'
+
+export type CashRegister = {
+  id: string
+  tenantId: string
+  openedByUserId: string
+  closedByUserId?: string
+  status: CashRegisterStatus
+  initialBalanceCents: number
+  closingBalanceCents: number
+  systemBalanceCents: number
+  differenceCents: number
+  openedAt: string
+  closedAt?: string
+  notes?: string
+}
+
+export type CashRegisterEntry = {
+  id: string
+  tenantId: string
+  cashRegisterId: string
+  type: CashRegisterEntryType
+  amountCents: number
+  reason: string
+  createdByUserId: string
+  createdAt: string
+}
+
+export type ShiftSummary = {
+  cashRegister: CashRegister
+  entries: CashRegisterEntry[]
+  totalSangriasCents: number
+  totalSuprimentosCents: number
+  totalCashIncomeCents: number
+  totalCardIncomeCents: number
+  totalPixIncomeCents: number
+  totalOtherIncomeCents: number
+  currentDrawerCents: number
+}
+
+export type CurrentCashRegisterResponse = {
+  status: 'open' | 'closed'
+  open: boolean
+  summary?: ShiftSummary
+}
+
+// --- Checkout ---
+export type CheckoutProductItem = {
+  productId: string
+  quantity: number
+}
+
+export type CheckoutInput = {
+  appointmentId: string
+  products?: CheckoutProductItem[]
+  discountCents?: number
+  surchargeCents?: number
+  paymentMethod: 'pix' | 'cash' | 'credit_card' | 'debit_card' | 'other'
+  notes?: string
+}
+
+export type CheckoutResult = {
+  appointment: Appointment
+  totalChargedCents: number
+  serviceTotalCents: number
+  productsTotalCents: number
+  commissionCents: number
 }
