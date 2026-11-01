@@ -8,6 +8,8 @@ const (
 	TypePostService  Type = "post_service"
 	TypeNoShowFee    Type = "no_show_fee"
 	TypeWaitingList  Type = "waiting_list"
+	TypeCancellation Type = "cancellation"
+	TypeReschedule   Type = "reschedule"
 )
 
 type Log struct {

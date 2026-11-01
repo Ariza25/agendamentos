@@ -30,6 +30,9 @@ func (r *ServiceRepository) Create(input service.Service) (service.Service, erro
 	item.ID = uuid.NewString()
 	item.Name = strings.TrimSpace(item.Name)
 	item.Description = strings.TrimSpace(item.Description)
+	if item.MaxCapacity <= 0 {
+		item.MaxCapacity = 1
+	}
 	item.CreatedAt = time.Now().Format(time.RFC3339)
 	item.UpdatedAt = item.CreatedAt
 	r.services[item.ID] = item
@@ -54,6 +57,9 @@ func (r *ServiceRepository) Update(input service.Service) (service.Service, erro
 	current.PriceCents = input.PriceCents
 	if strings.TrimSpace(input.Color) != "" {
 		current.Color = input.Color
+	}
+	if input.MaxCapacity > 0 {
+		current.MaxCapacity = input.MaxCapacity
 	}
 	current.Active = input.Active
 	current.UpdatedAt = time.Now().Format(time.RFC3339)

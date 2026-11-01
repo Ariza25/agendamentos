@@ -21,6 +21,8 @@ const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   post_service: 'Pós-atendimento',
   no_show_fee: 'Taxa de não comparecimento',
   waiting_list: 'Lista de espera',
+  cancellation: 'Cancelamento',
+  reschedule: 'Reagendamento',
   test: 'Teste',
 }
 

@@ -33,7 +33,7 @@ func newTestUseCase() *UseCase {
 
 	appointmentRepo := memory.NewAppointmentRepository()
 	appointments := appappointment.NewUseCase(appointmentRepo, memory.NewResourceRepository())
-	return NewUseCase(tenantRepo, configurationRepo, serviceRepo, professionalRepo, memory.NewResourceRepository(), customerRepo, appointments)
+	return NewUseCase(tenantRepo, configurationRepo, serviceRepo, professionalRepo, memory.NewResourceRepository(), customerRepo, appointments, nil)
 }
 
 func TestCreateBookingGeneratesManagementCode(t *testing.T) {

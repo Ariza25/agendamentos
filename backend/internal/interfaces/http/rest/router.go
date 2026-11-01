@@ -8,15 +8,19 @@ import (
 	appappointment "erpagendamentos/backend/internal/application/appointment"
 	appauth "erpagendamentos/backend/internal/application/auth"
 	appbooking "erpagendamentos/backend/internal/application/booking"
+	appcalendar "erpagendamentos/backend/internal/application/calendar"
 	appcommerce "erpagendamentos/backend/internal/application/commerce"
+	appcommission "erpagendamentos/backend/internal/application/commission"
 	appconfiguration "erpagendamentos/backend/internal/application/configuration"
 	appcustomer "erpagendamentos/backend/internal/application/customer"
+	appfinance "erpagendamentos/backend/internal/application/finance"
 	appnotification "erpagendamentos/backend/internal/application/notification"
 	apppayment "erpagendamentos/backend/internal/application/payment"
 	appprofessional "erpagendamentos/backend/internal/application/professional"
 	appresource "erpagendamentos/backend/internal/application/resource"
 	appreview "erpagendamentos/backend/internal/application/review"
 	appservice "erpagendamentos/backend/internal/application/service"
+	appstock "erpagendamentos/backend/internal/application/stock"
 	apptenant "erpagendamentos/backend/internal/application/tenant"
 	appwaitinglist "erpagendamentos/backend/internal/application/waitinglist"
 	configurationdomain "erpagendamentos/backend/internal/domain/configuration"
@@ -46,6 +50,11 @@ type RouterConfig struct {
 	WaitingListUseCase    *appwaitinglist.UseCase
 	CommerceUseCase       *appcommerce.UseCase
 	ReviewUseCase         *appreview.UseCase
+	StockUseCase          *appstock.UseCase
+	CommissionUseCase     *appcommission.UseCase
+	FinanceUseCase        *appfinance.UseCase
+	CalendarSyncUseCase   *appcalendar.UseCase
+	EventBroker           *EventBroker
 	CustomerRepository    customerdomain.Repository
 	ServiceRepository     servicedomain.Repository
 	ConfigurationRepo     configurationdomain.Repository
@@ -73,6 +82,19 @@ func NewRouter(config RouterConfig) *Router {
 	registerCalendarRoutes(mux, config)
 	registerReviewRoutes(mux, config)
 	registerExportRoutes(mux, config)
+	registerStockRoutes(mux, config)
+	registerCommissionRoutes(mux, config)
+	registerFinanceRoutes(mux, config)
+	registerCalendarSyncRoutes(mux, config)
+
+	// Prometheus metrics
+	mux.HandleFunc("GET /metrics", HandleMetrics)
+
+	// Real-time SSE event stream
+	if config.EventBroker != nil {
+		RegisterMetricsBroker(config.EventBroker)
+		mux.HandleFunc("GET /api/v1/admin/events", requireAdmin(config.AuthUseCase, config.EventBroker.ServeHTTP))
+	}
 
 	widgetHandler := NewWidgetHandler()
 	mux.HandleFunc("GET /widget.js", widgetHandler.ServeScript)

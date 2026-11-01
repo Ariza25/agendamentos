@@ -41,6 +41,7 @@ export function BookingPage() {
 
   const [step, setStep] = useState<Step>('service')
   const [service, setService] = useState<Service | null>(null)
+  const [selectedServices, setSelectedServices] = useState<Service[]>([])
   const [professional, setProfessional] = useState<Professional | null>(null)
   const [dateKeys] = useState(() => nextDateKeys(14))
   const [selectedDateKey, setSelectedDateKey] = useState('')
@@ -115,8 +116,9 @@ export function BookingPage() {
     setError('')
   }
 
-  function selectService(nextService: Service) {
-    setService(nextService)
+  function selectServices(items: Service[]) {
+    setSelectedServices(items)
+    setService(items[0] || null)
     setProfessional(null)
     setSelectedDateKey('')
     setSlots([])
@@ -156,6 +158,21 @@ export function BookingPage() {
     const phone = String(formData.get('phone') ?? '').trim()
     const email = String(formData.get('email') ?? '').trim()
     const notes = String(formData.get('notes') ?? '').trim()
+    const timezone = String(formData.get('timezone') ?? '').trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'
+    const recurrenceOption = String(formData.get('recurrence') ?? 'none')
+
+    let recurrenceRule: string | undefined
+    let recurrenceCount: number | undefined
+    if (recurrenceOption === 'weekly_2') {
+      recurrenceRule = 'weekly'
+      recurrenceCount = 2
+    } else if (recurrenceOption === 'weekly_4') {
+      recurrenceRule = 'weekly'
+      recurrenceCount = 4
+    } else if (recurrenceOption === 'weekly_8') {
+      recurrenceRule = 'weekly'
+      recurrenceCount = 8
+    }
 
     if (!name) {
       setError('Informe seu nome.')
@@ -170,12 +187,16 @@ export function BookingPage() {
     try {
       const result = await createPublicBooking(slug, {
         serviceId: service.id,
+        serviceIds: selectedServices.length > 1 ? selectedServices.map((s) => s.id) : undefined,
         professionalId: professional.id,
         startsAt: selectedSlot.startsAt,
         name,
         phone,
         email,
         notes,
+        recurrenceRule,
+        recurrenceCount,
+        timezone,
       })
       setBooking(result)
       setStep('done')
@@ -256,7 +277,7 @@ export function BookingPage() {
           ) : null}
 
           {step === 'service' ? (
-            <ServiceStep onSelect={selectService} services={services} />
+            <ServiceStep onSelectServices={selectServices} services={services} />
           ) : null}
 
           {step === 'professional' ? (
@@ -272,7 +293,11 @@ export function BookingPage() {
               professionalName={professional.name}
               selectedDateKey={selectedDateKey}
               selectedSlot={selectedSlot}
-              serviceName={service.name}
+              serviceName={
+                selectedServices.length > 1
+                  ? `${selectedServices.map((s) => s.name).join(' + ')} (Combo)`
+                  : service.name
+              }
               slots={slots}
             />
           ) : null}
@@ -281,7 +306,11 @@ export function BookingPage() {
             <DetailsStep
               onSubmit={handleBookingSubmit}
               professionalName={professional.name}
-              serviceName={service.name}
+              serviceName={
+                selectedServices.length > 1
+                  ? `${selectedServices.map((s) => s.name).join(' + ')} (Combo)`
+                  : service.name
+              }
               slot={selectedSlot}
             />
           ) : null}
@@ -326,36 +355,118 @@ function StepProgress({
   )
 }
 
-function ServiceStep({ services, onSelect }: { services: Service[]; onSelect: (service: Service) => void }) {
+function ServiceStep({
+  services,
+  onSelectServices,
+}: {
+  services: Service[]
+  onSelectServices: (selected: Service[]) => void
+}) {
+  const [comboMode, setComboMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+
   if (services.length === 0) {
     return <EmptyNote message="Este estabelecimento ainda não possui serviços disponíveis para agendamento." />
   }
+
+  function toggleService(item: Service) {
+    if (!comboMode) {
+      onSelectServices([item])
+      return
+    }
+    setSelectedIds((prev) =>
+      prev.includes(item.id) ? prev.filter((id) => id !== item.id) : [...prev, item.id],
+    )
+  }
+
+  const selectedList = services.filter((s) => selectedIds.includes(s.id))
+  const totalDuration = selectedList.reduce((acc, s) => acc + s.durationMinutes, 0)
+  const totalPrice = selectedList.reduce((acc, s) => acc + s.priceCents, 0)
+
   return (
     <div>
-      <h2 className="font-headline text-lg font-extrabold text-[var(--color-ink)]">Escolha o serviço</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-headline text-lg font-extrabold text-[var(--color-ink)]">Escolha o serviço</h2>
+        <button
+          type="button"
+          onClick={() => {
+            setComboMode(!comboMode)
+            setSelectedIds([])
+          }}
+          className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            comboMode
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'bg-[var(--color-bg-muted)] text-[var(--color-ink)] hover:bg-[var(--color-line)]'
+          }`}
+        >
+          {comboMode ? '✓ Modo Combo (Múltiplos Serviços)' : '+ Agendar Combo (Vários Serviços)'}
+        </button>
+      </div>
+
+      <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+        {comboMode
+          ? 'Selecione dois ou mais serviços para realizar no mesmo dia.'
+          : 'Clique no serviço desejado para continuar.'}
+      </p>
+
       <ul className="mt-4 grid gap-3">
-        {services.map((item) => (
-          <li key={item.id}>
-            <button
-              className="flex w-full items-center gap-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] p-4 text-left transition hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-elevated)]"
-              onClick={() => onSelect(item)}
-              type="button"
-            >
-              <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: item.color || '#b42318' }} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-bold text-[var(--color-ink)]">{item.name}</span>
-                {item.description ? (
-                  <span className="mt-0.5 line-clamp-2 block text-sm text-[var(--color-ink-soft)]">{item.description}</span>
-                ) : null}
-              </span>
-              <span className="flex shrink-0 flex-col items-end gap-1 text-sm font-semibold text-[var(--color-ink-soft)]">
-                <span>{item.durationMinutes} min</span>
-                <span className="font-bold text-[var(--color-ink)]">{formatMoney(item.priceCents)}</span>
-              </span>
-            </button>
-          </li>
-        ))}
+        {services.map((item) => {
+          const isSelected = selectedIds.includes(item.id)
+          return (
+            <li key={item.id}>
+              <button
+                className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition ${
+                  isSelected
+                    ? 'border-[var(--color-primary)] bg-[var(--color-bg-elevated)] ring-2 ring-[var(--color-primary)]'
+                    : 'border-[var(--color-line)] bg-[var(--color-bg-muted)] hover:border-[var(--color-primary)] hover:bg-[var(--color-bg-elevated)]'
+                }`}
+                onClick={() => toggleService(item)}
+                type="button"
+              >
+                {comboMode && (
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                      isSelected
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                        : 'border-[var(--color-line)] bg-white'
+                    }`}
+                  >
+                    {isSelected && <Check className="h-3.5 w-3.5" />}
+                  </div>
+                )}
+                <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: item.color || '#b42318' }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-bold text-[var(--color-ink)]">{item.name}</span>
+                  {item.description ? (
+                    <span className="mt-0.5 line-clamp-2 block text-sm text-[var(--color-ink-soft)]">{item.description}</span>
+                  ) : null}
+                </span>
+                <span className="flex shrink-0 flex-col items-end gap-1 text-sm font-semibold text-[var(--color-ink-soft)]">
+                  <span>{item.durationMinutes} min</span>
+                  <span className="font-bold text-[var(--color-ink)]">{formatMoney(item.priceCents)}</span>
+                </span>
+              </button>
+            </li>
+          )
+        })}
       </ul>
+
+      {comboMode && selectedList.length > 0 && (
+        <div className="mt-5 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-bg-muted)] p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-[var(--color-ink)]">
+              {selectedList.length} serviço{selectedList.length > 1 ? 's' : ''} no combo:
+            </p>
+            <p className="text-xs text-[var(--color-ink-soft)]">
+              Duração total estimada: <span className="font-semibold text-[var(--color-ink)]">{totalDuration} min</span> • Total:{' '}
+              <span className="font-semibold text-[var(--color-primary)]">{formatMoney(totalPrice)}</span>
+            </p>
+          </div>
+          <Button onClick={() => onSelectServices(selectedList)}>
+            Continuar com Combo ({selectedList.length})
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -557,6 +668,34 @@ function DetailsStep({
         <Field hint="Opcional" label="Observações">
           <Textarea className="mt-2" name="notes" placeholder="Conte-nos algo que gostaria de acrescentar..." />
         </Field>
+
+        <Field hint="Deseja manter o mesmo horário nas próximas semanas?" label="Recorrência">
+          <select
+            name="recurrence"
+            defaultValue="none"
+            className="mt-2 w-full rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] p-3 text-sm font-semibold text-[var(--color-ink)] focus:border-[var(--color-primary)] focus:outline-none"
+          >
+            <option value="none">Somente nesta data (Agendamento Único)</option>
+            <option value="weekly_2">Repetir semanalmente por 2 semanas</option>
+            <option value="weekly_4">Repetir semanalmente por 4 semanas (1 mês)</option>
+            <option value="weekly_8">Repetir semanalmente por 8 semanas (2 meses)</option>
+          </select>
+        </Field>
+
+        <div className="flex items-center justify-between text-xs text-[var(--color-ink-soft)] px-1">
+          <span>
+            Fuso horário:{' '}
+            <strong className="text-[var(--color-ink)]">
+              {Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'}
+            </strong>
+          </span>
+          <input
+            type="hidden"
+            name="timezone"
+            value={Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'}
+          />
+        </div>
+
         <Button size="lg" type="submit">
           Confirmar agendamento
         </Button>

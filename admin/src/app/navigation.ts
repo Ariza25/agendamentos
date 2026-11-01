@@ -5,6 +5,9 @@ import {
   CalendarClock,
   Code2,
   CreditCard,
+  DollarSign,
+  Boxes,
+  Percent,
   Gift,
   History,
   LineChart,
@@ -39,6 +42,9 @@ export const navigationItems: AdminNavigationItem[] = [
   { to: '/resources', label: 'Recursos e salas', icon: DoorOpen, area: 'resources' },
   { to: '/professionals', label: 'Profissionais', icon: UserCog, area: 'professionals' },
   { to: '/analytics', label: 'Dashboard', icon: LineChart, area: 'analytics' },
+  { to: '/finance', label: 'Financeiro', icon: DollarSign, area: 'finance' },
+  { to: '/commissions', label: 'Comissões', icon: Percent, area: 'commissions' },
+  { to: '/inventory', label: 'Estoque & Produtos', icon: Boxes, area: 'inventory' },
   { to: '/payments', label: 'Pagamentos', icon: CreditCard, area: 'payments' },
   { to: '/packages', label: 'Pacotes', icon: Package, area: 'packages' },
   { to: '/gift-cards', label: 'Gift cards', icon: Gift, area: 'gift-cards' },
@@ -63,7 +69,7 @@ export const navigationGroups = [
   },
   {
     label: 'Gestão',
-    paths: ['/analytics', '/payments', '/packages', '/gift-cards', '/memberships', '/waiting-list', '/reviews', '/notifications'],
+    paths: ['/analytics', '/finance', '/commissions', '/inventory', '/payments', '/packages', '/gift-cards', '/memberships', '/waiting-list', '/reviews', '/notifications'],
   },
   {
     label: 'Administração',

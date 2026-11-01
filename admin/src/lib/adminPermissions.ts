@@ -19,6 +19,9 @@ export type AdminAreaKey =
   | 'gift-cards'
   | 'memberships'
   | 'widget'
+  | 'finance'
+  | 'inventory'
+  | 'commissions'
 
 export type AdminModuleSetting = {
   key: string
@@ -45,6 +48,9 @@ const ADMIN_AREAS_ROLES: Record<AdminAreaKey, AdminRole[]> = {
   'gift-cards': ['owner', 'admin'],
   memberships: ['owner', 'admin'],
   widget: ['owner', 'admin'],
+  finance: ['owner', 'admin'],
+  inventory: ['owner', 'admin'],
+  commissions: ['owner', 'admin'],
 }
 
 export function canAccessAdminArea(area: AdminAreaKey, role?: AdminRole): boolean {

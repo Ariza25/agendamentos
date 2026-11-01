@@ -24,16 +24,23 @@ func (r *ServiceRepository) Create(input service.Service) (service.Service, erro
 	item.ID = uuid.NewString()
 	item.Name = strings.TrimSpace(item.Name)
 	item.Description = strings.TrimSpace(item.Description)
+	if item.MaxCapacity <= 0 {
+		item.MaxCapacity = 1
+	}
 	if _, err := r.db.Exec(`
-		INSERT INTO catalog.services (id, tenant_id, name, description, duration_minutes, price_cents, color, active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, item.ID, item.TenantID, item.Name, item.Description, item.DurationMinutes, item.PriceCents, item.Color, item.Active); err != nil {
+		INSERT INTO catalog.services (id, tenant_id, name, description, duration_minutes, price_cents, color, active, max_capacity)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`, item.ID, item.TenantID, item.Name, item.Description, item.DurationMinutes, item.PriceCents, item.Color, item.Active, item.MaxCapacity); err != nil {
 		return service.Service{}, fmt.Errorf("insert service: %w", err)
 	}
 	return r.GetByID(item.TenantID, item.ID)
 }
 
 func (r *ServiceRepository) Update(input service.Service) (service.Service, error) {
+	maxCap := input.MaxCapacity
+	if maxCap <= 0 {
+		maxCap = 1
+	}
 	result, err := r.db.Exec(`
 		UPDATE catalog.services
 		SET name = COALESCE(NULLIF($3, ''), name),
@@ -42,9 +49,10 @@ func (r *ServiceRepository) Update(input service.Service) (service.Service, erro
 		    price_cents = $6,
 		    color = COALESCE(NULLIF($7, ''), color),
 		    active = $8,
+		    max_capacity = $9,
 		    updated_at = NOW()
 		WHERE id = $1 AND tenant_id = $2
-	`, input.ID, input.TenantID, strings.TrimSpace(input.Name), strings.TrimSpace(input.Description), input.DurationMinutes, input.PriceCents, strings.TrimSpace(input.Color), input.Active)
+	`, input.ID, input.TenantID, strings.TrimSpace(input.Name), strings.TrimSpace(input.Description), input.DurationMinutes, input.PriceCents, strings.TrimSpace(input.Color), input.Active, maxCap)
 	if err != nil {
 		return service.Service{}, fmt.Errorf("update service: %w", err)
 	}
@@ -60,7 +68,7 @@ func (r *ServiceRepository) Update(input service.Service) (service.Service, erro
 
 func (r *ServiceRepository) GetByID(tenantID string, id string) (service.Service, error) {
 	item, err := scanServiceRow(r.db.QueryRow(`
-		SELECT id, tenant_id, name, description, duration_minutes, price_cents, color, active, created_at, updated_at
+		SELECT id, tenant_id, name, description, duration_minutes, price_cents, color, active, max_capacity, created_at, updated_at
 		FROM catalog.services
 		WHERE id = $1 AND tenant_id = $2
 	`, strings.TrimSpace(id), strings.TrimSpace(tenantID)))
@@ -72,7 +80,7 @@ func (r *ServiceRepository) GetByID(tenantID string, id string) (service.Service
 
 func (r *ServiceRepository) ListByTenant(tenantID string) ([]service.Service, error) {
 	rows, err := r.db.Query(`
-		SELECT id, tenant_id, name, description, duration_minutes, price_cents, color, active, created_at, updated_at
+		SELECT id, tenant_id, name, description, duration_minutes, price_cents, color, active, max_capacity, created_at, updated_at
 		FROM catalog.services
 		WHERE tenant_id = $1
 		ORDER BY name ASC
@@ -201,11 +209,14 @@ func scanServiceRow(scanner serviceScanner) (service.Service, error) {
 func scanServiceRows(scanner serviceScanner) (service.Service, error) {
 	var item service.Service
 	var createdAt, updatedAt time.Time
-	if err := scanner.Scan(&item.ID, &item.TenantID, &item.Name, &item.Description, &item.DurationMinutes, &item.PriceCents, &item.Color, &item.Active, &createdAt, &updatedAt); err != nil {
+	if err := scanner.Scan(&item.ID, &item.TenantID, &item.Name, &item.Description, &item.DurationMinutes, &item.PriceCents, &item.Color, &item.Active, &item.MaxCapacity, &createdAt, &updatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return service.Service{}, fmt.Errorf("service not found")
 		}
 		return service.Service{}, fmt.Errorf("scan service: %w", err)
+	}
+	if item.MaxCapacity <= 0 {
+		item.MaxCapacity = 1
 	}
 	item.CreatedAt = createdAt.Format(time.RFC3339)
 	item.UpdatedAt = updatedAt.Format(time.RFC3339)

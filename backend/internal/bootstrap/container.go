@@ -13,20 +13,26 @@ import (
 	"erpagendamentos/backend/internal/application/appointment"
 	"erpagendamentos/backend/internal/application/auth"
 	"erpagendamentos/backend/internal/application/booking"
+	"erpagendamentos/backend/internal/application/calendar"
 	"erpagendamentos/backend/internal/application/commerce"
+	"erpagendamentos/backend/internal/application/commission"
 	"erpagendamentos/backend/internal/application/configuration"
 	"erpagendamentos/backend/internal/application/customer"
+	"erpagendamentos/backend/internal/application/finance"
+	"erpagendamentos/backend/internal/application/job"
 	"erpagendamentos/backend/internal/application/notification"
 	"erpagendamentos/backend/internal/application/payment"
 	"erpagendamentos/backend/internal/application/professional"
 	"erpagendamentos/backend/internal/application/resource"
 	"erpagendamentos/backend/internal/application/review"
 	"erpagendamentos/backend/internal/application/service"
+	"erpagendamentos/backend/internal/application/stock"
 	"erpagendamentos/backend/internal/application/tenant"
 	"erpagendamentos/backend/internal/application/waitinglist"
 	authdomain "erpagendamentos/backend/internal/domain/auth"
 	configurationdomain "erpagendamentos/backend/internal/domain/configuration"
 	customerdomain "erpagendamentos/backend/internal/domain/customer"
+	notificationdomain "erpagendamentos/backend/internal/domain/notification"
 	paymentdomain "erpagendamentos/backend/internal/domain/payment"
 	servicedomain "erpagendamentos/backend/internal/domain/service"
 	tenantdomain "erpagendamentos/backend/internal/domain/tenant"
@@ -52,6 +58,12 @@ type Container struct {
 	waitingListUseCase      *waitinglist.UseCase
 	commerceUseCase         *commerce.UseCase
 	reviewUseCase           *review.UseCase
+	stockUseCase            *stock.UseCase
+	commissionUseCase       *commission.UseCase
+	financeUseCase          *finance.UseCase
+	calendarUseCase         *calendar.UseCase
+	jobQueue                *job.Queue
+	eventBroker             *rest.EventBroker
 	authMaintenance         auth.MaintenanceConfig
 	customerRepository      customerdomain.Repository
 	serviceRepository       servicedomain.Repository
@@ -68,8 +80,16 @@ func NewContainer() *Container {
 	ensureDefaultTenant(repositories.tenant)
 	authComponents := buildAuthComponents(authRepository)
 
+	eventBroker := rest.NewEventBroker()
+	stockUseCase := stock.NewUseCase(repositories.stock)
+	commissionUseCase := commission.NewUseCase(repositories.commission)
+	financeUseCase := finance.NewUseCase(repositories.finance)
+	calendarUseCase := calendar.NewUseCase(repositories.calendar)
+	jobQueue := job.NewQueue(repositories.job)
+	jobQueue.Start(2, 5*time.Second)
+
 	appointmentUseCase := appointment.NewUseCase(repositories.appointment, repositories.resource)
-	notificationUseCase := notification.NewUseCase(repositories.notification, notificationinfra.NewLogProvider())
+	notificationUseCase := notification.NewUseCase(repositories.notification, buildNotificationProvider())
 	paymentUseCase := payment.NewUseCase(repositories.payment, buildPaymentProvider())
 
 	container := &Container{
@@ -87,6 +107,12 @@ func NewContainer() *Container {
 		paymentUseCase:       paymentUseCase,
 		waitingListUseCase:   waitinglist.NewUseCase(repositories.waitingList),
 		reviewUseCase:        review.NewUseCase(repositories.review),
+		stockUseCase:         stockUseCase,
+		commissionUseCase:    commissionUseCase,
+		financeUseCase:       financeUseCase,
+		calendarUseCase:      calendarUseCase,
+		jobQueue:             jobQueue,
+		eventBroker:          eventBroker,
 		commerceUseCase: commerce.NewUseCase(
 			repositories.packages,
 			repositories.packageCredits,
@@ -107,8 +133,23 @@ func NewContainer() *Container {
 		repositories.resource,
 		repositories.customer,
 		appointmentUseCase,
+		notificationUseCase,
 	)
 	return container
+}
+
+func buildNotificationProvider() notificationdomain.Provider {
+	host := strings.TrimSpace(os.Getenv("SMTP_HOST"))
+	if host == "" {
+		return notificationinfra.NewLogProvider()
+	}
+	return notificationinfra.NewEmailProvider(
+		host,
+		intEnv("SMTP_PORT", 587),
+		strings.TrimSpace(os.Getenv("SMTP_USER")),
+		os.Getenv("SMTP_PASS"),
+		strings.TrimSpace(os.Getenv("SMTP_FROM")),
+	)
 }
 
 func buildPaymentProvider() paymentdomain.Provider {
@@ -194,6 +235,11 @@ func (c *Container) Router() *rest.Router {
 		WaitingListUseCase:    c.waitingListUseCase,
 		CommerceUseCase:       c.commerceUseCase,
 		ReviewUseCase:         c.reviewUseCase,
+		StockUseCase:          c.stockUseCase,
+		CommissionUseCase:     c.commissionUseCase,
+		FinanceUseCase:        c.financeUseCase,
+		CalendarSyncUseCase:   c.calendarUseCase,
+		EventBroker:           c.eventBroker,
 		CustomerRepository:    c.customerRepository,
 		ServiceRepository:     c.serviceRepository,
 		ConfigurationRepo:     c.configurationRepository,
@@ -217,6 +263,9 @@ func (c *Container) ReadinessCheck() error {
 
 func (c *Container) Close() error {
 	var closeErrors []error
+	if c.jobQueue != nil {
+		c.jobQueue.Stop()
+	}
 	if c.router != nil {
 		c.router.Close()
 	}

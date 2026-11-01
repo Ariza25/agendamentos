@@ -27,6 +27,9 @@ export type Appointment = {
   checkInAt?: string
   noShowAt?: string
   reminderSentAt?: string
+  recurrenceRule?: string
+  timezone?: string
+  serviceIds?: string[]
   createdAt: string
   updatedAt: string
 }
@@ -77,6 +80,7 @@ export type Service = {
   priceCents: number
   color: string
   active: boolean
+  maxCapacity?: number
   createdAt: string
   updatedAt: string
 }
@@ -90,6 +94,7 @@ export type Professional = {
   phone: string
   color: string
   active: boolean
+  maxCapacity?: number
   createdAt: string
   updatedAt: string
 }
@@ -290,4 +295,133 @@ export type Tenant = {
   active: boolean
   createdAt: string
   updatedAt: string
+}
+
+// --- ERP Inventory & Supplies ---
+export type Product = {
+  id: string
+  tenantId: string
+  name: string
+  sku: string
+  category: string
+  unit: string
+  costPriceCents: number
+  salePriceCents: number
+  stockQuantity: number
+  minStockAlert: number
+  isSupply: boolean
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type StockMovementType = 'in' | 'out' | 'adjustment'
+
+export type StockMovement = {
+  id: string
+  tenantId: string
+  productId: string
+  productName?: string
+  movementType: StockMovementType
+  quantity: number
+  previousStock: number
+  newStock: number
+  reason: string
+  referenceType?: string
+  referenceId?: string
+  performedBy?: string
+  createdAt: string
+}
+
+export type ServiceSupply = {
+  id: string
+  tenantId: string
+  serviceId: string
+  productId: string
+  quantity: number
+}
+
+// --- ERP Commissions ---
+export type CommissionType = 'percentage' | 'fixed'
+
+export type CommissionRule = {
+  id: string
+  tenantId: string
+  professionalId?: string
+  serviceId?: string
+  commissionType: CommissionType
+  value: number
+  active: boolean
+  createdAt: string
+}
+
+export type CommissionRecordStatus = 'pending' | 'settled'
+
+export type CommissionRecord = {
+  id: string
+  tenantId: string
+  appointmentId: string
+  professionalId: string
+  amountCents: number
+  status: CommissionRecordStatus
+  settledAt?: string
+  createdAt: string
+}
+
+export type CommissionSummary = {
+  professionalId: string
+  professionalName: string
+  pendingCents: number
+  settledCents: number
+  totalCents: number
+  count: number
+}
+
+// --- ERP Finance ---
+export type TransactionType = 'income' | 'expense'
+export type TransactionStatus = 'pending' | 'paid' | 'cancelled'
+
+export type FinancialTransaction = {
+  id: string
+  tenantId: string
+  type: TransactionType
+  category: string
+  description: string
+  amountCents: number
+  dueDate: string
+  paidAt?: string
+  status: TransactionStatus
+  referenceType?: string
+  referenceId?: string
+  paymentMethod?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type CategoryTotal = {
+  category: string
+  amountCents: number
+}
+
+export type FinancialSummary = {
+  totalIncomeCents: number
+  totalExpenseCents: number
+  netProfitCents: number
+  pendingIncomeCents: number
+  pendingExpenseCents: number
+  incomeByCategory: CategoryTotal[]
+  expenseByCategory: CategoryTotal[]
+}
+
+// --- Calendar Sync ---
+export type CalendarConnection = {
+  id: string
+  tenantId: string
+  professionalId: string
+  provider: 'google' | 'caldav'
+  externalCalendarId: string
+  syncToken?: string
+  active: boolean
+  lastSyncAt?: string
+  createdAt: string
 }

@@ -60,3 +60,61 @@ func registerCalendarRoutes(mux *http.ServeMux, config RouterConfig) {
 
 	mux.HandleFunc("GET /api/v1/admin/calendar/export.ics", requireAdmin(config.AuthUseCase, handler.ExportICal))
 }
+
+func registerStockRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.StockUseCase == nil {
+		return
+	}
+	handler := NewStockHandler(config.StockUseCase)
+
+	mux.HandleFunc("GET /api/v1/admin/products", requireAdmin(config.AuthUseCase, handler.ListProducts))
+	mux.HandleFunc("POST /api/v1/admin/products", requireAdmin(config.AuthUseCase, handler.CreateProduct))
+	mux.HandleFunc("PUT /api/v1/admin/products/{productID}", requireAdmin(config.AuthUseCase, handler.UpdateProduct))
+	mux.HandleFunc("DELETE /api/v1/admin/products/{productID}", requireAdmin(config.AuthUseCase, handler.DeleteProduct))
+
+	mux.HandleFunc("GET /api/v1/admin/stock/movements", requireAdmin(config.AuthUseCase, handler.ListMovements))
+	mux.HandleFunc("POST /api/v1/admin/stock/movements", requireAdmin(config.AuthUseCase, handler.CreateMovement))
+
+	mux.HandleFunc("GET /api/v1/admin/services/{serviceID}/supplies", requireAdmin(config.AuthUseCase, handler.ListServiceSupplies))
+	mux.HandleFunc("PUT /api/v1/admin/services/{serviceID}/supplies", requireAdmin(config.AuthUseCase, handler.SetServiceSupplies))
+}
+
+func registerCommissionRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.CommissionUseCase == nil {
+		return
+	}
+	handler := NewCommissionHandler(config.CommissionUseCase)
+
+	mux.HandleFunc("GET /api/v1/admin/commissions/rules", requireAdmin(config.AuthUseCase, handler.ListRules))
+	mux.HandleFunc("POST /api/v1/admin/commissions/rules", requireAdmin(config.AuthUseCase, handler.CreateRule))
+	mux.HandleFunc("PUT /api/v1/admin/commissions/rules/{ruleID}", requireAdmin(config.AuthUseCase, handler.UpdateRule))
+	mux.HandleFunc("DELETE /api/v1/admin/commissions/rules/{ruleID}", requireAdmin(config.AuthUseCase, handler.DeleteRule))
+
+	mux.HandleFunc("GET /api/v1/admin/commissions", requireAdmin(config.AuthUseCase, handler.ListRecords))
+	mux.HandleFunc("POST /api/v1/admin/commissions/settle", requireAdmin(config.AuthUseCase, handler.SettleCommissions))
+	mux.HandleFunc("GET /api/v1/admin/commissions/summaries", requireAdmin(config.AuthUseCase, handler.GetSummaries))
+}
+
+func registerFinanceRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.FinanceUseCase == nil {
+		return
+	}
+	handler := NewFinanceHandler(config.FinanceUseCase)
+
+	mux.HandleFunc("GET /api/v1/admin/finance/transactions", requireAdmin(config.AuthUseCase, handler.ListTransactions))
+	mux.HandleFunc("POST /api/v1/admin/finance/transactions", requireAdmin(config.AuthUseCase, handler.CreateTransaction))
+	mux.HandleFunc("PUT /api/v1/admin/finance/transactions/{txID}", requireAdmin(config.AuthUseCase, handler.UpdateTransaction))
+	mux.HandleFunc("DELETE /api/v1/admin/finance/transactions/{txID}", requireAdmin(config.AuthUseCase, handler.DeleteTransaction))
+	mux.HandleFunc("GET /api/v1/admin/finance/summary", requireAdmin(config.AuthUseCase, handler.GetSummary))
+}
+
+func registerCalendarSyncRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.CalendarSyncUseCase == nil {
+		return
+	}
+	handler := NewCalendarSyncHandler(config.CalendarSyncUseCase)
+
+	mux.HandleFunc("GET /api/v1/admin/calendar/connections", requireAdmin(config.AuthUseCase, handler.ListConnections))
+	mux.HandleFunc("POST /api/v1/admin/calendar/connections", requireAdmin(config.AuthUseCase, handler.Connect))
+	mux.HandleFunc("DELETE /api/v1/admin/calendar/connections/{connID}", requireAdmin(config.AuthUseCase, handler.Disconnect))
+}

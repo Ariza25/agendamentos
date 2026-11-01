@@ -126,12 +126,16 @@ export function createPublicBooking(
   slug: string,
   input: {
     serviceId: string
+    serviceIds?: string[]
     professionalId: string
     startsAt: string
     name: string
     phone: string
     email: string
     notes: string
+    recurrenceRule?: string
+    recurrenceCount?: number
+    timezone?: string
   },
 ): Promise<BookingResult> {
   return publicFetch<BookingResult>(

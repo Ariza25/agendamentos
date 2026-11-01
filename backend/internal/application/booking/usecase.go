@@ -5,14 +5,19 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	appappointment "erpagendamentos/backend/internal/application/appointment"
+	appnotification "erpagendamentos/backend/internal/application/notification"
 	appointmentdomain "erpagendamentos/backend/internal/domain/appointment"
 	configurationdomain "erpagendamentos/backend/internal/domain/configuration"
 	customerdomain "erpagendamentos/backend/internal/domain/customer"
+	notificationdomain "erpagendamentos/backend/internal/domain/notification"
 	professionaldomain "erpagendamentos/backend/internal/domain/professional"
 	resourcedomain "erpagendamentos/backend/internal/domain/resource"
 	servicedomain "erpagendamentos/backend/internal/domain/service"
@@ -49,13 +54,17 @@ type ProfessionalSlots struct {
 }
 
 type BookingInput struct {
-	ServiceID      string `json:"serviceId"`
-	ProfessionalID string `json:"professionalId"`
-	StartsAt       string `json:"startsAt"`
-	Name           string `json:"name"`
-	Phone          string `json:"phone"`
-	Email          string `json:"email"`
-	Notes          string `json:"notes"`
+	ServiceID       string   `json:"serviceId"`
+	ServiceIDs      []string `json:"serviceIds,omitempty"`
+	ProfessionalID  string   `json:"professionalId"`
+	StartsAt        string   `json:"startsAt"`
+	Name            string   `json:"name"`
+	Phone           string   `json:"phone"`
+	Email           string   `json:"email"`
+	Notes           string   `json:"notes"`
+	RecurrenceRule  string   `json:"recurrenceRule,omitempty"`
+	RecurrenceCount int      `json:"recurrenceCount,omitempty"`
+	Timezone        string   `json:"timezone,omitempty"`
 }
 
 type BookingResult struct {
@@ -100,6 +109,7 @@ type UseCase struct {
 	resourceRepo      resourcedomain.Repository
 	customerRepo      customerdomain.Repository
 	appointments      *appappointment.UseCase
+	notifications     *appnotification.UseCase
 }
 
 func NewUseCase(
@@ -110,6 +120,7 @@ func NewUseCase(
 	resourceRepo resourcedomain.Repository,
 	customerRepo customerdomain.Repository,
 	appointments *appappointment.UseCase,
+	notifications *appnotification.UseCase,
 ) *UseCase {
 	return &UseCase{
 		tenantRepo:        tenantRepo,
@@ -119,6 +130,7 @@ func NewUseCase(
 		resourceRepo:      resourceRepo,
 		customerRepo:      customerRepo,
 		appointments:      appointments,
+		notifications:     notifications,
 	}
 }
 
@@ -203,7 +215,7 @@ func (u *UseCase) Availability(slug string, date string, serviceID string, profe
 	}
 
 	if strings.TrimSpace(professionalID) != "" {
-		slots, err := u.availableSlots(tenant.ID, day, duration, configuration, strings.TrimSpace(professionalID))
+		slots, err := u.availableSlots(tenant.ID, day, duration, configuration, strings.TrimSpace(professionalID), strings.TrimSpace(serviceID))
 		if err != nil {
 			return nil, err
 		}
@@ -228,7 +240,7 @@ func (u *UseCase) Availability(slug string, date string, serviceID string, profe
 		if len(allowed) > 0 && !allowed[professional.ID] {
 			continue
 		}
-		slots, err := u.availableSlots(tenant.ID, day, duration, configuration, professional.ID)
+		slots, err := u.availableSlots(tenant.ID, day, duration, configuration, professional.ID, strings.TrimSpace(serviceID))
 		if err != nil {
 			return nil, err
 		}
@@ -266,7 +278,20 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 	}
 
 	duration, err := u.resolveDuration(tenant.ID, input.ServiceID)
-	if err != nil {
+	if len(input.ServiceIDs) > 0 {
+		comboDuration := 0
+		for _, sID := range input.ServiceIDs {
+			if d, err := u.resolveDuration(tenant.ID, sID); err == nil && d > 0 {
+				comboDuration += d
+			}
+		}
+		if comboDuration > 0 {
+			duration = comboDuration
+		}
+		if input.ServiceID == "" && len(input.ServiceIDs) > 0 {
+			input.ServiceID = input.ServiceIDs[0]
+		}
+	} else if err != nil {
 		return BookingResult{}, err
 	}
 
@@ -297,11 +322,17 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 		}
 	}
 
+	seriesID := ""
+	if input.RecurrenceCount > 1 {
+		seriesID = uuid.NewString()
+	}
+
 	managementCode := generateManagementCode()
 	appointment, err := u.appointments.Create(appointmentdomain.Appointment{
 		TenantID:           tenant.ID,
 		ProfessionalID:     input.ProfessionalID,
 		ServiceID:          input.ServiceID,
+		ServiceIDs:         input.ServiceIDs,
 		CustomerID:         customer.ID,
 		StartsAt:           startsAt.Format(time.RFC3339),
 		EndsAt:             endsAt.Format(time.RFC3339),
@@ -309,6 +340,9 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 		Notes:              input.Notes,
 		CreatedBy:          createdByOnlineBooking,
 		ManagementCodeHash: hashManagementCode(managementCode),
+		SeriesID:           seriesID,
+		RecurrenceRule:     input.RecurrenceRule,
+		Timezone:           input.Timezone,
 		Source:             "booking",
 	})
 	if err != nil {
@@ -318,7 +352,35 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 		return BookingResult{}, err
 	}
 
-	return BookingResult{Appointment: appointment, Customer: customer, ManagementCode: managementCode}, nil
+	// Create subsequent recurring appointments if requested
+	if input.RecurrenceCount > 1 {
+		for i := 1; i < input.RecurrenceCount; i++ {
+			recStarts := startsAt.AddDate(0, 0, 7*i)
+			recEnds := endsAt.AddDate(0, 0, 7*i)
+			subCode := generateManagementCode()
+			_, _ = u.appointments.Create(appointmentdomain.Appointment{
+				TenantID:           tenant.ID,
+				ProfessionalID:     input.ProfessionalID,
+				ServiceID:          input.ServiceID,
+				ServiceIDs:         input.ServiceIDs,
+				CustomerID:         customer.ID,
+				StartsAt:           recStarts.Format(time.RFC3339),
+				EndsAt:             recEnds.Format(time.RFC3339),
+				Status:             appappointment.StatusScheduled,
+				Notes:              input.Notes,
+				CreatedBy:          createdByOnlineBooking,
+				ManagementCodeHash: hashManagementCode(subCode),
+				SeriesID:           seriesID,
+				RecurrenceRule:     input.RecurrenceRule,
+				Timezone:           input.Timezone,
+				Source:             "booking",
+			})
+		}
+	}
+
+	result := BookingResult{Appointment: appointment, Customer: customer, ManagementCode: managementCode}
+	u.notifyCustomer(tenant, appointment, managementCode, string(notificationdomain.TypeConfirmation), appnotification.RenderConfirmation)
+	return result, nil
 }
 
 func (u *UseCase) GetByManagementCode(slug string, code string) (appointmentdomain.Appointment, error) {
@@ -365,6 +427,7 @@ func (u *UseCase) CancelPublic(slug string, code string, reason string) (appoint
 	if err != nil {
 		return appointmentdomain.Appointment{}, err
 	}
+	u.notifyCustomer(tenant, updated, code, string(notificationdomain.TypeCancellation), appnotification.RenderCancellation)
 	return updated, nil
 }
 
@@ -413,6 +476,7 @@ func (u *UseCase) ReschedulePublic(slug string, code string, newStartsAt string)
 		}
 		return appointmentdomain.Appointment{}, err
 	}
+	u.notifyCustomer(tenant, updated, code, string(notificationdomain.TypeReschedule), appnotification.RenderReschedule)
 	return updated, nil
 }
 
@@ -489,6 +553,7 @@ func (u *UseCase) PortalCancel(slug string, phone string, appointmentID string, 
 	if err != nil {
 		return appointmentdomain.Appointment{}, err
 	}
+	u.notifyCustomer(tenant, updated, "", string(notificationdomain.TypeCancellation), appnotification.RenderCancellation)
 	return updated, nil
 }
 
@@ -541,6 +606,7 @@ func (u *UseCase) PortalReschedule(slug string, phone string, appointmentID stri
 		}
 		return appointmentdomain.Appointment{}, err
 	}
+	u.notifyCustomer(tenant, updated, "", string(notificationdomain.TypeReschedule), appnotification.RenderReschedule)
 	return updated, nil
 }
 
@@ -550,6 +616,82 @@ func (u *UseCase) resolvePortalCustomer(tenantID string, phone string) (customer
 		return customerdomain.Customer{}, ErrCustomerNotFound
 	}
 	return customer, nil
+}
+
+func (u *UseCase) notifyCustomer(
+	tenant tenantdomain.Tenant,
+	appointment appointmentdomain.Appointment,
+	code string,
+	notificationType string,
+	build func(appnotification.TemplateData) (string, string),
+) {
+	if u == nil || u.notifications == nil {
+		return
+	}
+	configuration, err := u.configurationRepo.Get(tenant.ID)
+	if err != nil || !configuration.NotificationsEnabled {
+		return
+	}
+	customer, err := u.customerRepo.GetByID(tenant.ID, appointment.CustomerID)
+	if err != nil {
+		return
+	}
+
+	channel := strings.TrimSpace(configuration.NotificationChannel)
+	if channel == "" {
+		channel = "whatsapp"
+	}
+	recipient := strings.TrimSpace(customer.Phone)
+	if channel == "email" {
+		recipient = strings.TrimSpace(customer.Email)
+	}
+	if recipient == "" {
+		return
+	}
+
+	serviceName := "Agendamento"
+	if appointment.ServiceID != "" {
+		if service, err := u.serviceRepo.GetByID(tenant.ID, appointment.ServiceID); err == nil {
+			serviceName = service.Name
+		}
+	}
+	professionalName := "Equipe"
+	if appointment.ProfessionalID != "" {
+		if professional, err := u.professionalRepo.GetByID(tenant.ID, appointment.ProfessionalID); err == nil {
+			professionalName = professional.Name
+		}
+	}
+
+	data := appnotification.TemplateData{
+		EstablishmentName: tenant.Name,
+		CustomerName:      customer.Name,
+		ServiceName:       serviceName,
+		ProfessionalName:  professionalName,
+		StartsAt:          formatAppointmentForTemplate(appointment.StartsAt),
+		ManagementCode:    strings.TrimSpace(code),
+		ManageURL:         appnotification.PublicBookingOrigin() + "/#/manage/" + tenant.Slug,
+		PortalURL:         appnotification.PublicBookingOrigin() + "/#/portal/" + tenant.Slug,
+	}
+	subject, body := build(data)
+	if _, err := u.notifications.Send(notificationdomain.Log{
+		TenantID:      tenant.ID,
+		AppointmentID: appointment.ID,
+		Type:          notificationType,
+		Channel:       channel,
+		Recipient:     recipient,
+		Subject:       subject,
+		Body:          body,
+	}); err != nil {
+		log.Printf(`{"level":"WARN","message":"notification send failed","type":"%s","appointment":"%s","error":"%v"}`, notificationType, appointment.ID, err)
+	}
+}
+
+func formatAppointmentForTemplate(value string) string {
+	parsed, err := parseRFC3339(value)
+	if err != nil {
+		return strings.TrimSpace(value)
+	}
+	return parsed.Local().Format("02/01/2006 às 15:04")
 }
 
 func (u *UseCase) toPortalAppointment(tenantID string, item appointmentdomain.Appointment) PortalAppointment {
@@ -628,9 +770,16 @@ func (u *UseCase) resolveDuration(tenantID string, serviceID string) (int, error
 	return configuration.DefaultDurationMinutes, nil
 }
 
-func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, configuration configurationdomain.Configuration, professionalID string) ([]Slot, error) {
+func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, configuration configurationdomain.Configuration, professionalID string, serviceID string) ([]Slot, error) {
 	if _, err := u.professionalRepo.GetByID(tenantID, professionalID); err != nil {
 		return nil, ErrInvalidBooking
+	}
+
+	maxCapacity := 1
+	if serviceID != "" {
+		if svc, err := u.serviceRepo.GetByID(tenantID, serviceID); err == nil && svc.MaxCapacity > 1 {
+			maxCapacity = svc.MaxCapacity
+		}
 	}
 
 	if isClosedDay(configuration, day) {
@@ -696,7 +845,7 @@ func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, c
 		if start.Before(minStart) {
 			continue
 		}
-		if overlapsAnyBusy(start, end, busy) {
+		if countOverlappingSlots(start, end, busy) >= maxCapacity {
 			continue
 		}
 		slots = append(slots, Slot{
@@ -705,6 +854,24 @@ func (u *UseCase) availableSlots(tenantID string, day time.Time, duration int, c
 		})
 	}
 	return slots, nil
+}
+
+func countOverlappingSlots(start time.Time, end time.Time, busy []Slot) int {
+	count := 0
+	for _, interval := range busy {
+		busyStart, err := parseRFC3339(interval.StartsAt)
+		if err != nil {
+			continue
+		}
+		busyEnd, err := parseRFC3339(interval.EndsAt)
+		if err != nil {
+			continue
+		}
+		if start.Before(busyEnd) && end.After(busyStart) {
+			count++
+		}
+	}
+	return count
 }
 
 func (u *UseCase) validateSlotInWorkingHours(startsAt time.Time, endsAt time.Time, configuration configurationdomain.Configuration) error {

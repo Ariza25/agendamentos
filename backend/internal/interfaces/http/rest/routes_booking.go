@@ -3,7 +3,7 @@ package rest
 import "net/http"
 
 func registerBookingRoutes(mux *http.ServeMux, config RouterConfig) {
-	handler := NewBookingHandler(config.BookingUseCase)
+	handler := NewBookingHandler(config.BookingUseCase, config.EventBroker)
 
 	mux.HandleFunc("GET /api/v1/public/{slug}/info", handler.Info)
 	mux.HandleFunc("GET /api/v1/public/{slug}/services", handler.Services)

@@ -115,7 +115,7 @@ export default function App() {
     void refreshAdminAccount().then(() => {
       setSession(getAdminSession())
     })
-  }, [isResetPasswordPage, session])
+  }, [isResetPasswordPage])
 
   if (isResetPasswordPage) {
     return <ResetPasswordPage />

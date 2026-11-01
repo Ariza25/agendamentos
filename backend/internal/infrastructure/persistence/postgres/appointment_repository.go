@@ -23,9 +23,9 @@ func (r *AppointmentRepository) Create(input appointment.Appointment) (appointme
 	item := input
 	item.ID = uuid.NewString()
 	_, err := r.db.Exec(`
-		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by, management_code_hash, series_id, payment_status, no_show_fee_cents, source, cancellation_reason)
-		VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8::timestamptz, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.ResourceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy, nullIfEmpty(item.ManagementCodeHash), item.SeriesID, item.PaymentStatus, item.NoShowFeeCents, item.Source, item.CancellationReason)
+		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by, management_code_hash, series_id, recurrence_rule, timezone, payment_status, no_show_fee_cents, source, cancellation_reason)
+		VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8::timestamptz, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.ResourceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy, nullIfEmpty(item.ManagementCodeHash), item.SeriesID, item.RecurrenceRule, item.Timezone, item.PaymentStatus, item.NoShowFeeCents, item.Source, item.CancellationReason)
 	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("insert appointment: %w", err)
 	}
@@ -45,15 +45,17 @@ func (r *AppointmentRepository) Update(input appointment.Appointment) (appointme
 		    notes = COALESCE(NULLIF($10, ''), notes),
 		    management_code_hash = COALESCE(NULLIF($11, ''), management_code_hash),
 		    series_id = COALESCE(NULLIF($12, ''), series_id),
-		    payment_status = COALESCE(NULLIF($13, ''), payment_status),
-		    no_show_fee_cents = $14,
-		    source = COALESCE(NULLIF($15, ''), source),
-		    cancellation_reason = COALESCE(NULLIF($16, ''), cancellation_reason),
-		    check_in_at = $17,
-		    no_show_at = $18,
+		    recurrence_rule = COALESCE(NULLIF($13, ''), recurrence_rule),
+		    timezone = COALESCE(NULLIF($14, ''), timezone),
+		    payment_status = COALESCE(NULLIF($15, ''), payment_status),
+		    no_show_fee_cents = $16,
+		    source = COALESCE(NULLIF($17, ''), source),
+		    cancellation_reason = COALESCE(NULLIF($18, ''), cancellation_reason),
+		    check_in_at = $19,
+		    no_show_at = $20,
 		    updated_at = NOW()
 		WHERE id = $1 AND tenant_id = $2
-	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.ResourceID, input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes), nullIfEmpty(input.ManagementCodeHash), input.SeriesID, input.PaymentStatus, input.NoShowFeeCents, input.Source, input.CancellationReason, nullIfEmpty(input.CheckInAt), nullIfEmpty(input.NoShowAt))
+	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.ResourceID, input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes), nullIfEmpty(input.ManagementCodeHash), input.SeriesID, input.RecurrenceRule, input.Timezone, input.PaymentStatus, input.NoShowFeeCents, input.Source, input.CancellationReason, nullIfEmpty(input.CheckInAt), nullIfEmpty(input.NoShowAt))
 	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("update appointment: %w", err)
 	}
@@ -405,7 +407,7 @@ func scanAppointmentRow(scanner appointmentScanner) (appointment.Appointment, er
 func appointmentSelectColumns() string {
 	return `
 		SELECT id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by,
-		       management_code_hash, series_id, payment_status, no_show_fee_cents, source, cancellation_reason,
+		       COALESCE(management_code_hash, ''), series_id, COALESCE(recurrence_rule, ''), COALESCE(timezone, ''), payment_status, no_show_fee_cents, source, cancellation_reason,
 		       check_in_at, no_show_at, reminder_sent_at, created_at, updated_at`
 }
 
@@ -413,7 +415,7 @@ func scanAppointmentRows(scanner appointmentScanner) (appointment.Appointment, e
 	var item appointment.Appointment
 	var startsAt, endsAt, createdAt, updatedAt time.Time
 	var checkInAt, noShowAt, reminderSentAt sql.NullTime
-	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.ResourceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &item.ManagementCodeHash, &item.SeriesID, &item.PaymentStatus, &item.NoShowFeeCents, &item.Source, &item.CancellationReason, &checkInAt, &noShowAt, &reminderSentAt, &createdAt, &updatedAt); err != nil {
+	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.ResourceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &item.ManagementCodeHash, &item.SeriesID, &item.RecurrenceRule, &item.Timezone, &item.PaymentStatus, &item.NoShowFeeCents, &item.Source, &item.CancellationReason, &checkInAt, &noShowAt, &reminderSentAt, &createdAt, &updatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return appointment.Appointment{}, fmt.Errorf("appointment not found")
 		}

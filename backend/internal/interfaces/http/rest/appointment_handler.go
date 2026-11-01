@@ -6,17 +6,79 @@ import (
 	"net/http"
 
 	appappointment "erpagendamentos/backend/internal/application/appointment"
+	appcommission "erpagendamentos/backend/internal/application/commission"
+	appfinance "erpagendamentos/backend/internal/application/finance"
+	appprofessional "erpagendamentos/backend/internal/application/professional"
 	appreview "erpagendamentos/backend/internal/application/review"
+	appstock "erpagendamentos/backend/internal/application/stock"
 	appointmentdomain "erpagendamentos/backend/internal/domain/appointment"
+	servicedomain "erpagendamentos/backend/internal/domain/service"
 )
 
 type AppointmentHandler struct {
-	useCase       *appappointment.UseCase
-	reviewUseCase *appreview.UseCase
+	useCase             *appappointment.UseCase
+	reviewUseCase       *appreview.UseCase
+	stockUseCase        *appstock.UseCase
+	commissionUseCase   *appcommission.UseCase
+	financeUseCase      *appfinance.UseCase
+	professionalUseCase *appprofessional.UseCase
+	serviceRepo         servicedomain.Repository
+	eventBroker         *EventBroker
 }
 
-func NewAppointmentHandler(useCase *appappointment.UseCase, reviewUseCase *appreview.UseCase) *AppointmentHandler {
-	return &AppointmentHandler{useCase: useCase, reviewUseCase: reviewUseCase}
+func NewAppointmentHandler(
+	useCase *appappointment.UseCase,
+	reviewUseCase *appreview.UseCase,
+	stockUseCase *appstock.UseCase,
+	commissionUseCase *appcommission.UseCase,
+	financeUseCase *appfinance.UseCase,
+	professionalUseCase *appprofessional.UseCase,
+	serviceRepo servicedomain.Repository,
+	eventBroker *EventBroker,
+) *AppointmentHandler {
+	return &AppointmentHandler{
+		useCase:             useCase,
+		reviewUseCase:       reviewUseCase,
+		stockUseCase:        stockUseCase,
+		commissionUseCase:   commissionUseCase,
+		financeUseCase:      financeUseCase,
+		professionalUseCase: professionalUseCase,
+		serviceRepo:         serviceRepo,
+		eventBroker:         eventBroker,
+	}
+}
+
+func (h *AppointmentHandler) onStatusCompleted(appt appointmentdomain.Appointment) {
+	if h.reviewUseCase != nil && appt.CustomerID != "" {
+		_, _ = h.reviewUseCase.CreateInvitation(appt.TenantID, appt.ID, appt.CustomerID)
+	}
+	if h.stockUseCase != nil && appt.ServiceID != "" {
+		_ = h.stockUseCase.DeductSuppliesForAppointment(appt.TenantID, appt.ID, appt.ServiceID)
+	}
+	var servicePrice int
+	var serviceName string
+	if h.serviceRepo != nil && appt.ServiceID != "" {
+		if svc, err := h.serviceRepo.GetByID(appt.TenantID, appt.ServiceID); err == nil {
+			servicePrice = svc.PriceCents
+			serviceName = svc.Name
+		}
+	}
+	var profName string
+	if h.professionalUseCase != nil && appt.ProfessionalID != "" {
+		if prof, err := h.professionalUseCase.GetByID(appt.TenantID, appt.ProfessionalID); err == nil {
+			profName = prof.Name
+		}
+	}
+	if h.commissionUseCase != nil && appt.ProfessionalID != "" {
+		_, _ = h.commissionUseCase.CalculateAndRecord(appt.TenantID, appt.ID, appt.ProfessionalID, profName, appt.ServiceID, serviceName, servicePrice)
+	}
+	if h.financeUseCase != nil && servicePrice > 0 {
+		desc := "Atendimento: " + serviceName
+		if desc == "Atendimento: " {
+			desc = "Atendimento Concluído"
+		}
+		_ = h.financeUseCase.RecordAppointmentIncome(appt.TenantID, appt.ID, servicePrice, desc)
+	}
 }
 
 func (h *AppointmentHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +119,9 @@ func (h *AppointmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeAppointmentError(w, err)
 		return
 	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(appointment.TenantID, "appointment.created", appointment)
+	}
 	writeJSON(w, http.StatusCreated, appointment)
 }
 
@@ -72,6 +137,9 @@ func (h *AppointmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeAppointmentError(w, err)
 		return
+	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(appointment.TenantID, "appointment.updated", appointment)
 	}
 	writeJSON(w, http.StatusOK, appointment)
 }
@@ -94,8 +162,11 @@ func (h *AppointmentHandler) UpdateStatus(w http.ResponseWriter, r *http.Request
 		writeAppointmentError(w, err)
 		return
 	}
-	if appointment.Status == appappointment.StatusCompleted && h.reviewUseCase != nil && appointment.CustomerID != "" {
-		_, _ = h.reviewUseCase.CreateInvitation(appointment.TenantID, appointment.ID, appointment.CustomerID)
+	if appointment.Status == appappointment.StatusCompleted {
+		h.onStatusCompleted(appointment)
+	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(appointment.TenantID, "appointment."+appointment.Status, appointment)
 	}
 	writeJSON(w, http.StatusOK, appointment)
 }
@@ -134,6 +205,9 @@ func (h *AppointmentHandler) CheckIn(w http.ResponseWriter, r *http.Request) {
 		writeAppointmentError(w, err)
 		return
 	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(appointment.TenantID, "appointment.checked_in", appointment)
+	}
 	writeJSON(w, http.StatusOK, appointment)
 }
 
@@ -152,13 +226,21 @@ func (h *AppointmentHandler) MarkNoShow(w http.ResponseWriter, r *http.Request) 
 		writeAppointmentError(w, err)
 		return
 	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(appointment.TenantID, "appointment.no_show", appointment)
+	}
 	writeJSON(w, http.StatusOK, appointment)
 }
 
 func (h *AppointmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	if err := h.useCase.Delete(resolveRequestTenantID(r, nil), r.PathValue("appointmentID")); err != nil {
+	tenantID := resolveRequestTenantID(r, nil)
+	id := r.PathValue("appointmentID")
+	if err := h.useCase.Delete(tenantID, id); err != nil {
 		writeAppointmentError(w, err)
 		return
+	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(tenantID, "appointment.deleted", map[string]string{"id": id})
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

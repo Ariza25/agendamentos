@@ -21,6 +21,9 @@ const MembershipsPage = lazy(() => import('../pages/MembershipsPage').then((modu
 const WaitingListPage = lazy(() => import('../pages/WaitingListPage').then((module) => ({ default: module.WaitingListPage })))
 const ReviewsPage = lazy(() => import('../pages/ReviewsPage').then((module) => ({ default: module.ReviewsPage })))
 const WidgetPage = lazy(() => import('../pages/WidgetPage').then((module) => ({ default: module.WidgetPage })))
+const FinancePage = lazy(() => import('../pages/FinancePage').then((module) => ({ default: module.FinancePage })))
+const InventoryPage = lazy(() => import('../pages/InventoryPage').then((module) => ({ default: module.InventoryPage })))
+const CommissionsPage = lazy(() => import('../pages/CommissionsPage').then((module) => ({ default: module.CommissionsPage })))
 
 type AdminRoutesProps = {
   canAccessRoute: (area: AdminAreaKey) => boolean
@@ -51,6 +54,9 @@ export function AdminRoutes({ canAccessRoute, defaultRoute }: AdminRoutesProps) 
         <Route element={canAccessRoute('waiting-list') ? <WaitingListPage /> : <AccessDeniedPage />} path="/waiting-list" />
         <Route element={canAccessRoute('reviews') ? <ReviewsPage /> : <AccessDeniedPage />} path="/reviews" />
         <Route element={canAccessRoute('widget') ? <WidgetPage /> : <AccessDeniedPage />} path="/widget" />
+        <Route element={canAccessRoute('finance') ? <FinancePage /> : <AccessDeniedPage />} path="/finance" />
+        <Route element={canAccessRoute('inventory') ? <InventoryPage /> : <AccessDeniedPage />} path="/inventory" />
+        <Route element={canAccessRoute('commissions') ? <CommissionsPage /> : <AccessDeniedPage />} path="/commissions" />
         <Route element={<Navigate replace to={defaultRoute} />} path="*" />
       </Routes>
     </Suspense>

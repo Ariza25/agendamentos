@@ -12,9 +12,12 @@ type Appointment struct {
 	Status             string `json:"status"`
 	Notes              string `json:"notes"`
 	CreatedBy          string `json:"createdBy"`
-	ManagementCodeHash string `json:"-"`
-	SeriesID           string `json:"seriesId,omitempty"`
-	PaymentStatus      string `json:"paymentStatus,omitempty"`
+	ManagementCodeHash string   `json:"-"`
+	SeriesID           string   `json:"seriesId,omitempty"`
+	RecurrenceRule     string   `json:"recurrenceRule,omitempty"`
+	Timezone           string   `json:"timezone,omitempty"`
+	ServiceIDs         []string `json:"serviceIds,omitempty"`
+	PaymentStatus      string   `json:"paymentStatus,omitempty"`
 	NoShowFeeCents     int    `json:"noShowFeeCents,omitempty"`
 	Source             string `json:"source,omitempty"`
 	CancellationReason string `json:"cancellationReason,omitempty"`

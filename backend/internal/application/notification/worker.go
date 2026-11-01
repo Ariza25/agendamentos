@@ -126,8 +126,12 @@ func (w *ReminderWorker) sendReminder(appointment appointmentdomain.Appointment)
 		hours = 24
 	}
 	when := formatAppointmentLocal(appointment.StartsAt)
-	subject := "Lembrete de agendamento"
-	body := "Olá " + customer.Name + ", passando para lembrar do seu agendamento: " + serviceName + " em " + when + "."
+	subject, body := RenderReminder(TemplateData{
+		EstablishmentName: configuration.EstablishmentName,
+		CustomerName:      customer.Name,
+		ServiceName:       serviceName,
+		StartsAt:          when,
+	})
 
 	logEntry, err := w.notifications.Send(domain.Log{
 		TenantID:      appointment.TenantID,

@@ -38,3 +38,6 @@ coverage.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Graphify cache
+graphify-out/cache/

@@ -58,7 +58,16 @@ func registerCustomerRoutes(mux *http.ServeMux, config RouterConfig) {
 }
 
 func registerAppointmentRoutes(mux *http.ServeMux, config RouterConfig) {
-	handler := NewAppointmentHandler(config.AppointmentUseCase, config.ReviewUseCase)
+	handler := NewAppointmentHandler(
+		config.AppointmentUseCase,
+		config.ReviewUseCase,
+		config.StockUseCase,
+		config.CommissionUseCase,
+		config.FinanceUseCase,
+		config.ProfessionalUseCase,
+		config.ServiceRepository,
+		config.EventBroker,
+	)
 
 	mux.HandleFunc("GET /api/v1/admin/appointments", requireAdmin(config.AuthUseCase, handler.List))
 	mux.HandleFunc("POST /api/v1/admin/appointments", requireAdmin(config.AuthUseCase, handler.Create))

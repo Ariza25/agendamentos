@@ -5,6 +5,7 @@ import { checkInAppointment, fetchAppointments, fetchAppointmentSummary, markApp
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_TONES } from '../lib/appointmentStatus'
 import { formatDate, formatTime, todayKey } from '../lib/format'
 import { useReferenceData } from '../shared/hooks/useReferenceData'
+import { useAdminEvents } from '../shared/hooks/useAdminEvents'
 import { Badge } from '../shared/components/Badge'
 import { Button } from '../shared/components/Button'
 import { EmptyState } from '../shared/components/EmptyState'
@@ -23,6 +24,12 @@ export function AgendaPage() {
   const [summary, setSummary] = useState<AppointmentSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const referenceData = useReferenceData()
+
+  const { isConnected } = useAdminEvents((event) => {
+    if (event.type.startsWith('appointment.')) {
+      load()
+    }
+  })
 
   function load() {
     setLoading(true)
@@ -107,7 +114,17 @@ export function AgendaPage() {
             </Button>
           </div>
         }
-        subtitle={formatDate(date)}
+        subtitle={
+          <span className="flex items-center gap-3">
+            <span>{formatDate(date)}</span>
+            {isConnected ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Tempo real ativo
+              </span>
+            ) : null}
+          </span>
+        }
         title="Agenda"
       >
         <div className="mt-4 flex flex-wrap gap-2">

@@ -9,6 +9,7 @@ type Service struct {
 	PriceCents      int      `json:"priceCents"`
 	Color           string   `json:"color"`
 	Active          bool     `json:"active"`
+	MaxCapacity     int      `json:"maxCapacity,omitempty"`
 	ProfessionalIDs []string `json:"professionalIds,omitempty"`
 	CreatedAt       string   `json:"createdAt"`
 	UpdatedAt       string   `json:"updatedAt"`

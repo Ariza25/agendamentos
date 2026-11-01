@@ -9,11 +9,12 @@ import (
 )
 
 type BookingHandler struct {
-	useCase *appbooking.UseCase
+	useCase     *appbooking.UseCase
+	eventBroker *EventBroker
 }
 
-func NewBookingHandler(useCase *appbooking.UseCase) *BookingHandler {
-	return &BookingHandler{useCase: useCase}
+func NewBookingHandler(useCase *appbooking.UseCase, eventBroker *EventBroker) *BookingHandler {
+	return &BookingHandler{useCase: useCase, eventBroker: eventBroker}
 }
 
 func (h *BookingHandler) Info(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +70,9 @@ func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeBookingError(w, err)
 		return
 	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(result.Appointment.TenantID, "appointment.created", result.Appointment)
+	}
 	writeJSON(w, http.StatusCreated, result)
 }
 
@@ -91,6 +95,9 @@ func (h *BookingHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		writeBookingError(w, err)
 		return
 	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(appointment.TenantID, "appointment.cancelled", appointment)
+	}
 	writeJSON(w, http.StatusOK, appointment)
 }
 
@@ -106,6 +113,9 @@ func (h *BookingHandler) Reschedule(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeBookingError(w, err)
 		return
+	}
+	if h.eventBroker != nil {
+		h.eventBroker.Publish(appointment.TenantID, "appointment.rescheduled", appointment)
 	}
 	writeJSON(w, http.StatusOK, appointment)
 }

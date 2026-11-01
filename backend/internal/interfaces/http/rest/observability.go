@@ -50,6 +50,7 @@ func withObservability(next http.Handler) http.Handler {
 			}
 
 			durationMs := time.Since(startedAt).Milliseconds()
+			RecordRequestMetric(r.Method, r.URL.Path, recorder.status, durationMs)
 			fields := map[string]any{
 				"request_id":  requestID,
 				"method":      r.Method,

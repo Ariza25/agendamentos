@@ -4,8 +4,14 @@ import type {
   Appointment,
   AppointmentAnalytics,
   AppointmentSummary,
+  CalendarConnection,
+  CommissionRecord,
+  CommissionRule,
+  CommissionSummary,
   Configuration,
   Customer,
+  FinancialSummary,
+  FinancialTransaction,
   GiftCard,
   MemberPlan,
   Membership,
@@ -13,10 +19,13 @@ import type {
   Package,
   PackageCredit,
   Payment,
+  Product,
   Professional,
   Resource,
   Review,
   Service,
+  ServiceSupply,
+  StockMovement,
   Tenant,
   WaitingListEntry,
 } from '../types'
@@ -639,4 +648,220 @@ export async function deleteTenant(id: string): Promise<void> {
   const response = await adminFetch(`/api/v1/admin/tenants/${id}`, { method: 'DELETE' })
   await parseJson<{ status?: string } | null>(response)
   invalidateAdminGetCache('/api/v1/admin/tenants')
+}
+
+// ==========================================
+// Stock / Inventory & Supplies
+// ==========================================
+
+export async function fetchProducts(activeOnly = false): Promise<Product[]> {
+  const query = activeOnly ? '?activeOnly=true' : ''
+  const data = await cachedAdminJson<{ products: Product[] }>(`/api/v1/admin/products${query}`)
+  return data.products || []
+}
+
+export async function createProduct(input: Partial<Product>): Promise<Product> {
+  const response = await adminFetch('/api/v1/admin/products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Product>(response)
+  invalidateAdminGetCache('/api/v1/admin/products')
+  return data
+}
+
+export async function updateProduct(id: string, input: Partial<Product>): Promise<Product> {
+  const response = await adminFetch(`/api/v1/admin/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Product>(response)
+  invalidateAdminGetCache('/api/v1/admin/products')
+  return data
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/products/${id}`, { method: 'DELETE' })
+  await parseJson<{ ok?: boolean } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/products')
+}
+
+export async function fetchStockMovements(productId?: string, limit = 50): Promise<StockMovement[]> {
+  const params = new URLSearchParams()
+  if (productId) params.set('productId', productId)
+  if (limit) params.set('limit', String(limit))
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const data = await cachedAdminJson<{ movements: StockMovement[] }>(`/api/v1/admin/stock/movements${query}`)
+  return data.movements || []
+}
+
+export async function createStockMovement(input: Partial<StockMovement>): Promise<StockMovement> {
+  const response = await adminFetch('/api/v1/admin/stock/movements', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<StockMovement>(response)
+  invalidateAdminGetCache('/api/v1/admin/stock/movements', '/api/v1/admin/products')
+  return data
+}
+
+export async function fetchServiceSupplies(serviceId: string): Promise<ServiceSupply[]> {
+  const data = await cachedAdminJson<{ supplies: ServiceSupply[] }>(`/api/v1/admin/services/${serviceId}/supplies`)
+  return data.supplies || []
+}
+
+export async function setServiceSupplies(serviceId: string, supplies: { productId: string; quantity: number }[]): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/services/${serviceId}/supplies`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(supplies),
+  })
+  await parseJson<{ ok?: boolean }>(response)
+  invalidateAdminGetCache(`/api/v1/admin/services/${serviceId}/supplies`)
+}
+
+// ==========================================
+// Commissions
+// ==========================================
+
+export async function fetchCommissionRules(): Promise<CommissionRule[]> {
+  const data = await cachedAdminJson<{ rules: CommissionRule[] }>('/api/v1/admin/commissions/rules')
+  return data.rules || []
+}
+
+export async function createCommissionRule(input: Partial<CommissionRule>): Promise<CommissionRule> {
+  const response = await adminFetch('/api/v1/admin/commissions/rules', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<CommissionRule>(response)
+  invalidateAdminGetCache('/api/v1/admin/commissions/rules')
+  return data
+}
+
+export async function updateCommissionRule(id: string, input: Partial<CommissionRule>): Promise<CommissionRule> {
+  const response = await adminFetch(`/api/v1/admin/commissions/rules/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<CommissionRule>(response)
+  invalidateAdminGetCache('/api/v1/admin/commissions/rules')
+  return data
+}
+
+export async function deleteCommissionRule(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/commissions/rules/${id}`, { method: 'DELETE' })
+  await parseJson<{ ok?: boolean } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/commissions/rules')
+}
+
+export async function fetchCommissionRecords(professionalId?: string, status?: string): Promise<CommissionRecord[]> {
+  const params = new URLSearchParams()
+  if (professionalId) params.set('professionalId', professionalId)
+  if (status) params.set('status', status)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const data = await cachedAdminJson<{ records: CommissionRecord[] }>(`/api/v1/admin/commissions${query}`)
+  return data.records || []
+}
+
+export async function settleCommissions(professionalId: string, recordIds: string[]): Promise<void> {
+  const response = await adminFetch('/api/v1/admin/commissions/settle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ professionalId, recordIds }),
+  })
+  await parseJson<{ ok?: boolean }>(response)
+  invalidateAdminGetCache('/api/v1/admin/commissions', '/api/v1/admin/commissions/summaries')
+}
+
+export async function fetchCommissionSummaries(): Promise<CommissionSummary[]> {
+  const data = await cachedAdminJson<{ summaries: CommissionSummary[] }>('/api/v1/admin/commissions/summaries')
+  return data.summaries || []
+}
+
+// ==========================================
+// Finance
+// ==========================================
+
+export async function fetchFinancialTransactions(filters?: {
+  type?: string
+  status?: string
+  fromDate?: string
+  toDate?: string
+}): Promise<FinancialTransaction[]> {
+  const params = new URLSearchParams()
+  if (filters?.type) params.set('type', filters.type)
+  if (filters?.status) params.set('status', filters.status)
+  if (filters?.fromDate) params.set('fromDate', filters.fromDate)
+  if (filters?.toDate) params.set('toDate', filters.toDate)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  const data = await cachedAdminJson<{ transactions: FinancialTransaction[] }>(`/api/v1/admin/finance/transactions${query}`)
+  return data.transactions || []
+}
+
+export async function createFinancialTransaction(input: Partial<FinancialTransaction>): Promise<FinancialTransaction> {
+  const response = await adminFetch('/api/v1/admin/finance/transactions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<FinancialTransaction>(response)
+  invalidateAdminGetCache('/api/v1/admin/finance/transactions', '/api/v1/admin/finance/summary')
+  return data
+}
+
+export async function updateFinancialTransaction(id: string, input: Partial<FinancialTransaction>): Promise<FinancialTransaction> {
+  const response = await adminFetch(`/api/v1/admin/finance/transactions/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<FinancialTransaction>(response)
+  invalidateAdminGetCache('/api/v1/admin/finance/transactions', '/api/v1/admin/finance/summary')
+  return data
+}
+
+export async function deleteFinancialTransaction(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/finance/transactions/${id}`, { method: 'DELETE' })
+  await parseJson<{ ok?: boolean } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/finance/transactions', '/api/v1/admin/finance/summary')
+}
+
+export async function fetchFinancialSummary(fromDate?: string, toDate?: string): Promise<FinancialSummary> {
+  const params = new URLSearchParams()
+  if (fromDate) params.set('fromDate', fromDate)
+  if (toDate) params.set('toDate', toDate)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return cachedAdminJson<FinancialSummary>(`/api/v1/admin/finance/summary${query}`)
+}
+
+// ==========================================
+// Calendar Sync
+// ==========================================
+
+export async function fetchCalendarConnections(): Promise<CalendarConnection[]> {
+  const data = await cachedAdminJson<{ connections: CalendarConnection[] }>('/api/v1/admin/calendar/connections')
+  return data.connections || []
+}
+
+export async function connectCalendar(input: Partial<CalendarConnection>): Promise<CalendarConnection> {
+  const response = await adminFetch('/api/v1/admin/calendar/connections', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<CalendarConnection>(response)
+  invalidateAdminGetCache('/api/v1/admin/calendar/connections')
+  return data
+}
+
+export async function disconnectCalendar(id: string): Promise<void> {
+  const response = await adminFetch(`/api/v1/admin/calendar/connections/${id}`, { method: 'DELETE' })
+  await parseJson<{ ok?: boolean } | null>(response)
+  invalidateAdminGetCache('/api/v1/admin/calendar/connections')
 }
