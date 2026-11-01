@@ -70,6 +70,19 @@ func (r *PaymentRepository) GetByAppointment(tenantID string, appointmentID stri
 	return latest, nil
 }
 
+func (r *PaymentRepository) GetByProviderPaymentID(providerPaymentID string) (payment.Payment, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	providerPaymentID = strings.TrimSpace(providerPaymentID)
+	for _, item := range r.payments {
+		if item.ProviderPaymentID == providerPaymentID {
+			return item, nil
+		}
+	}
+	return payment.Payment{}, fmt.Errorf("payment not found")
+}
+
 func (r *PaymentRepository) ListByTenant(tenantID string, limit int) ([]payment.Payment, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -132,6 +145,26 @@ func (r *PaymentRepository) UpdateStatus(tenantID string, id string, status stri
 		current.ProviderPaymentID = providerPaymentID
 	}
 	if status == string(payment.StatusPaid) {
+		current.PaidAt = time.Now().Format(time.RFC3339)
+	}
+	r.payments[current.ID] = current
+	return current, nil
+}
+
+func (r *PaymentRepository) UpdateIntent(tenantID string, id string, result payment.IntentResult) (payment.Payment, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current, exists := r.payments[strings.TrimSpace(id)]
+	if !exists || current.TenantID != strings.TrimSpace(tenantID) {
+		return payment.Payment{}, fmt.Errorf("payment not found")
+	}
+	current.Status = result.Status
+	current.ProviderPaymentID = result.ProviderPaymentID
+	current.PixCopiaECola = result.PixCopiaECola
+	current.PixQRCodeBase64 = result.PixQRCodeBase64
+	current.ProviderData = result.ProviderData
+	if result.Status == string(payment.StatusPaid) {
 		current.PaidAt = time.Now().Format(time.RFC3339)
 	}
 	r.payments[current.ID] = current

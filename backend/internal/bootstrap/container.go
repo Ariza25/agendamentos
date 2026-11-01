@@ -21,6 +21,7 @@ import (
 	"erpagendamentos/backend/internal/application/finance"
 	"erpagendamentos/backend/internal/application/job"
 	"erpagendamentos/backend/internal/application/notification"
+	"erpagendamentos/backend/internal/application/onboarding"
 	"erpagendamentos/backend/internal/application/payment"
 	"erpagendamentos/backend/internal/application/professional"
 	"erpagendamentos/backend/internal/application/resource"
@@ -62,6 +63,7 @@ type Container struct {
 	commissionUseCase       *commission.UseCase
 	financeUseCase          *finance.UseCase
 	calendarUseCase         *calendar.UseCase
+	onboardingUseCase       *onboarding.UseCase
 	jobQueue                *job.Queue
 	eventBroker             *rest.EventBroker
 	authMaintenance         auth.MaintenanceConfig
@@ -91,6 +93,13 @@ func NewContainer() *Container {
 	appointmentUseCase := appointment.NewUseCase(repositories.appointment, repositories.resource)
 	notificationUseCase := notification.NewUseCase(repositories.notification, buildNotificationProvider())
 	paymentUseCase := payment.NewUseCase(repositories.payment, buildPaymentProvider())
+	onboardingUseCase := onboarding.NewUseCase(
+		repositories.tenant,
+		authComponents.useCase,
+		repositories.configuration,
+		repositories.service,
+		repositories.professional,
+	)
 
 	container := &Container{
 		db:                   db,
@@ -111,6 +120,7 @@ func NewContainer() *Container {
 		commissionUseCase:    commissionUseCase,
 		financeUseCase:       financeUseCase,
 		calendarUseCase:      calendarUseCase,
+		onboardingUseCase:    onboardingUseCase,
 		jobQueue:             jobQueue,
 		eventBroker:          eventBroker,
 		commerceUseCase: commerce.NewUseCase(
@@ -153,6 +163,10 @@ func buildNotificationProvider() notificationdomain.Provider {
 }
 
 func buildPaymentProvider() paymentdomain.Provider {
+	if mpToken := strings.TrimSpace(os.Getenv("MERCADOPAGO_ACCESS_TOKEN")); mpToken != "" {
+		webhookURL := strings.TrimSpace(os.Getenv("MERCADOPAGO_WEBHOOK_URL"))
+		return paymentinfra.NewMercadoPagoProvider(mpToken, webhookURL)
+	}
 	if secretKey := strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")); secretKey != "" {
 		return paymentinfra.NewStripeProvider(secretKey)
 	}
@@ -239,6 +253,7 @@ func (c *Container) Router() *rest.Router {
 		CommissionUseCase:     c.commissionUseCase,
 		FinanceUseCase:        c.financeUseCase,
 		CalendarSyncUseCase:   c.calendarUseCase,
+		OnboardingUseCase:     c.onboardingUseCase,
 		EventBroker:           c.eventBroker,
 		CustomerRepository:    c.customerRepository,
 		ServiceRepository:     c.serviceRepository,

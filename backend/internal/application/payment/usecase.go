@@ -46,6 +46,14 @@ func (u *UseCase) GetByAppointment(tenantID string, appointmentID string) (domai
 	return item, nil
 }
 
+func (u *UseCase) GetByProviderPaymentID(providerPaymentID string) (domain.Payment, error) {
+	item, err := u.repository.GetByProviderPaymentID(strings.TrimSpace(providerPaymentID))
+	if err != nil {
+		return domain.Payment{}, ErrPaymentNotFound
+	}
+	return item, nil
+}
+
 func (u *UseCase) Create(input domain.Payment) (domain.Payment, error) {
 	input.TenantID = strings.TrimSpace(input.TenantID)
 	input.AppointmentID = strings.TrimSpace(input.AppointmentID)
@@ -81,7 +89,7 @@ func (u *UseCase) CreatePaymentIntent(tenantID string, input domain.Payment) (do
 	if err != nil {
 		return domain.Payment{}, err
 	}
-	return u.repository.UpdateStatus(created.TenantID, created.ID, result.Status, result.ProviderPaymentID)
+	return u.repository.UpdateIntent(created.TenantID, created.ID, result)
 }
 
 func (u *UseCase) UpdateStatus(tenantID string, id string, status string, providerPaymentID string) (domain.Payment, error) {

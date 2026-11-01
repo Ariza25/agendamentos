@@ -16,17 +16,17 @@ export function CtaSection() {
           </p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
-              href={APP_LINKS.admin}
+              href={APP_LINKS.signup}
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-semibold text-primary transition-colors hover:bg-white/90"
             >
-              Acessar o painel
+              Criar estabelecimento grátis
               <ArrowRight className="size-4" />
             </a>
             <a
-              href={APP_LINKS.booking}
+              href={APP_LINKS.admin}
               className="inline-flex items-center gap-2 rounded-lg border border-white/40 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-white/10"
             >
-              Ver página de agendamento
+              Acessar painel existente
             </a>
           </div>
         </div>

@@ -39,6 +39,9 @@ func (r *TenantRepository) Create(input tenant.Tenant) (tenant.Tenant, error) {
 		return tenant.Tenant{}, fmt.Errorf("tenant id is required")
 	}
 	item.Slug = slug
+	if item.Segment == "" {
+		item.Segment = "general"
+	}
 	item.CreatedAt = time.Now().Format(time.RFC3339)
 	item.UpdatedAt = item.CreatedAt
 	r.tenants[item.ID] = item

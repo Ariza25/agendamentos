@@ -65,6 +65,8 @@ type BookingInput struct {
 	RecurrenceRule  string   `json:"recurrenceRule,omitempty"`
 	RecurrenceCount int      `json:"recurrenceCount,omitempty"`
 	Timezone        string   `json:"timezone,omitempty"`
+	LGPDAccepted    bool     `json:"lgpdAccepted,omitempty"`
+	MarketingConsent bool    `json:"marketingConsent,omitempty"`
 }
 
 type BookingResult struct {
@@ -327,6 +329,11 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 		seriesID = uuid.NewString()
 	}
 
+	var lgpdAcceptedAt string
+	if input.LGPDAccepted {
+		lgpdAcceptedAt = time.Now().UTC().Format(time.RFC3339)
+	}
+
 	managementCode := generateManagementCode()
 	appointment, err := u.appointments.Create(appointmentdomain.Appointment{
 		TenantID:           tenant.ID,
@@ -344,6 +351,8 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 		RecurrenceRule:     input.RecurrenceRule,
 		Timezone:           input.Timezone,
 		Source:             "booking",
+		LGPDAcceptedAt:     lgpdAcceptedAt,
+		MarketingConsent:   input.MarketingConsent,
 	})
 	if err != nil {
 		if errors.Is(err, appappointment.ErrTimeConflict) {
@@ -374,6 +383,8 @@ func (u *UseCase) CreateBooking(slug string, input BookingInput) (BookingResult,
 				RecurrenceRule:     input.RecurrenceRule,
 				Timezone:           input.Timezone,
 				Source:             "booking",
+				LGPDAcceptedAt:     lgpdAcceptedAt,
+				MarketingConsent:   input.MarketingConsent,
 			})
 		}
 	}

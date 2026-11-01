@@ -23,10 +23,13 @@ func (r *TenantRepository) Create(input tenant.Tenant) (tenant.Tenant, error) {
 		return tenant.Tenant{}, fmt.Errorf("tenant id is required")
 	}
 	item.Slug = strings.ToLower(strings.TrimSpace(item.Slug))
+	if item.Segment == "" {
+		item.Segment = "general"
+	}
 	if _, err := r.db.Exec(`
-		INSERT INTO catalog.tenants (id, name, slug, active)
-		VALUES ($1, $2, $3, $4)
-	`, item.ID, item.Name, item.Slug, item.Active); err != nil {
+		INSERT INTO catalog.tenants (id, name, slug, segment, active)
+		VALUES ($1, $2, $3, $4, $5)
+	`, item.ID, item.Name, item.Slug, item.Segment, item.Active); err != nil {
 		if isTenantIdentityConflict(err) {
 			return tenant.Tenant{}, fmt.Errorf("slug already used")
 		}
@@ -37,7 +40,7 @@ func (r *TenantRepository) Create(input tenant.Tenant) (tenant.Tenant, error) {
 
 func (r *TenantRepository) GetByID(id string) (tenant.Tenant, error) {
 	item, err := scanTenantRow(r.db.QueryRow(`
-		SELECT id, name, slug, active, created_at, updated_at, deleted_at
+		SELECT id, name, slug, COALESCE(segment, 'general'), active, created_at, updated_at, deleted_at
 		FROM catalog.tenants
 		WHERE id = $1
 	`, strings.TrimSpace(id)))
@@ -49,7 +52,7 @@ func (r *TenantRepository) GetByID(id string) (tenant.Tenant, error) {
 
 func (r *TenantRepository) GetBySlug(slug string) (tenant.Tenant, error) {
 	item, err := scanTenantRow(r.db.QueryRow(`
-		SELECT id, name, slug, active, created_at, updated_at, deleted_at
+		SELECT id, name, slug, COALESCE(segment, 'general'), active, created_at, updated_at, deleted_at
 		FROM catalog.tenants
 		WHERE LOWER(BTRIM(slug)) = LOWER($1)
 	`, strings.TrimSpace(slug)))
@@ -61,7 +64,7 @@ func (r *TenantRepository) GetBySlug(slug string) (tenant.Tenant, error) {
 
 func (r *TenantRepository) List() ([]tenant.Tenant, error) {
 	rows, err := r.db.Query(`
-		SELECT id, name, slug, active, created_at, updated_at, deleted_at
+		SELECT id, name, slug, COALESCE(segment, 'general'), active, created_at, updated_at, deleted_at
 		FROM catalog.tenants
 		ORDER BY created_at DESC
 	`)
@@ -153,7 +156,7 @@ func scanTenantRows(scanner tenantScanner) (tenant.Tenant, error) {
 	var item tenant.Tenant
 	var createdAt, updatedAt time.Time
 	var deletedAt sql.NullTime
-	if err := scanner.Scan(&item.ID, &item.Name, &item.Slug, &item.Active, &createdAt, &updatedAt, &deletedAt); err != nil {
+	if err := scanner.Scan(&item.ID, &item.Name, &item.Slug, &item.Segment, &item.Active, &createdAt, &updatedAt, &deletedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return tenant.Tenant{}, fmt.Errorf("tenant not found")
 		}

@@ -26,6 +26,9 @@ type Payment struct {
 	ProviderPaymentID string `json:"providerPaymentId,omitempty"`
 	Status            string `json:"status"`
 	Description       string `json:"description,omitempty"`
+	PixCopiaECola     string `json:"pixCopiaECola,omitempty"`
+	PixQRCodeBase64   string `json:"pixQrCodeBase64,omitempty"`
+	ProviderData      string `json:"providerData,omitempty"`
 	PaidAt            string `json:"paidAt,omitempty"`
 	CreatedAt         string `json:"createdAt"`
 }
@@ -33,11 +36,15 @@ type Payment struct {
 type IntentInput struct {
 	AmountCents int
 	Description string
+	PayerEmail  string
+	PayerName   string
 }
 
 type IntentResult struct {
 	ProviderPaymentID string
 	Status            string
+	PixCopiaECola     string
+	PixQRCodeBase64   string
 	ProviderData      string
 }
 
@@ -51,7 +58,9 @@ type Repository interface {
 	Create(input Payment) (Payment, error)
 	GetByID(tenantID string, id string) (Payment, error)
 	GetByAppointment(tenantID string, appointmentID string) (Payment, error)
+	GetByProviderPaymentID(providerPaymentID string) (Payment, error)
 	ListByTenant(tenantID string, limit int) ([]Payment, error)
 	ListByTenantRange(tenantID string, from string, to string) ([]Payment, error)
 	UpdateStatus(tenantID string, id string, status string, providerPaymentID string) (Payment, error)
+	UpdateIntent(tenantID string, id string, result IntentResult) (Payment, error)
 }

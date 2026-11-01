@@ -118,3 +118,25 @@ func registerCalendarSyncRoutes(mux *http.ServeMux, config RouterConfig) {
 	mux.HandleFunc("POST /api/v1/admin/calendar/connections", requireAdmin(config.AuthUseCase, handler.Connect))
 	mux.HandleFunc("DELETE /api/v1/admin/calendar/connections/{connID}", requireAdmin(config.AuthUseCase, handler.Disconnect))
 }
+
+func registerWebhookRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.PaymentUseCase == nil {
+		return
+	}
+	mpHandler := NewMercadoPagoWebhookHandler(
+		config.PaymentUseCase,
+		config.AppointmentUseCase,
+		config.FinanceUseCase,
+		config.EventBroker,
+	)
+	mux.HandleFunc("POST /api/v1/webhooks/mercadopago", mpHandler.HandleWebhook)
+	mux.HandleFunc("GET /api/v1/webhooks/mercadopago", mpHandler.HandleWebhook)
+}
+
+func registerOnboardingRoutes(mux *http.ServeMux, config RouterConfig) {
+	if config.OnboardingUseCase == nil {
+		return
+	}
+	handler := NewOnboardingHandler(config.OnboardingUseCase)
+	mux.HandleFunc("POST /api/v1/auth/signup", handler.Signup)
+}

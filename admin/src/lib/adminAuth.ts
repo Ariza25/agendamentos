@@ -65,6 +65,43 @@ export async function loginAdmin(input: AdminLoginInput): Promise<AdminAccount> 
   return payload.user
 }
 
+export type SignupInput = {
+  businessName: string
+  slug: string
+  ownerName: string
+  email: string
+  password: string
+  phone: string
+  segment?: string
+}
+
+export async function signupAdmin(input: SignupInput): Promise<AdminAccount> {
+  const response = await fetch(buildApiUrl('/api/v1/auth/signup'), {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...buildAdminAuthHeaders() },
+    body: JSON.stringify(input),
+  })
+
+  const payload = (await response.json().catch(() => null)) as
+    | ({
+        error?: string
+        fieldErrors?: Record<string, string>
+        code?: string
+        csrfToken?: string
+        user?: Partial<AdminAccount>
+      })
+    | null
+
+  if (!response.ok || !payload?.csrfToken || !payload.user) {
+    throw buildApiError(payload ?? null, 'Falha ao cadastrar estabelecimento.', response.status)
+  }
+
+  const user = normalizeAdminAccount(payload.user)
+  persistAdminSession(user, payload.csrfToken)
+  return user
+}
+
 export async function refreshAdminAccount() {
   const response = await fetch(buildApiUrl('/api/v1/auth/me'), {
     credentials: 'include',

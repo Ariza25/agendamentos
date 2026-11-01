@@ -112,6 +112,11 @@ func (u *UseCase) CreateStaffAccount(input domain.RegisterInput) (domain.Account
 	return session.User, nil
 }
 
+func (u *UseCase) RegisterOwner(input domain.RegisterInput) (domain.Session, error) {
+	input.Role = "owner"
+	return u.registerWithRole(input, "owner")
+}
+
 func (u *UseCase) CreateOrUpdateTenantOwner(input domain.RegisterInput, tenantID string) (domain.Account, bool, error) {
 	tenantID = strings.TrimSpace(tenantID)
 	if tenantID == "" {

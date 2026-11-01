@@ -5,6 +5,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 
 import { AdminShell } from './app/AdminShell'
 import { AdminLoginPage } from './pages/LoginAdminPage'
+import { SignupPage } from './pages/SignupPage'
 import { Button } from './shared/components/Button'
 import { Field, Input } from './shared/components/FormControls'
 import { useToast } from './shared/components/toast/ToastProvider'
@@ -91,21 +92,22 @@ function ResetPasswordPage() {
 export default function App() {
   const { pathname } = useLocation()
   const isResetPasswordPage = pathname === '/reset-password'
+  const isSignupPage = pathname === '/signup'
 
   const [session, setSession] = useState(getAdminSession())
 
   useEffect(() => {
-    if (isResetPasswordPage) {
+    if (isResetPasswordPage || isSignupPage) {
       return
     }
 
     return subscribeToAdminAuthChanges(() => {
       setSession(getAdminSession())
     })
-  }, [isResetPasswordPage])
+  }, [isResetPasswordPage, isSignupPage])
 
   useEffect(() => {
-    if (isResetPasswordPage) {
+    if (isResetPasswordPage || isSignupPage) {
       return
     }
     if (!session) {
@@ -115,10 +117,17 @@ export default function App() {
     void refreshAdminAccount().then(() => {
       setSession(getAdminSession())
     })
-  }, [isResetPasswordPage])
+  }, [isResetPasswordPage, isSignupPage])
 
   if (isResetPasswordPage) {
     return <ResetPasswordPage />
+  }
+
+  if (isSignupPage) {
+    if (session) {
+      return <Navigate replace to="/" />
+    }
+    return <SignupPage onSignup={() => setSession(getAdminSession())} />
   }
 
   if (!session) {

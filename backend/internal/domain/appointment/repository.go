@@ -24,6 +24,8 @@ type Appointment struct {
 	CheckInAt          string `json:"checkInAt,omitempty"`
 	NoShowAt           string `json:"noShowAt,omitempty"`
 	ReminderSentAt     string `json:"reminderSentAt,omitempty"`
+	LGPDAcceptedAt     string `json:"lgpdAcceptedAt,omitempty"`
+	MarketingConsent   bool   `json:"marketingConsent,omitempty"`
 	CreatedAt          string `json:"createdAt"`
 	UpdatedAt          string `json:"updatedAt"`
 }

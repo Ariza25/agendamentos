@@ -23,9 +23,9 @@ func (r *AppointmentRepository) Create(input appointment.Appointment) (appointme
 	item := input
 	item.ID = uuid.NewString()
 	_, err := r.db.Exec(`
-		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by, management_code_hash, series_id, recurrence_rule, timezone, payment_status, no_show_fee_cents, source, cancellation_reason)
-		VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8::timestamptz, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.ResourceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy, nullIfEmpty(item.ManagementCodeHash), item.SeriesID, item.RecurrenceRule, item.Timezone, item.PaymentStatus, item.NoShowFeeCents, item.Source, item.CancellationReason)
+		INSERT INTO catalog.appointments (id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by, management_code_hash, series_id, recurrence_rule, timezone, payment_status, no_show_fee_cents, source, cancellation_reason, lgpd_accepted_at, marketing_consent)
+		VALUES ($1, $2, $3, $4, $5, $6, $7::timestamptz, $8::timestamptz, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::timestamptz, $21)
+	`, item.ID, item.TenantID, item.ProfessionalID, item.ServiceID, item.ResourceID, item.CustomerID, item.StartsAt, item.EndsAt, item.Status, item.Notes, item.CreatedBy, nullIfEmpty(item.ManagementCodeHash), item.SeriesID, item.RecurrenceRule, item.Timezone, item.PaymentStatus, item.NoShowFeeCents, item.Source, item.CancellationReason, nullIfEmpty(item.LGPDAcceptedAt), item.MarketingConsent)
 	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("insert appointment: %w", err)
 	}
@@ -53,9 +53,10 @@ func (r *AppointmentRepository) Update(input appointment.Appointment) (appointme
 		    cancellation_reason = COALESCE(NULLIF($18, ''), cancellation_reason),
 		    check_in_at = $19,
 		    no_show_at = $20,
+		    marketing_consent = $21,
 		    updated_at = NOW()
 		WHERE id = $1 AND tenant_id = $2
-	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.ResourceID, input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes), nullIfEmpty(input.ManagementCodeHash), input.SeriesID, input.RecurrenceRule, input.Timezone, input.PaymentStatus, input.NoShowFeeCents, input.Source, input.CancellationReason, nullIfEmpty(input.CheckInAt), nullIfEmpty(input.NoShowAt))
+	`, input.ID, input.TenantID, input.ProfessionalID, strings.TrimSpace(input.ServiceID), input.ResourceID, input.CustomerID, input.StartsAt, input.EndsAt, input.Status, strings.TrimSpace(input.Notes), nullIfEmpty(input.ManagementCodeHash), input.SeriesID, input.RecurrenceRule, input.Timezone, input.PaymentStatus, input.NoShowFeeCents, input.Source, input.CancellationReason, nullIfEmpty(input.CheckInAt), nullIfEmpty(input.NoShowAt), input.MarketingConsent)
 	if err != nil {
 		return appointment.Appointment{}, fmt.Errorf("update appointment: %w", err)
 	}
@@ -408,14 +409,14 @@ func appointmentSelectColumns() string {
 	return `
 		SELECT id, tenant_id, professional_id, service_id, resource_id, customer_id, starts_at, ends_at, status, notes, created_by,
 		       COALESCE(management_code_hash, ''), series_id, COALESCE(recurrence_rule, ''), COALESCE(timezone, ''), payment_status, no_show_fee_cents, source, cancellation_reason,
-		       check_in_at, no_show_at, reminder_sent_at, created_at, updated_at`
+		       check_in_at, no_show_at, reminder_sent_at, lgpd_accepted_at, COALESCE(marketing_consent, false), created_at, updated_at`
 }
 
 func scanAppointmentRows(scanner appointmentScanner) (appointment.Appointment, error) {
 	var item appointment.Appointment
 	var startsAt, endsAt, createdAt, updatedAt time.Time
-	var checkInAt, noShowAt, reminderSentAt sql.NullTime
-	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.ResourceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &item.ManagementCodeHash, &item.SeriesID, &item.RecurrenceRule, &item.Timezone, &item.PaymentStatus, &item.NoShowFeeCents, &item.Source, &item.CancellationReason, &checkInAt, &noShowAt, &reminderSentAt, &createdAt, &updatedAt); err != nil {
+	var checkInAt, noShowAt, reminderSentAt, lgpdAcceptedAt sql.NullTime
+	if err := scanner.Scan(&item.ID, &item.TenantID, &item.ProfessionalID, &item.ServiceID, &item.ResourceID, &item.CustomerID, &startsAt, &endsAt, &item.Status, &item.Notes, &item.CreatedBy, &item.ManagementCodeHash, &item.SeriesID, &item.RecurrenceRule, &item.Timezone, &item.PaymentStatus, &item.NoShowFeeCents, &item.Source, &item.CancellationReason, &checkInAt, &noShowAt, &reminderSentAt, &lgpdAcceptedAt, &item.MarketingConsent, &createdAt, &updatedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return appointment.Appointment{}, fmt.Errorf("appointment not found")
 		}
@@ -433,6 +434,9 @@ func scanAppointmentRows(scanner appointmentScanner) (appointment.Appointment, e
 	}
 	if reminderSentAt.Valid {
 		item.ReminderSentAt = reminderSentAt.Time.UTC().Format(time.RFC3339)
+	}
+	if lgpdAcceptedAt.Valid {
+		item.LGPDAcceptedAt = lgpdAcceptedAt.Time.UTC().Format(time.RFC3339)
 	}
 	return item, nil
 }

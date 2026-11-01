@@ -35,13 +35,13 @@ export function Header() {
             href={APP_LINKS.admin}
             className="rounded-lg px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-panel-alt"
           >
-            Acessar painel
+            Entrar
           </a>
           <a
-            href={APP_LINKS.booking}
+            href={APP_LINKS.signup}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-strong"
           >
-            Agendar agora
+            Cadastre-se grátis
           </a>
         </div>
       </div>

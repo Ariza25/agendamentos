@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, Check, Clock, Copy, User, Users } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Check, Clock, Copy, ShieldCheck, User, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -160,6 +160,8 @@ export function BookingPage() {
     const notes = String(formData.get('notes') ?? '').trim()
     const timezone = String(formData.get('timezone') ?? '').trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'
     const recurrenceOption = String(formData.get('recurrence') ?? 'none')
+    const lgpdAccepted = formData.get('lgpdAccepted') === 'on' || formData.get('lgpdAccepted') === 'true'
+    const marketingConsent = formData.get('marketingConsent') === 'on' || formData.get('marketingConsent') === 'true'
 
     let recurrenceRule: string | undefined
     let recurrenceCount: number | undefined
@@ -182,6 +184,10 @@ export function BookingPage() {
       setError('Informe seu telefone para contato.')
       return
     }
+    if (!lgpdAccepted) {
+      setError('É obrigatório aceitar os Termos de Uso e a Política de Privacidade (LGPD) para prosseguir.')
+      return
+    }
 
     setError('')
     try {
@@ -197,6 +203,8 @@ export function BookingPage() {
         recurrenceRule,
         recurrenceCount,
         timezone,
+        lgpdAccepted,
+        marketingConsent,
       })
       setBooking(result)
       setStep('done')
@@ -605,6 +613,76 @@ function DateTimeStep({
   )
 }
 
+function LegalModal({
+  type,
+  onClose,
+}: {
+  type: 'terms' | 'lgpd'
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--color-line)] bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--color-line)]">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-[var(--color-primary)]" />
+            <h3 className="font-headline text-lg font-black text-[var(--color-ink)]">
+              {type === 'terms' ? 'Termos e Condições de Uso' : 'Privacidade e Proteção de Dados (LGPD)'}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition"
+            type="button"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-4 text-sm text-[var(--color-ink-soft)] leading-relaxed">
+          {type === 'terms' ? (
+            <>
+              <p>
+                <strong>1. Agendamento e Pontualidade:</strong> Ao agendar um serviço, você reserva um horário exclusivo com o profissional selecionado. Recomendamos chegar com 5 a 10 minutos de antecedência. Em caso de atraso superior a 10 minutos, o atendimento poderá ser reduzido ou remarcado.
+              </p>
+              <p>
+                <strong>2. Cancelamento e Reagendamento:</strong> Cancelamentos ou solicitações de reagendamento devem ser realizados através do link fornecido no código do agendamento, respeitando o prazo mínimo de antecedência configurado pelo estabelecimento.
+              </p>
+              <p>
+                <strong>3. Política de Não Comparecimento (No-Show):</strong> O não comparecimento sem aviso prévio causa prejuízo à agenda dos profissionais e poderá resultar no bloqueio de novos agendamentos online para o mesmo número de contato.
+              </p>
+              <p>
+                <strong>4. Pagamento:</strong> Caso aplicável, os pagamentos poderão ser realizados no momento do agendamento via Pix ou diretamente no local de atendimento através das formas aceitas pelo estabelecimento.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                <strong>1. Conformidade com a LGPD:</strong> Em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), garantimos total transparência e segurança sobre o tratamento dos seus dados pessoais.
+              </p>
+              <p>
+                <strong>2. Coleta e Finalidade:</strong> Coletamos apenas os dados essenciais (nome, telefone/WhatsApp e e-mail opcional) com a finalidade exclusiva de identificar seu agendamento, enviar confirmações, lembretes de horário e atualizações de status.
+              </p>
+              <p>
+                <strong>3. Segurança e Retenção:</strong> Seus dados são transmitidos com criptografia SSL/TLS e armazenados em servidores seguros, com controles rigorosos de acesso restrito apenas à equipe do estabelecimento.
+              </p>
+              <p>
+                <strong>4. Seus Direitos (Acesso e Anonimização):</strong> Você pode solicitar a qualquer momento a confirmação da existência de tratamento, a consulta, correção ou a anonimização/exclusão definitiva dos seus dados pessoais entrando em contato diretamente com o estabelecimento ou administrador do sistema.
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <Button onClick={onClose} type="button">
+            Entendido
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DetailsStep({
   serviceName,
   professionalName,
@@ -618,6 +696,9 @@ function DetailsStep({
 }) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [lgpdAccepted, setLgpdAccepted] = useState(false)
+  const [marketingConsent, setMarketingConsent] = useState(false)
+  const [legalModal, setLegalModal] = useState<'terms' | 'lgpd' | null>(null)
   return (
     <div>
       <h2 className="font-headline text-lg font-extrabold text-[var(--color-ink)]">Confirme seus dados</h2>
@@ -695,6 +776,53 @@ function DetailsStep({
             value={Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'}
           />
         </div>
+
+        <div className="space-y-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-bg-muted)] p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="lgpdAccepted"
+              checked={lgpdAccepted}
+              onChange={(e) => setLgpdAccepted(e.target.checked)}
+              required
+              className="mt-1 h-4 w-4 rounded border-stone-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+            />
+            <span className="text-xs text-[var(--color-ink)] leading-normal">
+              Li e concordo com os{' '}
+              <button
+                type="button"
+                onClick={() => setLegalModal('terms')}
+                className="font-bold text-[var(--color-primary)] underline hover:opacity-80"
+              >
+                Termos de Uso
+              </button>{' '}
+              e a{' '}
+              <button
+                type="button"
+                onClick={() => setLegalModal('lgpd')}
+                className="font-bold text-[var(--color-primary)] underline hover:opacity-80"
+              >
+                Política de Privacidade (LGPD)
+              </button>
+              . <span className="text-red-500 font-bold">*</span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="marketingConsent"
+              checked={marketingConsent}
+              onChange={(e) => setMarketingConsent(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-stone-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+            />
+            <span className="text-xs text-[var(--color-ink-soft)] leading-normal">
+              Aceito receber lembretes de horário, novidades e promoções exclusivas via WhatsApp ou E-mail.
+            </span>
+          </label>
+        </div>
+
+        {legalModal && <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />}
 
         <Button size="lg" type="submit">
           Confirmar agendamento

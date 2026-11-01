@@ -55,6 +55,7 @@ func registerCustomerRoutes(mux *http.ServeMux, config RouterConfig) {
 	mux.HandleFunc("GET /api/v1/admin/customers/{customerID}", requireAdmin(config.AuthUseCase, handler.Get))
 	mux.HandleFunc("PUT /api/v1/admin/customers/{customerID}", requireAdmin(config.AuthUseCase, handler.Update))
 	mux.HandleFunc("DELETE /api/v1/admin/customers/{customerID}", requireAdmin(config.AuthUseCase, handler.Delete))
+	mux.HandleFunc("POST /api/v1/admin/customers/{customerID}/anonymize", requireAdmin(config.AuthUseCase, handler.Anonymize))
 }
 
 func registerAppointmentRoutes(mux *http.ServeMux, config RouterConfig) {

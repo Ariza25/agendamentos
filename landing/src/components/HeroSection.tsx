@@ -18,16 +18,22 @@ export function HeroSection() {
       </p>
       <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <a
-          href={APP_LINKS.booking}
+          href={APP_LINKS.signup}
           className="rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-primary-strong"
         >
-          Experimentar agendamento
+          Criar estabelecimento grátis
+        </a>
+        <a
+          href={APP_LINKS.booking}
+          className="rounded-lg border border-line bg-bg-elevated px-6 py-3 text-base font-semibold text-ink transition-colors hover:bg-panel-alt"
+        >
+          Ver agendamento público
         </a>
         <a
           href={APP_LINKS.admin}
-          className="rounded-lg border border-line bg-bg-elevated px-6 py-3 text-base font-semibold text-ink transition-colors hover:bg-panel-alt"
+          className="text-sm font-semibold text-ink-soft transition-colors hover:text-ink sm:ml-2"
         >
-          Acessar o painel
+          Já tem conta? Entrar
         </a>
       </div>
 

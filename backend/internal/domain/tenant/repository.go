@@ -4,6 +4,7 @@ type Tenant struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Slug      string `json:"slug"`
+	Segment   string `json:"segment,omitempty"`
 	Active    bool   `json:"active"`
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`

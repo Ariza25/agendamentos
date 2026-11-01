@@ -39,8 +39,48 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
+      BASE_URL: ${BASE_URL:-https://localhost}
+    expose:
+      - "8080"
+
+  admin:
+    build:
+      context: ./admin
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  booking:
+    build:
+      context: ./booking
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  landing:
+    build:
+      context: ./landing
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - admin
+      - booking
+      - landing
     ports:
-      - "8080:8080"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
 
 volumes:
   pgdata:

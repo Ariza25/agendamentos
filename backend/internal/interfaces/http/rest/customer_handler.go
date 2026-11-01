@@ -75,6 +75,26 @@ func (h *CustomerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *CustomerHandler) Anonymize(w http.ResponseWriter, r *http.Request) {
+	tenantID := resolveRequestTenantID(r, nil)
+	customerID := r.PathValue("customerID")
+	c, err := h.useCase.GetByID(tenantID, customerID)
+	if err != nil {
+		writeNotFoundError(w, "not_found", "Customer not found.")
+		return
+	}
+	c.Name = "Cliente Anonimizado (LGPD)"
+	c.Phone = "(00) 00000-0000"
+	c.Email = "anonimizado@lgpd.local"
+	c.Notes = "Dados pessoais anonimizados a pedido do titular conforme Lei 13.709/2018 (LGPD)."
+	updated, err := h.useCase.Update(c)
+	if err != nil {
+		writeCustomerError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, updated)
+}
+
 func writeCustomerError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, appcustomer.ErrCustomerNotFound):

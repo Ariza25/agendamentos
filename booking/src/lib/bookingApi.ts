@@ -136,6 +136,8 @@ export function createPublicBooking(
     recurrenceRule?: string
     recurrenceCount?: number
     timezone?: string
+    lgpdAccepted?: boolean
+    marketingConsent?: boolean
   },
 ): Promise<BookingResult> {
   return publicFetch<BookingResult>(

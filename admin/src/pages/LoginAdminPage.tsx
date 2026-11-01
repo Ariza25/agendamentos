@@ -156,6 +156,13 @@ export function AdminLoginPage({ onLogin }: LoginAdminPageProps) {
             >
               {isRequestingRecovery ? 'Enviando...' : 'Esqueci minha senha'}
             </button>
+
+            <div className="mt-2 border-t border-stone-200 pt-4 text-center text-sm font-semibold text-[var(--color-ink-soft)]">
+              Não tem uma conta?{' '}
+              <Link to="/signup" className="font-bold text-[var(--color-primary)] hover:underline">
+                Crie seu estabelecimento grátis
+              </Link>
+            </div>
           </form>
         </div>
       </section>
