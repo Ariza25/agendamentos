@@ -121,9 +121,9 @@ func (r *TenantRepository) List() ([]tenant.Tenant, error) {
 func (r *TenantRepository) Update(input tenant.Tenant) (tenant.Tenant, error) {
 	result, err := r.db.Exec(`
 		UPDATE catalog.tenants
-		SET name = $2, slug = $3, updated_at = NOW()
+		SET name = $2, slug = $3, segment = COALESCE(NULLIF($4, ''), segment), updated_at = NOW()
 		WHERE id = $1
-	`, input.ID, input.Name, strings.ToLower(strings.TrimSpace(input.Slug)))
+	`, input.ID, input.Name, strings.ToLower(strings.TrimSpace(input.Slug)), input.Segment)
 	if err != nil {
 		if isTenantIdentityConflict(err) {
 			return tenant.Tenant{}, fmt.Errorf("slug already used")

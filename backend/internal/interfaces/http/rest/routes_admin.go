@@ -6,6 +6,7 @@ func registerTenantRoutes(mux *http.ServeMux, config RouterConfig) {
 	tenantHandler := NewTenantHandler(config.TenantUseCase)
 
 	mux.HandleFunc("GET /api/v1/admin/tenant", requireAdmin(config.AuthUseCase, tenantHandler.GetCurrent))
+	mux.HandleFunc("PUT /api/v1/admin/tenant", requireAdmin(config.AuthUseCase, tenantHandler.UpdateCurrent))
 	mux.HandleFunc("GET /api/v1/admin/tenants", requireMasterAdmin(config.AuthUseCase, tenantHandler.List))
 	mux.HandleFunc("POST /api/v1/admin/tenants", requireMasterAdmin(config.AuthUseCase, tenantHandler.Create))
 	mux.HandleFunc("GET /api/v1/admin/tenants/{tenantID}", requireMasterAdmin(config.AuthUseCase, tenantHandler.Get))

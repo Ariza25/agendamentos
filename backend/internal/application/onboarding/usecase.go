@@ -63,16 +63,6 @@ func NewUseCase(
 }
 
 func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Tenant, error) {
-	businessName := strings.TrimSpace(input.BusinessName)
-	if businessName == "" {
-		return authdomain.Session{}, tenantdomain.Tenant{}, ErrBusinessNameRequired
-	}
-
-	slug := strings.ToLower(strings.TrimSpace(input.Slug))
-	if slug == "" || !slugPattern.MatchString(slug) {
-		return authdomain.Session{}, tenantdomain.Tenant{}, ErrInvalidSlug
-	}
-
 	adminName := strings.TrimSpace(input.AdminName)
 	if adminName == "" {
 		return authdomain.Session{}, tenantdomain.Tenant{}, ErrAdminNameRequired
@@ -87,14 +77,37 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 		return authdomain.Session{}, tenantdomain.Tenant{}, ErrPasswordTooShort
 	}
 
-	segment := strings.ToLower(strings.TrimSpace(input.Segment))
-	if segment == "" {
-		segment = "general"
+	businessName := strings.TrimSpace(input.BusinessName)
+	if businessName == "" {
+		businessName = "Estabelecimento de " + adminName
 	}
 
-	// 1. Verify slug uniqueness
+	slug := strings.ToLower(strings.TrimSpace(input.Slug))
+	if slug == "" {
+		clean := strings.ToLower(regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(adminName, "-"))
+		clean = strings.Trim(clean, "-")
+		if clean == "" {
+			clean = "estabelecimento"
+		}
+		slug = fmt.Sprintf("%s-%d", clean, time.Now().Unix()%10000)
+	}
+
+	if !slugPattern.MatchString(slug) {
+		return authdomain.Session{}, tenantdomain.Tenant{}, ErrInvalidSlug
+	}
+
+	segment := strings.ToLower(strings.TrimSpace(input.Segment))
+	if segment == "" {
+		segment = "barbearia"
+	}
+
+	// 1. Verify slug uniqueness (auto-suffix if generated)
 	if _, err := u.tenantRepo.GetBySlug(slug); err == nil {
-		return authdomain.Session{}, tenantdomain.Tenant{}, ErrSlugAlreadyTaken
+		if strings.TrimSpace(input.Slug) == "" {
+			slug = fmt.Sprintf("%s-%d", slug, time.Now().UnixNano()%100000)
+		} else {
+			return authdomain.Session{}, tenantdomain.Tenant{}, ErrSlugAlreadyTaken
+		}
 	}
 
 	// 2. Create Tenant with 14-Day Free Trial

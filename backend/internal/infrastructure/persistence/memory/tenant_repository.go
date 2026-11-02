@@ -119,6 +119,9 @@ func (r *TenantRepository) Update(input tenant.Tenant) (tenant.Tenant, error) {
 	delete(r.bySlug, strings.ToLower(strings.TrimSpace(current.Slug)))
 	current.Name = strings.TrimSpace(input.Name)
 	current.Slug = slug
+	if strings.TrimSpace(input.Segment) != "" {
+		current.Segment = strings.TrimSpace(input.Segment)
+	}
 	current.Active = input.Active
 	current.UpdatedAt = time.Now().Format(time.RFC3339)
 	r.tenants[current.ID] = current

@@ -1,9 +1,12 @@
 import {
   AlertTriangle,
+  Building2,
   CalendarDays,
   Check,
   ChevronDown,
+  Copy,
   CreditCard,
+  ExternalLink,
   LogOut,
   Menu,
   QrCode,
@@ -21,6 +24,8 @@ import { canAccessAdminArea, isMasterAdmin } from '../lib/adminPermissions'
 import { roleLabel } from '../lib/adminAuth'
 import { Button } from '../shared/components/Button'
 import { Modal } from '../shared/components/Modal'
+import { useToast } from '../shared/components/toast/ToastProvider'
+import { EstablishmentModal, getPublicBookingUrl } from '../components/EstablishmentModal'
 import { AdminRoutes } from './AdminRoutes'
 import { navigationGroups, navigationItems, type AdminNavigationItem } from './navigation'
 import type { Tenant } from '../types'
@@ -31,10 +36,26 @@ type AdminShellProps = {
 }
 
 export function AdminShell({ user, onLogout }: AdminShellProps) {
+  const { showToast } = useToast()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null)
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
+  const [isEstablishmentModalOpen, setIsEstablishmentModalOpen] = useState(false)
+  const [copiedSlug, setCopiedSlug] = useState(false)
   const location = useLocation()
+
+  async function handleCopyBookingUrl() {
+    if (!currentTenant?.slug) return
+    const url = getPublicBookingUrl(currentTenant.slug)
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedSlug(true)
+      showToast({ message: 'Link da agenda pública copiado com sucesso!', tone: 'success' })
+      setTimeout(() => setCopiedSlug(false), 2000)
+    } catch {
+      showToast({ message: 'Falha ao copiar link.', tone: 'error' })
+    }
+  }
 
   useEffect(() => {
     setIsMobileMenuOpen(false)
@@ -157,6 +178,42 @@ export function AdminShell({ user, onLogout }: AdminShellProps) {
         </p>
       </div>
 
+      {/* Dados do Estabelecimento */}
+      <div className="mb-4 rounded-2xl border border-stone-200 bg-white p-3.5 shadow-sm">
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 font-headline text-[11px] font-black uppercase tracking-wider text-[var(--color-primary)]">
+            <Building2 className="h-3.5 w-3.5" />
+            Dados do Estabelecimento
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsEstablishmentModalOpen(true)}
+            className="rounded-lg bg-stone-100 px-2.5 py-1 text-[11px] font-bold text-stone-700 hover:bg-[var(--color-primary)] hover:text-white transition"
+            title="Editar Dados do Estabelecimento"
+          >
+            Editar
+          </button>
+        </div>
+        <div className="mt-2 min-w-0">
+          <p className="truncate font-headline text-sm font-black text-stone-900">
+            {currentTenant?.name || 'Meu Estabelecimento'}
+          </p>
+          <div className="mt-1 flex items-center justify-between text-xs">
+            <span className="truncate text-stone-500 font-medium">
+              Link: <strong className="font-semibold text-emerald-700">/{currentTenant?.slug || 'agenda'}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyBookingUrl}
+              className="ml-2 font-bold text-[var(--color-primary)] hover:underline shrink-0 text-[11px]"
+              title="Copiar link da agenda pública"
+            >
+              {copiedSlug ? 'Copiado!' : 'Copiar link'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {renderNavigation('desktop')}
 
       <div className="mt-auto border-t border-stone-200 pt-4">
@@ -241,6 +298,35 @@ export function AdminShell({ user, onLogout }: AdminShellProps) {
                   <X className="h-5 w-5" />
                 </Button>
               </div>
+
+              {/* Dados do Estabelecimento (Mobile) */}
+              <div className="mb-4 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 font-headline text-[11px] font-black uppercase tracking-wider text-[var(--color-primary)]">
+                    <Building2 className="h-3.5 w-3.5" />
+                    Dados do Estabelecimento
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      setIsEstablishmentModalOpen(true)
+                    }}
+                    className="rounded-lg bg-stone-100 px-2.5 py-1 text-[11px] font-bold text-stone-700 hover:bg-[var(--color-primary)] hover:text-white transition"
+                  >
+                    Editar
+                  </button>
+                </div>
+                <div className="mt-2 min-w-0">
+                  <p className="truncate font-headline text-sm font-black text-stone-900">
+                    {currentTenant?.name || 'Meu Estabelecimento'}
+                  </p>
+                  <p className="truncate text-xs font-semibold text-emerald-700 mt-0.5">
+                    /{currentTenant?.slug || 'agenda'}
+                  </p>
+                </div>
+              </div>
+
               {renderNavigation('mobile')}
               <div className="mt-4 border-t border-stone-200 pt-4">
                 <Button
@@ -346,6 +432,14 @@ export function AdminShell({ user, onLogout }: AdminShellProps) {
           onClose={() => setIsUpgradeModalOpen(false)}
         />
       )}
+
+      {/* Establishment Settings Modal */}
+      <EstablishmentModal
+        open={isEstablishmentModalOpen}
+        onClose={() => setIsEstablishmentModalOpen(false)}
+        tenant={currentTenant}
+        onTenantUpdated={(updated) => setCurrentTenant(updated)}
+      />
     </div>
   )
 }

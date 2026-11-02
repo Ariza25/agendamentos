@@ -45,6 +45,37 @@ func (h *TenantHandler) GetCurrent(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tenant)
 }
 
+func (h *TenantHandler) UpdateCurrent(w http.ResponseWriter, r *http.Request) {
+	tenantID := resolveRequestTenantID(r, nil)
+	var input tenantdomain.Tenant
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeInvalidPayload(w, "Could not read the establishment data.")
+		return
+	}
+	input.ID = tenantID
+
+	current, err := h.useCase.GetTenant(tenantID)
+	if err != nil {
+		writeNotFoundError(w, "not_found", "Establishment not found.")
+		return
+	}
+
+	input.Plan = current.Plan
+	input.Active = current.Active
+	input.TrialEndsAt = current.TrialEndsAt
+	input.ActiveModules = current.ActiveModules
+	if input.Segment == "" {
+		input.Segment = current.Segment
+	}
+
+	tenant, err := h.useCase.UpdateTenant(input)
+	if err != nil {
+		writeTenantError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, tenant)
+}
+
 func (h *TenantHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input tenantdomain.Tenant
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {

@@ -617,6 +617,17 @@ export async function fetchCurrentTenant(): Promise<Tenant> {
   return data
 }
 
+export async function updateCurrentTenant(input: Partial<Tenant>): Promise<Tenant> {
+  const response = await adminFetch('/api/v1/admin/tenant', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await parseJson<Tenant>(response)
+  invalidateAdminGetCache('/api/v1/admin/tenant', '/api/v1/admin/tenants')
+  return data
+}
+
 export async function fetchTenants(): Promise<Tenant[]> {
   const data = await cachedAdminJson<{ tenants: Tenant[] }>('/api/v1/admin/tenants')
   return data.tenants

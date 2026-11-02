@@ -82,5 +82,25 @@ func TestOnboardingSignup(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error for short password, got nil")
 	}
+
+	// 4. Signup without businessName and slug should auto-generate establishment
+	sessionMinimal, tenantMinimal, err := onboardingUseCase.Signup(onboarding.SignupInput{
+		AdminName: "Carlos Barbeiro",
+		Email:     "carlos@barbeiro.com",
+		Password:  "Senha@1234",
+		Phone:     "11988887777",
+	})
+	if err != nil {
+		t.Fatalf("expected successful minimal signup, got: %v", err)
+	}
+	if tenantMinimal.Name != "Estabelecimento de Carlos Barbeiro" {
+		t.Errorf("expected auto generated name, got: %s", tenantMinimal.Name)
+	}
+	if tenantMinimal.Slug == "" {
+		t.Errorf("expected non-empty auto generated slug")
+	}
+	if sessionMinimal.User.Email != "carlos@barbeiro.com" {
+		t.Errorf("expected email carlos@barbeiro.com, got: %s", sessionMinimal.User.Email)
+	}
 }
 

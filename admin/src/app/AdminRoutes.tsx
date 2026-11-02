@@ -9,6 +9,7 @@ const CustomersPage = lazy(() => import('../pages/CustomersPage').then((module) 
 const ServicesPage = lazy(() => import('../pages/ServicesPage').then((module) => ({ default: module.ServicesPage })))
 const ResourcesPage = lazy(() => import('../pages/ResourcesPage').then((module) => ({ default: module.ResourcesPage })))
 const ProfessionalsPage = lazy(() => import('../pages/ProfessionalsPage').then((module) => ({ default: module.ProfessionalsPage })))
+const EstablishmentPage = lazy(() => import('../pages/EstablishmentPage').then((module) => ({ default: module.EstablishmentPage })))
 const ConfigurationPage = lazy(() => import('../pages/ConfigurationPage').then((module) => ({ default: module.ConfigurationPage })))
 const TeamPage = lazy(() => import('../pages/TeamPage').then((module) => ({ default: module.TeamPage })))
 const TenantsPage = lazy(() => import('../pages/TenantsPage').then((module) => ({ default: module.TenantsPage })))
@@ -42,6 +43,7 @@ export function AdminRoutes({ canAccessRoute, defaultRoute }: AdminRoutesProps) 
         <Route element={canAccessRoute('services') ? <ServicesPage /> : <AccessDeniedPage />} path="/services" />
         <Route element={canAccessRoute('resources') ? <ResourcesPage /> : <AccessDeniedPage />} path="/resources" />
         <Route element={canAccessRoute('professionals') ? <ProfessionalsPage /> : <AccessDeniedPage />} path="/professionals" />
+        <Route element={canAccessRoute('configuration') ? <EstablishmentPage /> : <AccessDeniedPage />} path="/establishment" />
         <Route element={canAccessRoute('configuration') ? <ConfigurationPage /> : <AccessDeniedPage />} path="/configuration" />
         <Route element={canAccessRoute('team') ? <TeamPage /> : <AccessDeniedPage />} path="/team" />
         <Route element={canAccessRoute('tenants') ? <TenantsPage /> : <AccessDeniedPage />} path="/tenants" />

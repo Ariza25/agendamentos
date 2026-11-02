@@ -66,8 +66,8 @@ export async function loginAdmin(input: AdminLoginInput): Promise<AdminAccount> 
 }
 
 export type SignupInput = {
-  businessName: string
-  slug: string
+  businessName?: string
+  slug?: string
   ownerName: string
   email: string
   password: string

@@ -53,6 +53,7 @@ export const navigationItems: AdminNavigationItem[] = [
   { to: '/reviews', label: 'Avaliações', icon: Star, area: 'reviews' },
   { to: '/notifications', label: 'Notificações', icon: History, area: 'notifications' },
   { to: '/widget', label: 'Widget', icon: Code2, area: 'widget' },
+  { to: '/establishment', label: 'Dados do Estabelecimento', icon: Building2, area: 'configuration' },
   { to: '/configuration', label: 'Configuração', icon: SlidersHorizontal, area: 'configuration' },
   { to: '/team', label: 'Equipe', icon: Settings, area: 'team' },
   { to: '/tenants', label: 'Estabelecimentos', icon: Building2, area: 'tenants', masterOnly: true },
@@ -73,6 +74,6 @@ export const navigationGroups = [
   },
   {
     label: 'Administração',
-    paths: ['/configuration', '/widget', '/team', '/tenants'],
+    paths: ['/establishment', '/configuration', '/widget', '/team', '/tenants'],
   },
 ]
