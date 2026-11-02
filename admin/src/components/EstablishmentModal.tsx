@@ -224,3 +224,4 @@ export function EstablishmentModal({ open, onClose, tenant, onTenantUpdated }: E
     </Modal>
   )
 }
+

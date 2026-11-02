@@ -160,7 +160,7 @@ export function AdminLoginPage({ onLogin }: LoginAdminPageProps) {
             <div className="mt-2 border-t border-stone-200 pt-4 text-center text-sm font-semibold text-[var(--color-ink-soft)]">
               Não tem uma conta?{' '}
               <Link to="/signup" className="font-bold text-[var(--color-primary)] hover:underline">
-                Crie seu estabelecimento grátis
+                Criar conta
               </Link>
             </div>
           </form>

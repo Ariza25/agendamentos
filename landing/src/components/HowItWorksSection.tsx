@@ -5,7 +5,7 @@ const STEPS = [
     icon: LayoutDashboard,
     step: '1',
     title: 'Configure o painel',
-    description: 'Crie seu estabelecimento, adicione serviços, profissionais e regras de agenda.',
+    description: 'Acesse seu painel, adicione serviços, profissionais e regras de agenda.',
   },
   {
     icon: Globe,
