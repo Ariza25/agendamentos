@@ -563,3 +563,51 @@ export type CheckoutResult = {
   productsTotalCents: number
   commissionCents: number
 }
+
+// --- Audit Trail & System Health ---
+export type AuditLog = {
+  id: string
+  tenantId: string
+  userId: string
+  userEmail: string
+  action: string
+  resource: string
+  resourceId: string
+  details: Record<string, unknown>
+  ipAddress: string
+  userAgent: string
+  createdAt: string
+}
+
+export type AuditLogsResponse = {
+  logs: AuditLog[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export type SystemStatus = {
+  status: string
+  database: {
+    connected: boolean
+    error?: string
+    stats?: {
+      driver: string
+      openConnections?: number
+      inUse?: number
+      idle?: number
+      waitCount?: number
+      maxOpenConnections?: number
+    }
+  }
+  outbox: {
+    pending: number
+    published: number
+    failed: number
+  }
+  uptimeSeconds: number
+  goroutines: number
+  memoryAllocMb: number
+  memorySysMb: number
+  serverTime: string
+}

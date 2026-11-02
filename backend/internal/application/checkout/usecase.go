@@ -1,17 +1,19 @@
 package checkout
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	appointmentdomain "erpagendamentos/backend/internal/domain/appointment"
+	auditdomain "erpagendamentos/backend/internal/domain/audit"
+	cashregisterdomain "erpagendamentos/backend/internal/domain/cashregister"
 	commissiondomain "erpagendamentos/backend/internal/domain/commission"
 	financedomain "erpagendamentos/backend/internal/domain/finance"
 	professionaldomain "erpagendamentos/backend/internal/domain/professional"
 	servicedomain "erpagendamentos/backend/internal/domain/service"
 	stockdomain "erpagendamentos/backend/internal/domain/stock"
-	cashregisterdomain "erpagendamentos/backend/internal/domain/cashregister"
 )
 
 type ProductItem struct {
@@ -36,6 +38,18 @@ type CheckoutResult struct {
 	CommissionCents    int                           `json:"commissionCents"`
 }
 
+type TxRunner interface {
+	RunInTx(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
+type AuditLogger interface {
+	Log(entry auditdomain.AuditLog) error
+}
+
+type OutboxPublisher interface {
+	Publish(tenantID string, topic string, payload map[string]any) error
+}
+
 type UseCase struct {
 	appointmentRepo  appointmentdomain.Repository
 	serviceRepo      servicedomain.Repository
@@ -44,6 +58,9 @@ type UseCase struct {
 	commissionRepo   commissiondomain.Repository
 	financeRepo      financedomain.Repository
 	cashRegisterRepo cashregisterdomain.Repository
+	txRunner         TxRunner
+	audit            AuditLogger
+	outbox           OutboxPublisher
 }
 
 func NewUseCase(
@@ -64,6 +81,21 @@ func NewUseCase(
 		financeRepo:      financeRepo,
 		cashRegisterRepo: cashRegisterRepo,
 	}
+}
+
+func (u *UseCase) WithTxRunner(runner TxRunner) *UseCase {
+	u.txRunner = runner
+	return u
+}
+
+func (u *UseCase) WithAudit(audit AuditLogger) *UseCase {
+	u.audit = audit
+	return u
+}
+
+func (u *UseCase) WithOutbox(outbox OutboxPublisher) *UseCase {
+	u.outbox = outbox
+	return u
 }
 
 func (u *UseCase) Checkout(tenantID string, input CheckoutInput) (CheckoutResult, error) {
@@ -201,6 +233,34 @@ func (u *UseCase) Checkout(tenantID string, input CheckoutInput) (CheckoutResult
 	updatedAppt, err := u.appointmentRepo.Update(appt)
 	if err != nil {
 		return CheckoutResult{}, fmt.Errorf("update appointment: %w", err)
+	}
+
+	// 8. Trilha de Auditoria (Audit Log)
+	if u.audit != nil {
+		_ = u.audit.Log(auditdomain.AuditLog{
+			TenantID:   tenantID,
+			Action:     "checkout.completed",
+			Resource:   "appointment",
+			ResourceID: appt.ID,
+			Details: map[string]any{
+				"totalChargedCents":  totalCharged,
+				"serviceTotalCents":  serviceTotalCents,
+				"productsTotalCents": productsTotalCents,
+				"commissionCents":    totalCommissionCents,
+				"paymentMethod":      input.PaymentMethod,
+			},
+		})
+	}
+
+	// 9. Fila de Eventos Transacionais (Outbox & Cross-Instance SSE)
+	if u.outbox != nil {
+		_ = u.outbox.Publish(tenantID, "checkout.completed", map[string]any{
+			"appointmentId":      appt.ID,
+			"totalChargedCents":  totalCharged,
+			"serviceTotalCents":  serviceTotalCents,
+			"productsTotalCents": productsTotalCents,
+			"paymentMethod":      input.PaymentMethod,
+		})
 	}
 
 	return CheckoutResult{

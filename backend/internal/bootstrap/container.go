@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"erpagendamentos/backend/internal/application/appointment"
+	"erpagendamentos/backend/internal/application/audit"
 	"erpagendamentos/backend/internal/application/auth"
 	"erpagendamentos/backend/internal/application/booking"
 	"erpagendamentos/backend/internal/application/calendar"
@@ -24,6 +26,7 @@ import (
 	"erpagendamentos/backend/internal/application/job"
 	"erpagendamentos/backend/internal/application/notification"
 	"erpagendamentos/backend/internal/application/onboarding"
+	"erpagendamentos/backend/internal/application/outbox"
 	"erpagendamentos/backend/internal/application/payment"
 	"erpagendamentos/backend/internal/application/professional"
 	"erpagendamentos/backend/internal/application/resource"
@@ -41,6 +44,7 @@ import (
 	tenantdomain "erpagendamentos/backend/internal/domain/tenant"
 	notificationinfra "erpagendamentos/backend/internal/infrastructure/notifications"
 	paymentinfra "erpagendamentos/backend/internal/infrastructure/payments"
+	"erpagendamentos/backend/internal/infrastructure/persistence"
 	"erpagendamentos/backend/internal/interfaces/http/rest"
 )
 
@@ -68,6 +72,8 @@ type Container struct {
 	onboardingUseCase       *onboarding.UseCase
 	cashRegisterUseCase     *cashregister.UseCase
 	checkoutUseCase         *checkout.UseCase
+	auditUseCase            *audit.UseCase
+	outboxUseCase           *outbox.UseCase
 	jobQueue                *job.Queue
 	eventBroker             *rest.EventBroker
 	authMaintenance         auth.MaintenanceConfig
@@ -105,6 +111,15 @@ func NewContainer() *Container {
 		repositories.professional,
 	)
 
+	auditUseCase := audit.NewUseCase(repositories.audit)
+	outboxUseCase := outbox.NewUseCase(repositories.outbox, func(tenantID string, topic string, payload map[string]any) error {
+		if eventBroker != nil {
+			eventBroker.Publish(tenantID, topic, payload)
+		}
+		return nil
+	})
+	outboxUseCase.StartWorker(context.Background(), 5*time.Second)
+
 	container := &Container{
 		db:                   db,
 		databaseRequired:     databaseRequired,
@@ -134,7 +149,9 @@ func NewContainer() *Container {
 			repositories.commission,
 			repositories.finance,
 			repositories.cashRegister,
-		),
+		).WithTxRunner(persistence.NewPostgresTxRunner(db)).WithAudit(auditUseCase).WithOutbox(outboxUseCase),
+		auditUseCase:         auditUseCase,
+		outboxUseCase:        outboxUseCase,
 		jobQueue:             jobQueue,
 		eventBroker:          eventBroker,
 		commerceUseCase: commerce.NewUseCase(
@@ -270,6 +287,10 @@ func (c *Container) Router() *rest.Router {
 		OnboardingUseCase:     c.onboardingUseCase,
 		CashRegisterUseCase:   c.cashRegisterUseCase,
 		CheckoutUseCase:       c.checkoutUseCase,
+		AuditUseCase:          c.auditUseCase,
+		OutboxUseCase:         c.outboxUseCase,
+		ReadinessChecker:      c.ReadinessCheck,
+		DBStatsGetter:         c.DBStats,
 		EventBroker:           c.eventBroker,
 		CustomerRepository:    c.customerRepository,
 		ServiceRepository:     c.serviceRepository,
@@ -290,6 +311,22 @@ func (c *Container) ReadinessCheck() error {
 		}
 	}
 	return nil
+}
+
+func (c *Container) DBStats() map[string]any {
+	if c.db == nil {
+		return map[string]any{"driver": "memory", "connected": true}
+	}
+	stats := c.db.Stats()
+	return map[string]any{
+		"driver":             "postgres",
+		"connected":          true,
+		"openConnections":    stats.OpenConnections,
+		"inUse":              stats.InUse,
+		"idle":               stats.Idle,
+		"waitCount":          stats.WaitCount,
+		"maxOpenConnections": stats.MaxOpenConnections,
+	}
 }
 
 func (c *Container) Close() error {

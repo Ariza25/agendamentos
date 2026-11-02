@@ -4,6 +4,7 @@ import type {
   Appointment,
   AppointmentAnalytics,
   AppointmentSummary,
+  AuditLogsResponse,
   CalendarConnection,
   CashRegister,
   CashRegisterEntry,
@@ -34,6 +35,7 @@ import type {
   Service,
   ServiceSupply,
   StockMovement,
+  SystemStatus,
   Tenant,
   UpdateTenantSubscriptionInput,
   WaitingListEntry,
@@ -671,6 +673,34 @@ export async function updateTenantSubscription(
   const data = await parseJson<Tenant>(response)
   invalidateAdminGetCache('/api/v1/admin/tenants', '/api/v1/admin/tenant')
   return data
+}
+
+// ==========================================
+// Audit Logs & Master System Diagnostics
+// ==========================================
+
+export async function fetchAuditLogs(params?: {
+  tenantId?: string
+  limit?: number
+  offset?: number
+}): Promise<AuditLogsResponse> {
+  const searchParams = new URLSearchParams()
+  if (params?.tenantId) searchParams.set('tenantId', params.tenantId)
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.offset) searchParams.set('offset', String(params.offset))
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : ''
+  const response = await adminFetch(`/api/v1/admin/audit-logs${qs}`)
+  return parseJson<AuditLogsResponse>(response)
+}
+
+export async function fetchSystemStatus(): Promise<SystemStatus> {
+  const response = await adminFetch('/api/v1/admin/system/status')
+  return parseJson<SystemStatus>(response)
+}
+
+export async function checkSystemReadiness(): Promise<{ status: string; database?: string; timestamp?: string }> {
+  const response = await adminFetch('/ready')
+  return parseJson<{ status: string; database?: string; timestamp?: string }>(response)
 }
 
 // ==========================================

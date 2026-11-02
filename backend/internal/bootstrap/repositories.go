@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	appointmentdomain "erpagendamentos/backend/internal/domain/appointment"
+	auditdomain "erpagendamentos/backend/internal/domain/audit"
 	authdomain "erpagendamentos/backend/internal/domain/auth"
 	calendardomain "erpagendamentos/backend/internal/domain/calendar"
 	cashregisterdomain "erpagendamentos/backend/internal/domain/cashregister"
@@ -17,6 +18,7 @@ import (
 	financedomain "erpagendamentos/backend/internal/domain/finance"
 	jobdomain "erpagendamentos/backend/internal/domain/job"
 	notificationdomain "erpagendamentos/backend/internal/domain/notification"
+	outboxdomain "erpagendamentos/backend/internal/domain/outbox"
 	paymentdomain "erpagendamentos/backend/internal/domain/payment"
 	professionaldomain "erpagendamentos/backend/internal/domain/professional"
 	resourcedomain "erpagendamentos/backend/internal/domain/resource"
@@ -53,6 +55,8 @@ type repositorySet struct {
 	calendar       calendardomain.Repository
 	job            jobdomain.Repository
 	cashRegister   cashregisterdomain.Repository
+	audit          auditdomain.Repository
+	outbox         outboxdomain.Repository
 }
 
 func initializeRepositories() (repositorySet, *sql.DB, bool) {
@@ -114,6 +118,8 @@ func memoryRepositories() repositorySet {
 		calendar:       memory.NewCalendarRepository(),
 		job:            memory.NewJobRepository(),
 		cashRegister:   memory.NewCashRegisterRepository(),
+		audit:          memory.NewAuditRepository(),
+		outbox:         memory.NewOutboxRepository(),
 	}
 }
 
@@ -142,5 +148,7 @@ func postgresRepositories(db *sql.DB) repositorySet {
 		calendar:       postgres.NewCalendarRepository(db),
 		job:            postgres.NewJobRepository(db),
 		cashRegister:   postgres.NewCashRegisterRepository(db),
+		audit:          postgres.NewAuditRepository(db),
+		outbox:         postgres.NewOutboxRepository(db),
 	}
 }

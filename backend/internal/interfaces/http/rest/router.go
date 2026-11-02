@@ -6,6 +6,7 @@ import (
 	"time"
 
 	appappointment "erpagendamentos/backend/internal/application/appointment"
+	appaudit "erpagendamentos/backend/internal/application/audit"
 	appauth "erpagendamentos/backend/internal/application/auth"
 	appbooking "erpagendamentos/backend/internal/application/booking"
 	appcalendar "erpagendamentos/backend/internal/application/calendar"
@@ -18,6 +19,7 @@ import (
 	appfinance "erpagendamentos/backend/internal/application/finance"
 	appnotification "erpagendamentos/backend/internal/application/notification"
 	apponboarding "erpagendamentos/backend/internal/application/onboarding"
+	appoutbox "erpagendamentos/backend/internal/application/outbox"
 	apppayment "erpagendamentos/backend/internal/application/payment"
 	appprofessional "erpagendamentos/backend/internal/application/professional"
 	appresource "erpagendamentos/backend/internal/application/resource"
@@ -60,6 +62,10 @@ type RouterConfig struct {
 	OnboardingUseCase     *apponboarding.UseCase
 	CashRegisterUseCase   *appcashregister.UseCase
 	CheckoutUseCase       *appcheckout.UseCase
+	AuditUseCase          *appaudit.UseCase
+	OutboxUseCase         *appoutbox.UseCase
+	ReadinessChecker      func() error
+	DBStatsGetter         func() map[string]any
 	EventBroker           *EventBroker
 	CustomerRepository    customerdomain.Repository
 	ServiceRepository     servicedomain.Repository
@@ -96,6 +102,13 @@ func NewRouter(config RouterConfig) *Router {
 	registerOnboardingRoutes(mux, config)
 	registerCashRegisterRoutes(mux, config)
 	registerCheckoutRoutes(mux, config)
+
+	if config.AuditUseCase != nil {
+		auditHandler := NewAuditHandler(config.AuditUseCase)
+		mux.HandleFunc("GET /api/v1/admin/audit-logs", requireAdmin(config.AuthUseCase, auditHandler.List))
+	}
+	systemHandler := NewSystemHandler(config.ReadinessChecker, config.DBStatsGetter, config.OutboxUseCase)
+	mux.HandleFunc("GET /api/v1/admin/system/status", requireAdmin(config.AuthUseCase, systemHandler.Status))
 
 	// Prometheus metrics
 	mux.HandleFunc("GET /metrics", HandleMetrics)

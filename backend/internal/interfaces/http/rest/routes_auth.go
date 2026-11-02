@@ -6,7 +6,9 @@ func registerAuthRoutes(mux *http.ServeMux, config RouterConfig) {
 	authHandler := NewAuthHandler(config.AuthUseCase)
 
 	mux.HandleFunc("GET /health", health)
-	mux.HandleFunc("GET /ready", readiness(nil))
+	mux.HandleFunc("GET /healthz", health)
+	mux.HandleFunc("GET /live", health)
+	mux.HandleFunc("GET /ready", readiness(config.ReadinessChecker))
 
 	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("POST /api/v1/auth/logout", authHandler.Logout)

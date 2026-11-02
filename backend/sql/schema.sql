@@ -629,7 +629,113 @@ CREATE INDEX IF NOT EXISTS idx_calendar_connections_tenant
   ON catalog.calendar_connections(tenant_id, professional_id);
 
 -- ---------------------------------------------------------------------
--- 17. Seed / Carga Inicial Padrão (Idempotente)
+-- 17. Trilha de Auditoria (Audit Logs / LGPD Compliance)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS catalog.audit_logs (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  user_id TEXT NOT NULL DEFAULT '',
+  user_email TEXT NOT NULL DEFAULT '',
+  action TEXT NOT NULL,
+  resource TEXT NOT NULL,
+  resource_id TEXT NOT NULL DEFAULT '',
+  details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ip_address TEXT NOT NULL DEFAULT '',
+  user_agent TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_audit_logs_tenant_created
+  ON catalog.audit_logs(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_catalog_audit_logs_action
+  ON catalog.audit_logs(action, created_at DESC);
+
+-- ---------------------------------------------------------------------
+-- 18. Fila de Eventos Transacionais (Transactional Outbox & Cross-Instance)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS catalog.outbox_events (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'published', 'failed'
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  error_message TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_outbox_events_status_created
+  ON catalog.outbox_events(status, created_at ASC);
+
+-- ---------------------------------------------------------------------
+-- 19. Row-Level Security (RLS) - Isolamento de Dados por Tenant
+-- ---------------------------------------------------------------------
+ALTER TABLE catalog.appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.professionals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.finance_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.cash_register_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.commission_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE catalog.audit_logs ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'catalog' AND tablename = 'appointments' AND policyname = 'tenant_isolation_appointments') THEN
+    CREATE POLICY tenant_isolation_appointments ON catalog.appointments
+      USING (NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL 
+             OR current_setting('app.current_tenant_id', true) = 'default' 
+             OR tenant_id = current_setting('app.current_tenant_id', true));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'catalog' AND tablename = 'customers' AND policyname = 'tenant_isolation_customers') THEN
+    CREATE POLICY tenant_isolation_customers ON catalog.customers
+      USING (NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL 
+             OR current_setting('app.current_tenant_id', true) = 'default' 
+             OR tenant_id = current_setting('app.current_tenant_id', true));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'catalog' AND tablename = 'finance_transactions' AND policyname = 'tenant_isolation_finance') THEN
+    CREATE POLICY tenant_isolation_finance ON catalog.finance_transactions
+      USING (NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL 
+             OR current_setting('app.current_tenant_id', true) = 'default' 
+             OR tenant_id = current_setting('app.current_tenant_id', true));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'catalog' AND tablename = 'cash_register_entries' AND policyname = 'tenant_isolation_cash') THEN
+    CREATE POLICY tenant_isolation_cash ON catalog.cash_register_entries
+      USING (NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL 
+             OR current_setting('app.current_tenant_id', true) = 'default' 
+             OR tenant_id = current_setting('app.current_tenant_id', true));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'catalog' AND tablename = 'commission_records' AND policyname = 'tenant_isolation_commissions') THEN
+    CREATE POLICY tenant_isolation_commissions ON catalog.commission_records
+      USING (NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL 
+             OR current_setting('app.current_tenant_id', true) = 'default' 
+             OR tenant_id = current_setting('app.current_tenant_id', true));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'catalog' AND tablename = 'products' AND policyname = 'tenant_isolation_products') THEN
+    CREATE POLICY tenant_isolation_products ON catalog.products
+      USING (NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL 
+             OR current_setting('app.current_tenant_id', true) = 'default' 
+             OR tenant_id = current_setting('app.current_tenant_id', true));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'catalog' AND tablename = 'audit_logs' AND policyname = 'tenant_isolation_audit_logs') THEN
+    CREATE POLICY tenant_isolation_audit_logs ON catalog.audit_logs
+      USING (NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL 
+             OR current_setting('app.current_tenant_id', true) = 'default' 
+             OR tenant_id = current_setting('app.current_tenant_id', true));
+  END IF;
+END $$;
+
+-- ---------------------------------------------------------------------
+-- 20. Seed / Carga Inicial Padrão (Idempotente)
 -- ---------------------------------------------------------------------
 -- Tenant Master/Default
 INSERT INTO catalog.tenants (
