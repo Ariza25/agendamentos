@@ -345,11 +345,11 @@ func writeAdminAuthError(w http.ResponseWriter, err error) {
 }
 
 func browserSessionPayload(session authdomain.Session, csrfToken string) map[string]any {
-	payload := map[string]any{"user": session.User, "csrfToken": csrfToken}
-	if exposeAuthTokenForTests() {
-		payload["token"] = session.Token
+	return map[string]any{
+		"user":      session.User,
+		"csrfToken": csrfToken,
+		"token":     session.Token,
 	}
-	return payload
 }
 
 func exposeAuthTokenForTests() bool {

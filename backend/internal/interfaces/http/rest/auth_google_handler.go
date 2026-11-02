@@ -286,3 +286,4 @@ func appendQueryParam(rawURL, key, val string) string {
 	}
 	return fmt.Sprintf("%s%s%s=%s", rawURL, separator, url.QueryEscape(key), url.QueryEscape(val))
 }
+

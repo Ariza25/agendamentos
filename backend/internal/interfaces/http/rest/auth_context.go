@@ -3,7 +3,6 @@ package rest
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 
 	appauth "erpagendamentos/backend/internal/application/auth"
@@ -25,7 +24,7 @@ func resolveAuthClaims(r *http.Request, authUseCase *appauth.UseCase) (authdomai
 	}
 
 	token := authTokenFromCookie(r)
-	if token == "" && bearerAuthAllowed() {
+	if token == "" {
 		header := strings.TrimSpace(r.Header.Get("Authorization"))
 		if strings.HasPrefix(header, "Bearer ") {
 			token = strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
@@ -44,11 +43,7 @@ func resolveAuthClaims(r *http.Request, authUseCase *appauth.UseCase) (authdomai
 }
 
 func bearerAuthAllowed() bool {
-	raw := strings.ToLower(strings.TrimSpace(os.Getenv("ALLOW_BEARER_AUTH")))
-	if raw == "true" || raw == "1" || raw == "yes" {
-		return true
-	}
-	return !isAuthCookieProductionEnv()
+	return true
 }
 
 func withProtectedNamespaces(authUseCase *appauth.UseCase, next http.Handler) http.Handler {

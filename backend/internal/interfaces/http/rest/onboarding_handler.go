@@ -34,5 +34,6 @@ func (h *OnboardingHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		"user":      session.User,
 		"tenant":    tenant,
 		"csrfToken": csrfToken,
+		"token":     session.Token,
 	})
 }

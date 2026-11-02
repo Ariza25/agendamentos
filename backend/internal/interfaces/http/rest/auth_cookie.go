@@ -109,9 +109,12 @@ func authCookieSameSite() http.SameSite {
 	switch strings.ToLower(strings.TrimSpace(os.Getenv("AUTH_COOKIE_SAMESITE"))) {
 	case "strict":
 		return http.SameSiteStrictMode
-	case "none":
-		return http.SameSiteNoneMode
+	case "lax":
+		return http.SameSiteLaxMode
 	default:
+		if isAuthCookieProductionEnv() {
+			return http.SameSiteNoneMode
+		}
 		return http.SameSiteLaxMode
 	}
 }

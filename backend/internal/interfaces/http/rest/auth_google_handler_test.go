@@ -96,3 +96,4 @@ func TestAuthGoogleHandlerStatusAndLogin(t *testing.T) {
 	// Cleanup
 	os.Unsetenv("GOOGLE_CLIENT_ID")
 }
+

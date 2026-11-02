@@ -35,6 +35,7 @@ export const ADMIN_ROLES = new Set<AdminRole>(['owner', 'admin', 'receptionist',
 
 const ADMIN_USER_STORAGE_KEY = 'erpagendamentos:admin:user'
 const ADMIN_CSRF_STORAGE_KEY = 'erpagendamentos:admin:csrf'
+const ADMIN_TOKEN_STORAGE_KEY = 'erpagendamentos:admin:token'
 const ADMIN_CLIENT_ID_STORAGE_KEY = 'erpagendamentos:admin:client-id'
 const ADMIN_AUTH_EVENT = 'erpagendamentos:admin:auth:changed'
 
@@ -47,22 +48,33 @@ export async function loginAdmin(input: AdminLoginInput): Promise<AdminAccount> 
   })
 
   const payload = (await response.json().catch(() => null)) as
-    | ({ error?: string; fieldErrors?: Record<string, string>; code?: string; csrfToken?: string } & Partial<AdminSession>)
+    | ({
+        error?: string
+        fieldErrors?: Record<string, string>
+        code?: string
+        csrfToken?: string
+        token?: string
+        user?: AdminAccount
+        session?: { token?: string; user?: AdminAccount }
+      })
     | null
 
-  if (!response.ok || !payload?.csrfToken || !payload.user) {
+  const user = payload?.user || payload?.session?.user
+
+  if (!response.ok || !payload?.csrfToken || !user) {
     throw buildApiError(payload ?? null, 'Falha ao autenticar.', response.status)
   }
 
-  if (!isAdminRole(payload.user.role)) {
+  if (!isAdminRole(user.role)) {
     throw buildApiError(
       { error: 'Este usuario nao tem acesso administrativo.', code: 'forbidden' },
       'Este usuario nao tem acesso administrativo.',
     )
   }
 
-  persistAdminSession(payload.user, payload.csrfToken)
-  return payload.user
+  const token = payload.token || payload.session?.token || ''
+  persistAdminSession(user, payload.csrfToken, token)
+  return user
 }
 
 export type SignupInput = {
@@ -95,8 +107,9 @@ export async function signupAdmin(input: SignupInput): Promise<AdminAccount> {
         fieldErrors?: Record<string, string>
         code?: string
         csrfToken?: string
+        token?: string
         user?: Partial<AdminAccount>
-        session?: { user?: Partial<AdminAccount> }
+        session?: { token?: string; user?: Partial<AdminAccount> }
       })
     | null
 
@@ -106,8 +119,9 @@ export async function signupAdmin(input: SignupInput): Promise<AdminAccount> {
     throw buildApiError(resData ?? null, 'Falha ao cadastrar estabelecimento.', response.status)
   }
 
+  const token = resData.token || resData.session?.token || ''
   const user = normalizeAdminAccount(userPayload)
-  persistAdminSession(user, resData.csrfToken)
+  persistAdminSession(user, resData.csrfToken, token)
   return user
 }
 
@@ -144,6 +158,7 @@ export function logoutAdmin() {
   }).catch(() => {})
   window.localStorage.removeItem(ADMIN_CSRF_STORAGE_KEY)
   window.localStorage.removeItem(ADMIN_USER_STORAGE_KEY)
+  window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY)
   dispatchAdminAuthChange()
 }
 
@@ -173,9 +188,19 @@ export function getAdminAccount(): AdminAccount | null {
   }
 }
 
+export function getAdminAuthToken(): string {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+
+  return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY)?.trim() ?? ''
+}
+
 export function buildAdminAuthHeaders(): Record<string, string> {
   const csrfToken = getAdminCSRFToken()
+  const token = getAdminAuthToken()
   return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
     'X-Client-ID': getOrCreateAdminClientID(),
   }
@@ -191,12 +216,15 @@ export function subscribeToAdminAuthChanges(callback: () => void) {
   }
 }
 
-function persistAdminSession(user: AdminAccount, csrfToken: string) {
+function persistAdminSession(user: AdminAccount, csrfToken: string, token?: string) {
   if (typeof window === 'undefined') {
     return
   }
 
   window.localStorage.setItem(ADMIN_CSRF_STORAGE_KEY, csrfToken)
+  if (token) {
+    window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token)
+  }
   persistAdminUser(user)
 }
 
@@ -343,12 +371,13 @@ export function handleGoogleAuthRedirect(): {
   if (hash && hash.includes('google_auth=success')) {
     const params = new URLSearchParams(hash.replace(/^#/, ''))
     const csrfToken = params.get('csrfToken') || ''
+    const token = params.get('token') || ''
     const userRaw = params.get('user')
     if (csrfToken && userRaw) {
       try {
         const parsed = JSON.parse(decodeURIComponent(userRaw)) as Partial<AdminAccount>
         const user = normalizeAdminAccount(parsed)
-        persistAdminSession(user, csrfToken)
+        persistAdminSession(user, csrfToken, token)
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
         return { user, error: null }
       } catch {
