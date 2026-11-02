@@ -7,10 +7,7 @@ import (
 	"strings"
 )
 
-var defaultAllowedOrigins = []string{
-	"http://localhost:5173",
-	"http://localhost:5174",
-}
+var defaultAllowedOrigins = []string{}
 
 func withCORS(next http.Handler) http.Handler {
 	allowedOrigins := resolveAllowedOrigins()
@@ -25,6 +22,7 @@ func withCORS(next http.Handler) http.Handler {
 		"X-CSRF-Token",
 		"X-Client-ID",
 		"Idempotency-Key",
+		"X-Idempotency-Key",
 	}, ", ")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +40,7 @@ func withCORS(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set(
 				"Access-Control-Expose-Headers",
-				"X-Request-Id, Retry-After, Idempotency-Key",
+				"X-Request-Id, Retry-After, Idempotency-Key, X-Idempotency-Key, X-Idempotency-Replayed, X-RateLimit-Limit, X-RateLimit-Remaining",
 			)
 			w.Header().Set("Access-Control-Max-Age", "86400")
 		}
@@ -115,14 +113,5 @@ func isLocalDevelopmentOrigin(origin string) bool {
 	}
 
 	hostname := parsed.Hostname()
-	if hostname != "localhost" && hostname != "127.0.0.1" {
-		return false
-	}
-
-	switch parsed.Port() {
-	case "4173", "4174", "5173", "5174", "5175", "5176", "5177", "5178", "5179":
-		return true
-	default:
-		return false
-	}
+	return hostname == "localhost" || hostname == "127.0.0.1"
 }

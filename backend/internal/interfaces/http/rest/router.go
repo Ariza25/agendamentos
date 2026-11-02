@@ -115,8 +115,10 @@ func NewRouter(config RouterConfig) *Router {
 				withRateLimit(config.AuthUseCase,
 					withRequestBodyLimit(
 						withCSRFProtection(
-							withPrivilegedStepUp(config.AuthUseCase,
-								withProtectedNamespaces(config.AuthUseCase, mux),
+							withIdempotency(config.AuthUseCase,
+								withPrivilegedStepUp(config.AuthUseCase,
+									withProtectedNamespaces(config.AuthUseCase, mux),
+								),
 							),
 						),
 					),

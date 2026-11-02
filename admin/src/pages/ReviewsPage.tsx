@@ -18,7 +18,7 @@ const REVIEW_STATUS_LABELS: Record<string, string> = {
   submitted: 'Respondida',
 }
 
-const bookingOrigin = import.meta.env.VITE_BOOKING_ORIGIN?.trim() || 'http://localhost:5175'
+const bookingOrigin = import.meta.env.VITE_BOOKING_ORIGIN?.trim() || (typeof window !== 'undefined' ? `${window.location.origin}/booking` : '')
 
 function reviewStatusTone(status: string): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'submitted') {

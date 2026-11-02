@@ -1,14 +1,15 @@
-const isProd = import.meta.env.PROD
+const configuredAdmin = import.meta.env.VITE_ADMIN_URL?.trim()
+const configuredSignup = import.meta.env.VITE_SIGNUP_URL?.trim()
+const configuredBooking = import.meta.env.VITE_BOOKING_URL?.trim()
+const configuredWidget = import.meta.env.VITE_WIDGET_SCRIPT_URL?.trim()
 
 export const APP_LINKS = {
-  admin: isProd ? './admin/' : 'http://localhost:5173',
-  signup: isProd ? './admin/#/signup' : 'http://localhost:5173/#/signup',
-  booking: isProd ? './booking/' : 'http://localhost:5175',
+  admin: configuredAdmin || './admin/',
+  signup: configuredSignup || './admin/#/signup',
+  booking: configuredBooking || './booking/',
 }
 
-export const WIDGET_SCRIPT_URL = isProd
-  ? 'https://erpagendamentos-backend-88726602471.southamerica-east1.run.app/widget.js'
-  : 'http://localhost:8080/widget.js'
+export const WIDGET_SCRIPT_URL = configuredWidget || './widget.js'
 
 export const SECTION_LINKS = {
   features: '#funcionalidades',

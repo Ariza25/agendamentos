@@ -46,3 +46,4 @@ echo "Aplicando política de retenção: removendo arquivos com mais de ${RETENT
 find "${BACKUP_DIR}" -type f -name "erpagendamentos_backup_*.sql.gz" -mtime +"${RETENTION_DAYS}" -exec rm -vf {} \;
 
 echo "[OK] Rotina de backup finalizada."
+

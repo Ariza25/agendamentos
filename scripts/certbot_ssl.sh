@@ -68,3 +68,4 @@ fi
 echo "Configurando crontab para renovação automática duas vezes ao dia..."
 (crontab -l 2>/dev/null || true; echo "0 0,12 * * * certbot renew --quiet --post-hook 'docker compose restart nginx || systemctl reload nginx'") | sort -u | crontab -
 echo "[OK] Renovação automática via cron configurada com sucesso!"
+

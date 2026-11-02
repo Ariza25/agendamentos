@@ -48,6 +48,7 @@ func withRateLimit(authUseCase *appauth.UseCase, next http.Handler) http.Handler
 		}
 		clientIP := requestClientIP(r)
 		routeKey := rateLimitRouteKey(r)
+
 		if config, ok := persistentRateLimitConfig(r); ok && authUseCase != nil {
 			identities := []string{"ip:" + clientIP}
 			if clientID := normalizedClientID(r.Header.Get("X-Client-ID")); clientID != "" {
@@ -69,12 +70,16 @@ func withRateLimit(authUseCase *appauth.UseCase, next http.Handler) http.Handler
 				}
 			}
 		}
-		allowed, retryAfter := limiter.allow(clientIP, routeKey, isSensitiveRateLimitedRoute(r))
+
+		allowed, remaining, limit, retryAfter := limiter.allow(clientIP, routeKey, isSensitiveRateLimitedRoute(r))
 		if !allowed {
 			w.Header().Set("Retry-After", strconv.Itoa(int(retryAfter.Seconds())))
 			writeRateLimited(w, r, routeKey, clientIP, "local-fallback")
 			return
 		}
+
+		w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
+		w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(remaining))
 		next.ServeHTTP(w, r)
 	})
 }
@@ -103,6 +108,8 @@ func persistentRateLimitConfig(r *http.Request) (persistentRateLimit, bool) {
 	switch {
 	case path == "/api/v1/auth/login":
 		return persistentRateLimit{scope: "login-route", limit: 30, window: 15 * time.Minute}, true
+	case path == "/api/v1/auth/signup" || path == "/api/v1/onboarding/signup":
+		return persistentRateLimit{scope: "auth-signup", limit: 10, window: 15 * time.Minute}, true
 	case path == "/api/v1/auth/password-reset/request":
 		return persistentRateLimit{scope: "password-reset-request", limit: 10, window: 15 * time.Minute}, true
 	case path == "/api/v1/auth/password-reset/confirm":
@@ -111,8 +118,26 @@ func persistentRateLimitConfig(r *http.Request) (persistentRateLimit, bool) {
 		return persistentRateLimit{scope: "password-reset-code-request", limit: 10, window: 15 * time.Minute}, true
 	case path == "/api/v1/auth/password-reset/code/confirm":
 		return persistentRateLimit{scope: "password-reset-code-confirm", limit: 30, window: 15 * time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/auth/mfa"):
+		return persistentRateLimit{scope: "auth-mfa", limit: 20, window: 15 * time.Minute}, true
 	case strings.HasPrefix(path, "/api/v1/auth/sessions") && r.Method != http.MethodGet:
 		return persistentRateLimit{scope: "session-management", limit: 20, window: time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/public/") && strings.HasSuffix(path, "/appointments") && r.Method == http.MethodPost:
+		return persistentRateLimit{scope: "public-appointments", limit: 25, window: 15 * time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/public/") && strings.Contains(path, "/portal/lookup") && r.Method == http.MethodPost:
+		return persistentRateLimit{scope: "portal-lookup", limit: 15, window: 15 * time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/public/") && strings.Contains(path, "/waiting-list") && r.Method == http.MethodPost:
+		return persistentRateLimit{scope: "public-waiting-list", limit: 15, window: 15 * time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/public/") && strings.Contains(path, "/reviews/") && r.Method == http.MethodPost:
+		return persistentRateLimit{scope: "public-reviews", limit: 15, window: 15 * time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/admin/checkout") && r.Method != http.MethodGet:
+		return persistentRateLimit{scope: "admin-checkout", limit: 60, window: time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/admin/cash-register") && r.Method != http.MethodGet:
+		return persistentRateLimit{scope: "admin-cash-register", limit: 60, window: time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/admin/commissions") && r.Method != http.MethodGet:
+		return persistentRateLimit{scope: "admin-commissions", limit: 60, window: time.Minute}, true
+	case strings.HasPrefix(path, "/api/v1/admin/finance") && r.Method != http.MethodGet:
+		return persistentRateLimit{scope: "admin-finance", limit: 60, window: time.Minute}, true
 	default:
 		return persistentRateLimit{}, false
 	}
@@ -131,7 +156,7 @@ func writeRateLimited(w http.ResponseWriter, r *http.Request, routeKey string, c
 	writeAPIError(w, http.StatusTooManyRequests, "rate_limited", "Too many attempts. Please wait a moment and try again.")
 }
 
-func (l *memoryRateLimiter) allow(clientIP string, routeKey string, sensitive bool) (bool, time.Duration) {
+func (l *memoryRateLimiter) allow(clientIP string, routeKey string, sensitive bool) (bool, int, int, time.Duration) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := time.Now()
@@ -147,14 +172,18 @@ func (l *memoryRateLimiter) allow(clientIP string, routeKey string, sensitive bo
 	if sensitive {
 		limit = l.sensitive
 	}
+	remaining := limit - bucket.count
+	if remaining < 0 {
+		remaining = 0
+	}
 	if bucket.count <= limit {
-		return true, 0
+		return true, remaining, limit, 0
 	}
 	retryAfter := l.window - now.Sub(bucket.windowStart)
 	if retryAfter < time.Second {
 		retryAfter = time.Second
 	}
-	return false, retryAfter
+	return false, 0, limit, retryAfter
 }
 
 func (l *memoryRateLimiter) cleanup(now time.Time) {
@@ -233,7 +262,21 @@ func isSensitiveRateLimitedRoute(r *http.Request) bool {
 	switch {
 	case strings.HasPrefix(path, "/api/v1/auth/login"):
 		return true
+	case strings.HasPrefix(path, "/api/v1/auth/signup") || strings.HasPrefix(path, "/api/v1/onboarding/signup"):
+		return true
 	case strings.HasPrefix(path, "/api/v1/auth/password-reset"):
+		return true
+	case strings.HasPrefix(path, "/api/v1/auth/mfa"):
+		return true
+	case strings.HasPrefix(path, "/api/v1/public/") && r.Method != http.MethodGet:
+		return true
+	case strings.HasPrefix(path, "/api/v1/admin/checkout") && r.Method != http.MethodGet:
+		return true
+	case strings.HasPrefix(path, "/api/v1/admin/cash-register") && r.Method != http.MethodGet:
+		return true
+	case strings.HasPrefix(path, "/api/v1/admin/commissions") && r.Method != http.MethodGet:
+		return true
+	case strings.HasPrefix(path, "/api/v1/admin/finance") && r.Method != http.MethodGet:
 		return true
 	default:
 		return false

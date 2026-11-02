@@ -13,8 +13,8 @@ func sampleData() TemplateData {
 		ProfessionalName:  "Bruno Lima",
 		StartsAt:          "14/08/2026 às 14:00",
 		ManagementCode:    "A1-2-3",
-		ManageURL:         "http://localhost:5175/#/manage/default",
-		PortalURL:         "http://localhost:5175/#/portal/default",
+		ManageURL:         "https://example.com/#/manage/default",
+		PortalURL:         "https://example.com/#/portal/default",
 	}
 }
 
@@ -26,7 +26,7 @@ func TestRenderConfirmation(t *testing.T) {
 	if !strings.Contains(subject, "Barbearia Central") {
 		t.Errorf("subject should include establishment, got %q", subject)
 	}
-	for _, want := range []string{"Ana Souza", "Corte de Cabelo", "Bruno Lima", "14/08/2026 às 14:00", "A1-2-3", "http://localhost:5175/#/manage/default", "http://localhost:5175/#/portal/default"} {
+	for _, want := range []string{"Ana Souza", "Corte de Cabelo", "Bruno Lima", "14/08/2026 às 14:00", "A1-2-3", "https://example.com/#/manage/default", "https://example.com/#/portal/default"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("confirmation body should contain %q", want)
 		}
@@ -50,7 +50,7 @@ func TestRenderCancellation(t *testing.T) {
 	if !strings.Contains(subject, "Agendamento cancelado") {
 		t.Errorf("subject should mention cancellation, got %q", subject)
 	}
-	for _, want := range []string{"Ana Souza", "Corte de Cabelo", "http://localhost:5175/#/portal/default"} {
+	for _, want := range []string{"Ana Souza", "Corte de Cabelo", "https://example.com/#/portal/default"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("cancellation body should contain %q", want)
 		}

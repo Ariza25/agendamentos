@@ -1,17 +1,18 @@
-const prodOrigin = 'https://erpagendamentos-backend-88726602471.southamerica-east1.run.app'
-const devOrigin = 'http://localhost:8080'
 const configuredOrigin = import.meta.env.VITE_BACKEND_ORIGIN?.trim() ?? ''
+const configuredPort = import.meta.env.VITE_BACKEND_PORT?.trim() ?? ''
+const hostFallback = configuredPort ? `${window.location.protocol}//${window.location.hostname}:${configuredPort}` : ''
 
-export const backendOrigin = configuredOrigin || (import.meta.env.PROD ? prodOrigin : devOrigin)
+export const backendOrigin = configuredOrigin || hostFallback
 
 export function buildApiUrl(path: string) {
   if (/^https?:\/\//i.test(path)) {
     return path
   }
 
-  if (!path.startsWith('/')) {
-    return `${backendOrigin}/${path}`
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (!backendOrigin) {
+    return normalizedPath
   }
 
-  return `${backendOrigin}${path}`
+  return `${backendOrigin.replace(/\/+$/, '')}${normalizedPath}`
 }

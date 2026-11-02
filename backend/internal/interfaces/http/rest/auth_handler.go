@@ -371,12 +371,15 @@ func secureTemporaryPassword() string {
 func buildPasswordResetURL(r *http.Request, token string) string {
 	baseURL := strings.TrimRight(os.Getenv("ADMIN_BASE_URL"), "/")
 	if baseURL == "" {
-		if origin := strings.TrimRight(r.Header.Get("Origin"), "/"); strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1") {
+		baseURL = strings.TrimRight(os.Getenv("BASE_URL"), "/")
+	}
+	if baseURL == "" {
+		if origin := strings.TrimRight(r.Header.Get("Origin"), "/"); origin != "" {
 			baseURL = origin
 		}
 	}
 	if baseURL == "" {
-		baseURL = "http://localhost:5174"
+		return "/#/reset-password?token=" + token
 	}
 	return baseURL + "/#/reset-password?token=" + token
 }

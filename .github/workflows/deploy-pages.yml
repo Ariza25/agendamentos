@@ -41,7 +41,7 @@ jobs:
       - name: Install & Build Admin
         working-directory: admin
         env:
-          VITE_BACKEND_ORIGIN: https://erpagendamentos-backend-88726602471.southamerica-east1.run.app
+          VITE_BACKEND_ORIGIN: ${{ vars.VITE_BACKEND_ORIGIN || secrets.VITE_BACKEND_ORIGIN }}
         run: |
           npm ci || npm install
           npm run build
@@ -49,7 +49,7 @@ jobs:
       - name: Install & Build Booking
         working-directory: booking
         env:
-          VITE_BACKEND_ORIGIN: https://erpagendamentos-backend-88726602471.southamerica-east1.run.app
+          VITE_BACKEND_ORIGIN: ${{ vars.VITE_BACKEND_ORIGIN || secrets.VITE_BACKEND_ORIGIN }}
         run: |
           npm ci || npm install
           npm run build
@@ -84,3 +84,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+

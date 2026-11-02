@@ -17,11 +17,12 @@ type TemplateData struct {
 }
 
 func PublicBookingOrigin() string {
-	raw := strings.TrimSpace(os.Getenv("WIDGET_BOOKING_ORIGIN"))
-	if raw == "" {
-		return "http://localhost:5175"
+	for _, envKey := range []string{"WIDGET_BOOKING_ORIGIN", "BOOKING_BASE_URL", "BASE_URL"} {
+		if raw := strings.TrimSpace(os.Getenv(envKey)); raw != "" {
+			return strings.TrimSuffix(raw, "/")
+		}
 	}
-	return strings.TrimSuffix(raw, "/")
+	return ""
 }
 
 func RenderConfirmation(data TemplateData) (string, string) {

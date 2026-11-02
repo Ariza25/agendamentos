@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-const defaultWidgetBookingOrigin = "http://localhost:5175"
 
 const widgetScript = `(function () {
   'use strict'
@@ -153,9 +152,10 @@ func (h *WidgetHandler) ServeScript(w http.ResponseWriter, r *http.Request) {
 }
 
 func resolveWidgetBookingOrigin() string {
-	raw := strings.TrimSpace(os.Getenv("WIDGET_BOOKING_ORIGIN"))
-	if raw == "" {
-		return defaultWidgetBookingOrigin
+	for _, envKey := range []string{"WIDGET_BOOKING_ORIGIN", "BOOKING_BASE_URL", "BASE_URL"} {
+		if raw := strings.TrimSpace(os.Getenv(envKey)); raw != "" {
+			return strings.TrimSuffix(raw, "/")
+		}
 	}
-	return strings.TrimSuffix(raw, "/")
+	return ""
 }
