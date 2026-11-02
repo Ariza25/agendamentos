@@ -20,3 +20,4 @@ type Repository interface {
 	Record(entry AuditLog) error
 	List(tenantID string, limit int, offset int) ([]AuditLog, int, error)
 }
+

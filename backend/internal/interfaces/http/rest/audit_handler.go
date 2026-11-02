@@ -54,3 +54,4 @@ func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 		"offset": offset,
 	})
 }
+

@@ -21,3 +21,4 @@ type Repository interface {
 	MarkFailed(id string, errMsg string) error
 	CountByStatus() (map[string]int, error)
 }
+

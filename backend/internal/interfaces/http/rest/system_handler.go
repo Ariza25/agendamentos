@@ -64,3 +64,4 @@ func (h *SystemHandler) Status(w http.ResponseWriter, r *http.Request) {
 		"serverTime":    time.Now().UTC().Format(time.RFC3339),
 	})
 }
+

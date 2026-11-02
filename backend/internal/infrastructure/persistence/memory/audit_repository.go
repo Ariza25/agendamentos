@@ -55,3 +55,4 @@ func (r *AuditRepository) List(tenantID string, limit int, offset int) ([]auditd
 
 	return filtered[offset:end], total, nil
 }
+

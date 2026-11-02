@@ -40,3 +40,4 @@ func (u *UseCase) List(tenantID string, limit, offset int) ([]auditdomain.AuditL
 	}
 	return u.repo.List(tenantID, limit, offset)
 }
+

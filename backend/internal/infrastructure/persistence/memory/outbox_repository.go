@@ -85,3 +85,4 @@ func (r *OutboxRepository) CountByStatus() (map[string]int, error) {
 	}
 	return counts, nil
 }
+

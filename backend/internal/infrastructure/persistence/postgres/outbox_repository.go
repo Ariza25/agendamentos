@@ -148,3 +148,4 @@ func (r *OutboxRepository) CountByStatus() (map[string]int, error) {
 func quoteLiteral(s string) string {
 	return "'" + s + "'"
 }
+

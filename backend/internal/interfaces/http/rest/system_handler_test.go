@@ -93,3 +93,4 @@ func TestAuditAndSystemHandlers(t *testing.T) {
 		t.Fatalf("expected 1 pending outbox item, got %+v", sysRes["outbox"])
 	}
 }
+

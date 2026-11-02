@@ -61,3 +61,4 @@ func TestAuditLogRecordingAndListing(t *testing.T) {
 		t.Fatalf("expected action cash_register.close, got %s", t1Logs[0].Action)
 	}
 }
+
