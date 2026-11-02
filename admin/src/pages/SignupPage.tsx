@@ -41,14 +41,41 @@ export function SignupPage({ onSignup }: SignupPageProps) {
     setError('')
     setFieldErrors({})
 
-    if (!acceptTerms) {
-      setError('É obrigatório aceitar os Termos de Uso e a Política de Privacidade.')
+    const trimmedName = ownerName.trim()
+    if (!trimmedName) {
+      const msg = 'Informe seu nome completo.'
+      setError(msg)
+      showToast({ message: msg, tone: 'error' })
       return
     }
 
-    const trimmedName = ownerName.trim()
-    if (!trimmedName) {
-      setError('Informe seu nome completo.')
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      const msg = 'Informe um e-mail de acesso válido.'
+      setError(msg)
+      showToast({ message: msg, tone: 'error' })
+      return
+    }
+
+    const trimmedPhone = phone.trim()
+    if (!trimmedPhone) {
+      const msg = 'Informe seu WhatsApp ou celular.'
+      setError(msg)
+      showToast({ message: msg, tone: 'error' })
+      return
+    }
+
+    if (password.length < 8) {
+      const msg = 'A senha deve ter no mínimo 8 caracteres.'
+      setError(msg)
+      showToast({ message: msg, tone: 'error' })
+      return
+    }
+
+    if (!acceptTerms) {
+      const msg = 'É obrigatório aceitar os Termos de Uso e a Política de Privacidade.'
+      setError(msg)
+      showToast({ message: msg, tone: 'error' })
       return
     }
 
@@ -65,15 +92,18 @@ export function SignupPage({ onSignup }: SignupPageProps) {
         slug: fallbackSlug,
         segment: 'barbearia',
         ownerName: trimmedName,
-        email: email.trim(),
-        phone: phone.trim(),
+        adminName: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
         password,
       })
-      showToast({ message: 'Conta criada com sucesso! Bem-vindo.', tone: 'success' })
+      showToast({ message: 'Conta criada com sucesso! Redirecionando...', tone: 'success' })
       onSignup(user)
     } catch (err) {
       const authErr = err as AdminAuthError
-      setError(authErr.message || 'Falha ao cadastrar conta.')
+      const errorMsg = authErr.message || 'Falha ao cadastrar conta. Tente novamente.'
+      setError(errorMsg)
+      showToast({ message: errorMsg, tone: 'error' })
       if (authErr.fieldErrors) {
         setFieldErrors(authErr.fieldErrors)
       }

@@ -34,16 +34,21 @@ export function AdminLoginPage({ onLogin }: LoginAdminPageProps) {
 
     try {
       const user = await loginAdmin({ email, password, ...(mfaCode ? { mfaCode } : {}) })
+      showToast({ message: `Bem-vindo de volta, ${user.name}!`, tone: 'success' })
       onLogin(user)
     } catch (authError) {
       const err = authError as AdminAuthError
       if (err.code === 'mfa_required') {
         setRequiresMfa(true)
-        setError('Informe o codigo do aplicativo autenticador para concluir o acesso.')
+        const msg = 'Informe o código do aplicativo autenticador para concluir o acesso.'
+        setError(msg)
+        showToast({ message: msg, tone: 'error' })
       } else {
         setRequiresMfa(false)
         setFieldErrors(err.fieldErrors ?? {})
-        setError(err.message)
+        const msg = err.message || 'E-mail ou senha incorretos.'
+        setError(msg)
+        showToast({ message: msg, tone: 'error' })
       }
     } finally {
       setIsSubmitting(false)
@@ -52,15 +57,17 @@ export function AdminLoginPage({ onLogin }: LoginAdminPageProps) {
 
   async function handleRecovery() {
     if (!email.trim()) {
-      showToast({ message: 'Informe seu email para recuperar a senha.', tone: 'error' })
+      showToast({ message: 'Informe seu e-mail para recuperar a senha.', tone: 'error' })
       return
     }
     setIsRequestingRecovery(true)
     try {
       await requestAdminPasswordReset(email.trim())
       setIsRecoverySent(true)
+      showToast({ message: 'Instruções de recuperação enviadas para o seu e-mail.', tone: 'success' })
     } catch (recoveryError) {
-      showToast({ message: (recoveryError as Error).message, tone: 'error' })
+      const recoveryMsg = (recoveryError as Error).message || 'Não foi possível solicitar a recuperação de senha.'
+      showToast({ message: recoveryMsg, tone: 'error' })
     } finally {
       setIsRequestingRecovery(false)
     }

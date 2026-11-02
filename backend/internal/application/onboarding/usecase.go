@@ -18,12 +18,12 @@ import (
 )
 
 var (
-	ErrBusinessNameRequired = errors.New("business name is required")
-	ErrInvalidSlug          = errors.New("slug must be alphanumeric with hyphens (e.g. minha-empresa)")
-	ErrSlugAlreadyTaken     = errors.New("o link/slug informado já está em uso por outro estabelecimento")
-	ErrAdminNameRequired    = errors.New("admin name is required")
-	ErrEmailRequired        = errors.New("email is required")
-	ErrPasswordTooShort     = errors.New("password must have at least 8 characters")
+	ErrBusinessNameRequired = errors.New("O nome do estabelecimento é obrigatório.")
+	ErrInvalidSlug          = errors.New("O link da agenda deve conter apenas letras minúsculas, números e traços.")
+	ErrSlugAlreadyTaken     = errors.New("O link informado já está em uso por outro estabelecimento.")
+	ErrAdminNameRequired    = errors.New("O seu nome completo é obrigatório.")
+	ErrEmailRequired        = errors.New("O e-mail de acesso é obrigatório e deve ser válido.")
+	ErrPasswordTooShort     = errors.New("A senha deve ter no mínimo 8 caracteres.")
 )
 
 var slugPattern = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{1,58}[a-z0-9])?$`)
@@ -32,6 +32,7 @@ type SignupInput struct {
 	BusinessName string `json:"businessName"`
 	Slug         string `json:"slug"`
 	AdminName    string `json:"adminName"`
+	OwnerName    string `json:"ownerName"`
 	Email        string `json:"email"`
 	Password     string `json:"password"`
 	Phone        string `json:"phone"`
@@ -64,6 +65,9 @@ func NewUseCase(
 
 func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Tenant, error) {
 	adminName := strings.TrimSpace(input.AdminName)
+	if adminName == "" {
+		adminName = strings.TrimSpace(input.OwnerName)
+	}
 	if adminName == "" {
 		return authdomain.Session{}, tenantdomain.Tenant{}, ErrAdminNameRequired
 	}
@@ -129,7 +133,7 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 		MaxProfessionals: 5,
 	})
 	if err != nil {
-		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("create tenant: %w", err)
+		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("não foi possível criar o estabelecimento: %w", err)
 	}
 
 	// 3. Register Owner Account
@@ -141,7 +145,13 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 		TenantID: createdTenant.ID,
 	})
 	if err != nil {
-		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("create owner account: %w", err)
+		var valErr *appauth.ValidationError
+		if errors.As(err, &valErr) {
+			for _, msg := range valErr.FieldErrors {
+				return authdomain.Session{}, tenantdomain.Tenant{}, errors.New(msg)
+			}
+		}
+		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("não foi possível criar a conta de administrador: %w", err)
 	}
 
 	// 4. Seed Default Working Hours Configuration

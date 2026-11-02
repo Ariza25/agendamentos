@@ -74,9 +74,9 @@ func writeInvalidPayload(w http.ResponseWriter, message string) {
 }
 
 func writeUnauthorized(w http.ResponseWriter) {
-	writeAPIError(w, http.StatusUnauthorized, "unauthorized", "Session expired or user not authenticated.")
+	writeAPIError(w, http.StatusUnauthorized, "unauthorized", "Sessão expirada ou usuário não autenticado.")
 }
 
 func writeForbidden(w http.ResponseWriter) {
-	writeAPIError(w, http.StatusForbidden, "forbidden", "You do not have permission to access this resource.")
+	writeAPIError(w, http.StatusForbidden, "forbidden", "Você não tem permissão para acessar este recurso.")
 }

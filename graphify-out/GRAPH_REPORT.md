@@ -1,90 +1,86 @@
 # Graph Report - erpagendamentos  (2026-11-02)
 
 ## Corpus Check
-- 282 files · ~134,479 words
+- 282 files · ~135,791 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2713 nodes · 8114 edges · 116 communities (103 shown, 13 thin omitted)
+- 2717 nodes · 8122 edges · 107 communities (93 shown, 14 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 687 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9de11490`
+- Built from commit: `df50977e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - adminFetch
 - schema.sql
-- AdminRoutes.tsx
+- ref_react
 - Payment
-- net/http.ResponseWriter
+- net/http.Request
 - go_pkg_testing
 - go_pkg_net_http
-- PaymentsPage.tsx
+- downloadAdminCsv
 - adminAuth.ts
 - writeAPIError
-- ref_react
+- AppointmentsPage.tsx
 - adminApi.ts
 - Review
 - UseCase
-- RouterConfig
+- Repository
 - Tenant
 - landing/src/App.tsx
 - Service
 - go_pkg_time
-- auth/usecase.go
-- auth_cookie.go
+- auth/entities.go
+- RouterConfig
 - database/sql.DB
 - resource_test.go
 - Customer
-- CommissionRepository
-- PackagesPage.tsx
-- Resource
-- CashRegister
+- UseCase
+- formatMoney
 - Professional
+- CashRegister
+- MembershipsPage
 - Queue
 - Entry
 - devDependencies
 - devDependencies
 - UseCase
-- writeJSON
+- memory/configuration_repository.go
 - gencert.go
 - UseCase
 - withIdempotency
 - devDependencies
 - ManagePage.tsx
-- MemberPlan
-- writeNotFoundError
-- Configuration
-- NewContainer
+- postgres/commerce_repository.go
+- net/http.ResponseWriter
+- time.Time
+- Container
 - BookingPage.tsx
 - useToast
-- InventoryPage
+- writeProfessionalError
 - AuthRepository
 - UseCase
-- net/http.Request
-- publicFetch
+- AppointmentHandler
+- bookingApi.ts
 - memoryRepositories
 - Membership
 - Package
 - UseCase
-- UseCase
+- WaitingListPage
 - PackageCredit
 - GiftCard
-- UseCase
-- auth_handler.go
+- sync.Mutex
 - AuditLog
-- go_pkg_errors
+- checkout/usecase.go
 - EventBroker
 - rate_limit.go
-- Account
 - Appointment
 - writeInvalidPayload
-- bookingApi.ts
 - templates.go
-- Container
 - compilerOptions
 - AppointmentRepository
 - compilerOptions
@@ -94,24 +90,20 @@
 - totp.go
 - writeResourceError
 - testing.T
-- auth/entities.go
 - ERP Agendamentos
 - NewBcryptHasher
 - UseCase
-- email_provider.go
-- widget_handler.go
+- go_pkg_context
 - booking/src/lib/apiError.ts
 - time.Duration
 - ExportHandler
 - FinancePage.tsx
-- .UpdateAccountRole
 - observability.go
 - admin/vite.config.ts
 - appointment/repository.go
-- buildAuthComponents
-- booking/usecase.go
+- UseCase
 - TenantsPage.tsx
-- go_pkg_erpagendamentos_backend_internal_domain_appointment
+- ical.go
 - booking/src/App.tsx
 - graphify
 - rules/graphify.md
@@ -120,13 +112,12 @@
 - backup_postgres.sh
 - certbot_ssl.sh
 - catalog.finance_transactions
-- ReminderWorker
+- context.Context
 - go_pkg_path_filepath
 - erpagendamentos/backend
 - writeServiceError
 - PortalPage.tsx
-- go_pkg_context
-- repositories.go
+- go_pkg_os
 - ref_react_dom
 
 ## God Nodes (most connected - your core abstractions)
@@ -144,135 +135,135 @@
 ## Surprising Connections (you probably didn't know these)
 - `NewContainer()` --calls--> `loadEnvFile()`  [INFERRED]
   backend/internal/bootstrap/container.go → backend/internal/bootstrap/env.go
-- `main()` --calls--> `newLazyAppHandler()`  [INFERRED]
-  backend/cmd/api/main.go → backend/cmd/api/lazy_handler.go
 - `newResourceUseCase()` --calls--> `NewUseCase()`  [INFERRED]
   backend/internal/application/appointment/resource_test.go → backend/internal/application/appointment/usecase.go
 - `newTestUseCase()` --calls--> `NewUseCase()`  [INFERRED]
   backend/internal/application/booking/usecase_test.go → backend/internal/application/booking/usecase.go
 - `TestManagementCodeNormalization()` --calls--> `hashManagementCode()`  [INFERRED]
   backend/internal/application/booking/usecase_test.go → backend/internal/application/booking/usecase.go
+- `TestOutboxPublishAndDispatch()` --calls--> `NewUseCase()`  [INFERRED]
+  backend/internal/application/outbox/usecase_test.go → backend/internal/application/outbox/usecase.go
 
 ## Import Cycles
 - None detected.
 
-## Communities (116 total, 13 thin omitted)
+## Communities (107 total, 14 thin omitted)
 
 ### Community 0 - "adminFetch"
 Cohesion: 0.05
-Nodes (76): closeCashRegister(), connectCalendar(), createCashRegisterEntry(), createCommissionRule(), createFinancialTransaction(), createMemberPlan(), createMembership(), createProduct() (+68 more)
+Nodes (81): closeCashRegister(), connectCalendar(), createCashRegisterEntry(), createCustomer(), createFinancialTransaction(), createGiftCard(), createMembership(), createPackage() (+73 more)
 
 ### Community 1 - "schema.sql"
 Cohesion: 0.12
 Nodes (35): catalog.appointments, catalog.audit_logs, catalog.auth_rate_limits, catalog.auth_sessions, catalog.calendar_connections, catalog.cash_register_entries, catalog.cash_registers, catalog.commission_payouts (+27 more)
 
-### Community 2 - "AdminRoutes.tsx"
-Cohesion: 0.06
-Nodes (74): AdminRoutesProps, AgendaPage, AppointmentsPage, CommissionsPage, ConfigurationPage, CustomersPage, GiftCardsPage, InventoryPage (+66 more)
+### Community 2 - "ref_react"
+Cohesion: 0.07
+Nodes (89): AdminRoutesProps, AgendaPage, AnalyticsPage, AppointmentsPage, CommissionsPage, ConfigurationPage, CustomersPage, EstablishmentPage (+81 more)
 
 ### Community 3 - "Payment"
 Cohesion: 0.06
-Nodes (26): UseCase, NewUseCase(), normalizeStatus(), buildPaymentProvider(), IntentResult, Payment, NewMercadoPagoProvider(), NewMockProvider() (+18 more)
+Nodes (25): UseCase, NewUseCase(), normalizeStatus(), buildPaymentProvider(), IntentResult, Payment, NewMercadoPagoProvider(), NewMockProvider() (+17 more)
 
-### Community 4 - "net/http.ResponseWriter"
-Cohesion: 0.09
-Nodes (13): resolveRequestTenantID(), writeConfigurationError(), writeNotificationError(), writePaymentError(), writeInternalError(), writeReviewError(), net/http.ResponseWriter, CalendarSyncHandler (+5 more)
+### Community 4 - "net/http.Request"
+Cohesion: 0.10
+Nodes (13): resolveRequestTenantID(), health(), writePaymentError(), writeCSV(), writeInternalError(), writeJSON(), net/http.Request, CalendarSyncHandler (+5 more)
 
 ### Community 5 - "go_pkg_testing"
-Cohesion: 0.16
-Nodes (6): go_pkg_erpagendamentos_backend_internal_application_calendar, go_pkg_erpagendamentos_backend_internal_domain_calendar, go_pkg_erpagendamentos_backend_internal_domain_professional, go_pkg_erpagendamentos_backend_internal_domain_stock, go_pkg_erpagendamentos_backend_internal_infrastructure_persistence_memory, go_pkg_testing
+Cohesion: 0.10
+Nodes (12): TestJobQueue(), NewJobRepository(), go_pkg_erpagendamentos_backend_internal_application_calendar, go_pkg_erpagendamentos_backend_internal_application_cashregister, go_pkg_erpagendamentos_backend_internal_application_checkout, go_pkg_erpagendamentos_backend_internal_application_onboarding, go_pkg_erpagendamentos_backend_internal_application_stock, go_pkg_erpagendamentos_backend_internal_domain_stock (+4 more)
 
 ### Community 6 - "go_pkg_net_http"
-Cohesion: 0.10
-Nodes (26): deploymentEnvironment(), isProductionEnv(), go_pkg_encoding_json, go_pkg_erpagendamentos_backend_internal_application_booking, go_pkg_erpagendamentos_backend_internal_application_cashregister, go_pkg_erpagendamentos_backend_internal_application_checkout, go_pkg_erpagendamentos_backend_internal_application_commerce, go_pkg_erpagendamentos_backend_internal_application_commission (+18 more)
+Cohesion: 0.11
+Nodes (18): deploymentEnvironment(), isProductionEnv(), secureTemporaryPassword(), go_pkg_encoding_json, go_pkg_erpagendamentos_backend_internal_application_booking, go_pkg_erpagendamentos_backend_internal_application_commerce, go_pkg_erpagendamentos_backend_internal_application_configuration, go_pkg_erpagendamentos_backend_internal_application_customer (+10 more)
 
-### Community 7 - "PaymentsPage.tsx"
-Cohesion: 0.07
-Nodes (37): PaymentsPage, createPayment(), downloadAdminCsv(), fetchNotifications(), fetchPayments(), fetchReviews(), fetchWaitingList(), formatDateTime() (+29 more)
+### Community 7 - "downloadAdminCsv"
+Cohesion: 0.11
+Nodes (21): downloadAdminCsv(), fetchPayments(), fetchReviews(), handleExport(), CustomersPage(), handleDelete(), handleExport(), handleSearch() (+13 more)
 
 ### Community 8 - "adminAuth.ts"
 Cohesion: 0.06
 Nodes (50): App(), handleLogout(), AppProviders(), AppProvidersProps, ResetPasswordPage(), handleSubmit(), AppRouter(), admin_src_index (+42 more)
 
 ### Community 9 - "writeAPIError"
-Cohesion: 0.11
-Nodes (26): bearerAuthAllowed(), hasRole(), isAdminRole(), requestWithAuthClaims(), requireMasterAdmin(), requireOwnerOrAdmin(), requirePrivilegedAdmin(), requireRoles() (+18 more)
+Cohesion: 0.08
+Nodes (25): requireMasterAdmin(), resolveAuthClaims(), resolveTenantID(), browserSessionPayload(), buildPasswordResetURL(), exposeAuthTokenForTests(), AuthHandler, newAuthMFAHandler() (+17 more)
 
-### Community 10 - "ref_react"
-Cohesion: 0.06
-Nodes (59): AnalyticsPage, AppointmentFormModal(), computeEndsAt(), handleSubmit(), AppointmentFormModalProps, STATUS_OPTIONS, CheckoutComandaModal(), handleSubmit() (+51 more)
+### Community 10 - "AppointmentsPage.tsx"
+Cohesion: 0.08
+Nodes (48): AppointmentFormModal(), computeEndsAt(), handleSubmit(), AppointmentFormModalProps, STATUS_OPTIONS, checkInAppointment(), createAppointment(), deleteAppointment() (+40 more)
 
 ### Community 11 - "adminApi.ts"
-Cohesion: 0.07
-Nodes (60): AppointmentFilters, fetchCommissionPayouts(), fetchCommissionRecords(), fetchCommissionRules(), fetchCommissionSummaries(), fetchCustomers(), fetchProfessionals(), fetchResources() (+52 more)
+Cohesion: 0.06
+Nodes (63): AppointmentFilters, createCommissionRule(), deleteCommissionRule(), fetchCommissionPayouts(), fetchCommissionRecords(), fetchCommissionRules(), fetchCommissionSummaries(), fetchCustomers() (+55 more)
 
 ### Community 12 - "Review"
 Cohesion: 0.14
 Nodes (12): UseCase, NewUseCase(), Review, NewReviewRepository(), scanReviewRow(), scanReviewRows(), NewReviewHandler(), ReviewRepository (+4 more)
 
 ### Community 13 - "UseCase"
-Cohesion: 0.09
-Nodes (7): UseCase, Product, ServiceSupply, StockMovement, NewStockHandler(), StockRepository, StockRepository
+Cohesion: 0.08
+Nodes (12): NewUseCase(), UseCase, NewUseCase(), TestStockUseCase(), Product, Repository, ServiceSupply, StockMovement (+4 more)
 
-### Community 14 - "RouterConfig"
-Cohesion: 0.21
-Nodes (29): requireAdmin(), NewBookingHandler(), NewRouter(), registerAppointmentRoutes(), registerConfigurationRoutes(), registerCustomerRoutes(), registerProfessionalRoutes(), registerResourceRoutes() (+21 more)
+### Community 14 - "Repository"
+Cohesion: 0.18
+Nodes (11): UseCase, NewUseCase(), formatAppointmentLocal(), UseCase, NewReminderWorker(), NewCalendarHandler(), NewConfigurationHandler(), Repository (+3 more)
 
 ### Community 15 - "Tenant"
-Cohesion: 0.10
-Nodes (13): UseCase, Tenant, UpdateSubscriptionInput, defaultModules(), isTenantIdentityConflict(), defaultModules(), scanTenantRow(), scanTenantRows() (+5 more)
+Cohesion: 0.11
+Nodes (12): UseCase, Tenant, UpdateSubscriptionInput, defaultModules(), isTenantIdentityConflict(), defaultModules(), scanTenantRow(), scanTenantRows() (+4 more)
 
 ### Community 16 - "landing/src/App.tsx"
 Cohesion: 0.10
 Nodes (22): App(), CtaSection(), FEATURES, FeaturesSection(), Footer(), Header(), NAV_ITEMS, HeroSection() (+14 more)
 
 ### Community 17 - "Service"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (8): UseCase, Service, scanServiceRow(), scanServiceRows(), NewServiceHandler(), ServiceRepository, ServiceRepository, serviceScanner
 
 ### Community 18 - "go_pkg_time"
-Cohesion: 0.13
-Nodes (11): go_pkg_database_sql, go_pkg_erpagendamentos_backend_internal_domain_job, go_pkg_erpagendamentos_backend_internal_domain_resource, go_pkg_erpagendamentos_backend_internal_domain_review, go_pkg_erpagendamentos_backend_internal_domain_waitinglist, go_pkg_fmt, go_pkg_github_com_google_uuid, go_pkg_sort (+3 more)
+Cohesion: 0.09
+Nodes (23): go_pkg_database_sql, go_pkg_erpagendamentos_backend_internal_domain_appointment, go_pkg_erpagendamentos_backend_internal_domain_auth, go_pkg_erpagendamentos_backend_internal_domain_calendar, go_pkg_erpagendamentos_backend_internal_domain_cashregister, go_pkg_erpagendamentos_backend_internal_domain_commerce, go_pkg_erpagendamentos_backend_internal_domain_configuration, go_pkg_erpagendamentos_backend_internal_domain_customer (+15 more)
 
-### Community 19 - "auth/usecase.go"
-Cohesion: 0.23
-Nodes (9): PasswordResetRequestInput, ValidationError, hashResetToken(), isMFAEligibleRole(), NewValidationError(), passwordResetCodeChallengeKey(), passwordResetCodeToken(), validatePassword() (+1 more)
+### Community 19 - "auth/entities.go"
+Cohesion: 0.12
+Nodes (14): ChangePasswordInput, LoginInput, PasswordResetCodeConfirmInput, PasswordResetConfirmInput, PasswordResetRequestInput, RegisterInput, Session, ValidationError (+6 more)
 
-### Community 20 - "auth_cookie.go"
-Cohesion: 0.10
-Nodes (31): lazyAppHandler, newLazyAppHandler(), writeLazyJSON(), isPrivilegedAdminRole(), authCookieDomain(), authCookiePartitioned(), authCookieSameSite(), authCookieSecure() (+23 more)
+### Community 20 - "RouterConfig"
+Cohesion: 0.07
+Nodes (71): bearerAuthAllowed(), hasRole(), isAdminRole(), isPrivilegedAdminRole(), requestWithAuthClaims(), requireAdmin(), requireOwnerOrAdmin(), requirePrivilegedAdmin() (+63 more)
 
 ### Community 21 - "database/sql.DB"
-Cohesion: 0.11
-Nodes (34): initializeRepositories(), postgresRepositories(), NewAppointmentRepository(), NewAuditRepository(), NewAuthRepository(), NewCalendarRepository(), NewCashRegisterRepository(), NewGiftCardRepository() (+26 more)
+Cohesion: 0.12
+Nodes (32): applyDatabaseSQL(), resolveSchemaFile(), initializeRepositories(), postgresRepositories(), NewAppointmentRepository(), NewAuditRepository(), NewAuthRepository(), NewCalendarRepository() (+24 more)
 
 ### Community 22 - "resource_test.go"
 Cohesion: 0.54
 Nodes (7): UseCase, newAppointment(), newResourceUseCase(), TestCreateAutoAssignsAvailableResource(), TestCreateRejectsBusyExplicitResource(), TestCreateRejectsUnknownResource(), TestUpdateAutoReassignsFreedResource()
 
 ### Community 23 - "Customer"
-Cohesion: 0.15
-Nodes (8): Customer, NewCustomerRepository(), onlyDigits(), scanCustomerRow(), scanCustomerRows(), CustomerRepository, CustomerRepository, customerScanner
-
-### Community 24 - "CommissionRepository"
-Cohesion: 0.08
-Nodes (7): CommissionRecord, CommissionRule, Payout, Summary, PayoutInput, CommissionRepository, CommissionRepository
-
-### Community 25 - "PackagesPage.tsx"
-Cohesion: 0.11
-Nodes (27): PackagesPage, createCommissionPayout(), createPackage(), createPackageCredit(), fetchGiftCards(), fetchPackageCredits(), fetchPackages(), updatePackage() (+19 more)
-
-### Community 26 - "Resource"
 Cohesion: 0.13
-Nodes (8): UseCase, Resource, NewResourceRepository(), scanResourceRow(), NewResourceHandler(), ResourceRepository, ResourceRepository, resourceScanner
+Nodes (10): UseCase, Customer, onlyDigits(), scanCustomerRow(), scanCustomerRows(), NewCustomerHandler(), BookingResult, CustomerRepository (+2 more)
+
+### Community 24 - "UseCase"
+Cohesion: 0.08
+Nodes (11): UseCase, NewUseCase(), CommissionRecord, CommissionRule, Payout, Repository, Summary, NewCommissionHandler() (+3 more)
+
+### Community 25 - "formatMoney"
+Cohesion: 0.06
+Nodes (39): CheckoutComandaModal(), handleSubmit(), checkoutAppointment(), createCommissionPayout(), createMemberPlan(), createPackageCredit(), fetchGiftCards(), fetchPackageCredits() (+31 more)
+
+### Community 26 - "Professional"
+Cohesion: 0.06
+Nodes (19): UseCase, UseCase, NewUseCase(), Professional, Resource, NewResourceRepository(), scanProfessionalRow(), scanProfessionalRows() (+11 more)
 
 ### Community 27 - "CashRegister"
-Cohesion: 0.14
-Nodes (5): CashRegister, CashRegisterEntry, ShiftSummary, CashRegisterRepository, CashRegisterRepository
+Cohesion: 0.13
+Nodes (9): UseCase, NewUseCase(), CashRegister, CashRegisterEntry, Repository, ShiftSummary, NewCashRegisterHandler(), CashRegisterRepository (+1 more)
 
-### Community 28 - "Professional"
-Cohesion: 0.18
-Nodes (6): Professional, scanProfessionalRow(), scanProfessionalRows(), ProfessionalRepository, ProfessionalRepository, professionalScanner
+### Community 28 - "MembershipsPage"
+Cohesion: 0.36
+Nodes (8): fetchMemberPlans(), fetchMemberships(), MembershipsPage(), handleDelete(), handlePlanStatusChange(), handleToggleActive(), loadMemberships(), planStatusTone()
 
 ### Community 29 - "Queue"
 Cohesion: 0.10
@@ -291,24 +282,24 @@ Cohesion: 0.06
 Nodes (34): dependencies, lucide-react, react, react-dom, react-router-dom, devDependencies, tailwindcss, @tailwindcss/vite (+26 more)
 
 ### Community 33 - "UseCase"
-Cohesion: 0.25
-Nodes (7): UseCase, UseCase, NewCalendarHandler(), NewConfigurationHandler(), NewMercadoPagoWebhookHandler(), CalendarHandler, MercadoPagoWebhookHandler
+Cohesion: 0.16
+Nodes (6): RecurrenceInput, Repository, UseCase, NewUseCase(), parseRFC3339(), validStatusChange()
 
-### Community 34 - "writeJSON"
-Cohesion: 0.18
-Nodes (5): writeBookingError(), health(), writeJSON(), BookingHandler, CashRegisterHandler
+### Community 34 - "memory/configuration_repository.go"
+Cohesion: 0.46
+Nodes (5): cloneConfiguration(), defaultMemoryConfiguration(), NewConfigurationRepository(), normalizeConfigurationTenantID(), ConfigurationRepository
 
 ### Community 35 - "gencert.go"
-Cohesion: 0.11
-Nodes (14): NewSecretCipher(), go_pkg_crypto_aes, go_pkg_crypto_cipher, go_pkg_crypto_rand, go_pkg_crypto_rsa, go_pkg_crypto_sha256, go_pkg_crypto_x509, go_pkg_crypto_x509_pkix (+6 more)
+Cohesion: 0.12
+Nodes (13): NewSecretCipher(), go_pkg_crypto_aes, go_pkg_crypto_cipher, go_pkg_crypto_rand, go_pkg_crypto_rsa, go_pkg_crypto_x509, go_pkg_crypto_x509_pkix, go_pkg_encoding_base64 (+5 more)
 
 ### Community 36 - "UseCase"
-Cohesion: 0.12
-Nodes (8): UseCase, NewUseCase(), Connection, Repository, SyncEvent, NewCalendarSyncHandler(), CalendarRepository, CalendarRepository
+Cohesion: 0.11
+Nodes (10): UseCase, NewUseCase(), TestCalendarUseCase(), Connection, Repository, SyncEvent, NewCalendarRepository(), NewCalendarSyncHandler() (+2 more)
 
 ### Community 37 - "withIdempotency"
-Cohesion: 0.16
-Nodes (11): NewIdempotencyStore(), TestIdempotencyBlocksInFlightConcurrentRequests(), TestIdempotencyDoesNotCacheServerFailures(), TestIdempotencyIgnoredOnGetRequests(), TestIdempotencyReplaysCompletedResponse(), withIdempotency(), bytes.Buffer, net/http.Header (+3 more)
+Cohesion: 0.14
+Nodes (14): isHopByHopHeader(), NewIdempotencyStore(), TestIdempotencyBlocksInFlightConcurrentRequests(), TestIdempotencyDoesNotCacheServerFailures(), TestIdempotencyIgnoredOnGetRequests(), TestIdempotencyReplaysCompletedResponse(), withIdempotency(), go_pkg_bytes (+6 more)
 
 ### Community 38 - "devDependencies"
 Cohesion: 0.06
@@ -316,134 +307,114 @@ Nodes (32): dependencies, lucide-react, react, react-dom, devDependencies, tailw
 
 ### Community 39 - "ManagePage.tsx"
 Cohesion: 0.14
-Nodes (21): Service, ManageStep, Button, ButtonProps, ButtonSize, ButtonVariant, sizeClasses, variantClasses (+13 more)
+Nodes (24): Professional, PublicAppointment, Service, ManageStep, Button, ButtonProps, ButtonSize, ButtonVariant (+16 more)
 
-### Community 40 - "MemberPlan"
+### Community 40 - "postgres/commerce_repository.go"
 Cohesion: 0.14
-Nodes (7): MemberPlan, NewMemberPlanRepository(), nullIfEmpty(), scanMemberPlans(), database/sql.Rows, MemberPlanRepository, MemberPlanRepository
+Nodes (7): MemberPlan, nullIfEmpty(), NewMemberPlanRepository(), scanMemberPlans(), database/sql.Rows, MemberPlanRepository, MemberPlanRepository
 
-### Community 41 - "writeNotFoundError"
-Cohesion: 0.14
-Nodes (7): writeCustomerError(), writeProfessionalError(), writeNotFoundError(), writeTenantError(), CustomerHandler, ProfessionalHandler, TenantHandler
-
-### Community 42 - "Configuration"
-Cohesion: 0.18
-Nodes (11): workingHoursFor(), Configuration, cloneConfiguration(), defaultMemoryConfiguration(), NewConfigurationRepository(), normalizeConfigurationTenantID(), normalizePostgresTenantID(), ClosedDay (+3 more)
-
-### Community 43 - "NewContainer"
+### Community 41 - "net/http.ResponseWriter"
 Cohesion: 0.10
-Nodes (38): Repository, NewUseCase(), NewUseCase(), UseCase, NewUseCase(), UseCase, NewUseCase(), UseCase (+30 more)
+Nodes (15): writeLazyJSON(), writeBookingError(), writeConfigurationError(), writeCustomerError(), HandleMetrics(), writeNotificationError(), writeConflictError(), writeNotFoundError() (+7 more)
+
+### Community 42 - "time.Time"
+Cohesion: 0.18
+Nodes (15): countOverlappingSlots(), isClosedDay(), localMidnight(), overlapsAnyBusy(), parseClock(), workingHoursFor(), Configuration, normalizePostgresTenantID() (+7 more)
+
+### Community 43 - "Container"
+Cohesion: 0.12
+Nodes (19): NewUseCase(), NewUseCase(), UseCase, NewUseCase(), NewUseCase(), NewUseCase(), NewUseCase(), ensureDefaultTenant() (+11 more)
 
 ### Community 44 - "BookingPage.tsx"
 Cohesion: 0.13
-Nodes (18): formatDateLong(), formatDateTime(), formatMoney(), formatTime(), fromDateKey(), SHORT_DAY_LABELS, toDateKey(), Confirmation() (+10 more)
+Nodes (19): formatDateLong(), formatDateTime(), formatMoney(), formatTime(), fromDateKey(), nextDateKeys(), SHORT_DAY_LABELS, toDateKey() (+11 more)
 
 ### Community 45 - "useToast"
-Cohesion: 0.07
-Nodes (57): AdminRoutes(), EstablishmentPage, AdminShell(), handleCopyBookingUrl(), AdminShellProps, AdminNavigationItem, navigationGroups, navigationItems (+49 more)
-
-### Community 46 - "InventoryPage"
-Cohesion: 0.31
-Nodes (9): fetchServiceSupplies(), fetchStockMovements(), setServiceSupplies(), InventoryPage(), handleAddSupply(), handleDeleteProduct(), handleRemoveSupply(), handleSaveMovement() (+1 more)
+Cohesion: 0.06
+Nodes (47): AdminRoutes(), AdminShell(), handleCopyBookingUrl(), AdminShellProps, AdminNavigationItem, navigationGroups, navigationItems, EstablishmentModal() (+39 more)
 
 ### Community 47 - "AuthRepository"
-Cohesion: 0.10
-Nodes (7): DeviceSession, PasswordResetToken, cloneAuthAccount(), resetTokenExpired(), sessionExpired(), AuthRepository, rateLimitEntry
+Cohesion: 0.06
+Nodes (12): Account, AuthState, DeviceSession, PasswordResetToken, UpdateProfileInput, cloneAuthAccount(), resetTokenExpired(), sessionExpired() (+4 more)
 
 ### Community 48 - "UseCase"
+Cohesion: 0.18
+Nodes (10): appointmentDurationMinutes(), formatAppointmentForTemplate(), generateManagementCode(), UseCase, hashManagementCode(), parseRFC3339(), BookingInput, PortalAppointment (+2 more)
+
+### Community 49 - "AppointmentHandler"
 Cohesion: 0.19
-Nodes (9): appointmentDurationMinutes(), formatAppointmentForTemplate(), generateManagementCode(), UseCase, hashManagementCode(), parseRFC3339(), PublicBookingOrigin(), BookingInput (+1 more)
+Nodes (5): writeAppointmentError(), resolveActorTenantID(), writeAdminAuthError(), writeBadRequestError(), AppointmentHandler
 
-### Community 49 - "net/http.Request"
-Cohesion: 0.15
-Nodes (7): writeAppointmentError(), resolveActorTenantID(), AuthHandler, newAuthMFAHandler(), HandleMetrics(), net/http.Request, AppointmentHandler
-
-### Community 50 - "publicFetch"
-Cohesion: 0.11
-Nodes (19): cancelPublicAppointment(), createPublicBooking(), fetchPublicAppointment(), fetchPublicInfo(), fetchPublicProfessionals(), fetchPublicServices(), publicFetch(), reschedulePublicAppointment() (+11 more)
+### Community 50 - "bookingApi.ts"
+Cohesion: 0.10
+Nodes (30): backendOrigin, buildApiUrl(), AvailabilityResponse, BookingResult, cancelPublicAppointment(), createPublicBooking(), fetchAvailability(), fetchPublicAppointment() (+22 more)
 
 ### Community 51 - "memoryRepositories"
-Cohesion: 0.16
-Nodes (20): TestCalendarUseCase(), TestCashRegisterFlow(), TestCheckoutFlow(), TestCommissionUseCase(), TestFinanceUseCase(), TestJobQueue(), TestOnboardingSignup(), TestStockUseCase() (+12 more)
+Cohesion: 0.17
+Nodes (19): TestCashRegisterFlow(), TestCheckoutFlow(), TestCommissionUseCase(), TestOnboardingSignup(), memoryRepositories(), NewAppointmentRepository(), NewAuthRepository(), NewCashRegisterRepository() (+11 more)
 
 ### Community 52 - "Membership"
-Cohesion: 0.14
-Nodes (4): Membership, NewMembershipRepository(), MembershipRepository, MembershipRepository
+Cohesion: 0.15
+Nodes (3): Membership, MembershipRepository, MembershipRepository
 
 ### Community 53 - "Package"
-Cohesion: 0.14
-Nodes (4): Package, NewPackageRepository(), PackageRepository, PackageRepository
+Cohesion: 0.15
+Nodes (3): Package, PackageRepository, PackageRepository
 
 ### Community 54 - "UseCase"
-Cohesion: 0.11
-Nodes (8): UseCase, Summary, Transaction, NewFinanceHandler(), CategoryTotal, CategoryTotal, FinanceRepository, FinanceRepository
+Cohesion: 0.10
+Nodes (11): UseCase, NewUseCase(), TestFinanceUseCase(), Repository, Summary, Transaction, NewFinanceHandler(), CategoryTotal (+3 more)
 
-### Community 55 - "UseCase"
-Cohesion: 0.17
-Nodes (4): RegisterInput, SecretCipher, Session, UseCase
+### Community 55 - "WaitingListPage"
+Cohesion: 0.67
+Nodes (4): fetchWaitingList(), WaitingListPage(), handleStatusChange(), loadEntries()
 
 ### Community 56 - "PackageCredit"
-Cohesion: 0.18
-Nodes (5): PackageCredit, NewPackageCreditRepository(), scanPackageCredits(), PackageCreditRepository, PackageCreditRepository
+Cohesion: 0.19
+Nodes (4): PackageCredit, scanPackageCredits(), PackageCreditRepository, PackageCreditRepository
 
 ### Community 57 - "GiftCard"
 Cohesion: 0.14
 Nodes (5): generateGiftCardCode(), GiftCard, NewGiftCardRepository(), GiftCardRepository, GiftCardRepository
 
-### Community 58 - "UseCase"
-Cohesion: 0.17
-Nodes (10): UseCase, NewUseCase(), Log, NewNotificationRepository(), NewNotificationHandler(), NotificationRepository, Provider, Repository (+2 more)
-
-### Community 59 - "auth_handler.go"
-Cohesion: 0.17
-Nodes (11): browserSessionPayload(), buildPasswordResetURL(), exposeAuthTokenForTests(), NewAuthHandler(), secureTemporaryPassword(), writeAdminAuthError(), AuthHandler, logError() (+3 more)
+### Community 58 - "sync.Mutex"
+Cohesion: 0.13
+Nodes (13): lazyAppHandler, UseCase, NewUseCase(), Log, NewNotificationRepository(), NewNotificationHandler(), sync.Mutex, NotificationRepository (+5 more)
 
 ### Community 60 - "AuditLog"
-Cohesion: 0.15
-Nodes (12): AuditLog, Repository, UseCase, NewUseCase(), TestAuditLogRecordingAndListing(), TestOutboxPublishAndDispatch(), NewAuditRepository(), NewOutboxRepository() (+4 more)
+Cohesion: 0.17
+Nodes (11): AuditLog, Repository, UseCase, NewUseCase(), TestAuditLogRecordingAndListing(), NewAuditRepository(), NewAuditHandler(), TestAuditAndSystemHandlers() (+3 more)
 
-### Community 61 - "go_pkg_errors"
+### Community 61 - "checkout/usecase.go"
 Cohesion: 0.16
-Nodes (7): CheckoutInput, CheckoutResult, ProductItem, go_pkg_erpagendamentos_backend_internal_domain_cashregister, go_pkg_erpagendamentos_backend_internal_domain_commission, go_pkg_erpagendamentos_backend_internal_domain_finance, go_pkg_errors
+Nodes (6): CheckoutInput, CheckoutResult, ProductItem, go_pkg_erpagendamentos_backend_internal_application_commission, go_pkg_erpagendamentos_backend_internal_domain_commission, go_pkg_erpagendamentos_backend_internal_domain_finance
 
 ### Community 62 - "EventBroker"
-Cohesion: 0.23
-Nodes (8): NewCheckoutHandler(), EventBroker, NewEventBroker(), RegisterMetricsBroker(), sync.RWMutex, CheckoutHandler, Event, MetricsRegistry
+Cohesion: 0.14
+Nodes (14): UseCase, NewBookingHandler(), NewCheckoutHandler(), EventBroker, NewMercadoPagoWebhookHandler(), RegisterMetricsBroker(), AuditLogger, OutboxPublisher (+6 more)
 
 ### Community 63 - "rate_limit.go"
-Cohesion: 0.15
-Nodes (21): buildCompoundIdempotencyKey(), forwardedClientIP(), isSensitiveRateLimitedRoute(), isTrustedProxy(), newMemoryRateLimiter(), normalizedClientID(), persistentRateLimitConfig(), rateLimitRouteKey() (+13 more)
-
-### Community 64 - "Account"
-Cohesion: 0.15
-Nodes (5): Account, UpdateProfileInput, updateAuthPasswordAndVersion(), database/sql.Tx, AuthRepository
+Cohesion: 0.17
+Nodes (19): buildCompoundIdempotencyKey(), forwardedClientIP(), isSensitiveRateLimitedRoute(), isTrustedProxy(), newMemoryRateLimiter(), normalizedClientID(), persistentRateLimitConfig(), rateLimitRouteKey() (+11 more)
 
 ### Community 65 - "Appointment"
-Cohesion: 0.12
-Nodes (7): RecurrenceInput, parseRFC3339(), validStatusChange(), Appointment, parseAppointmentBound(), parseAppointmentInterval(), AppointmentRepository
+Cohesion: 0.23
+Nodes (4): Appointment, parseAppointmentBound(), parseAppointmentInterval(), AppointmentRepository
 
 ### Community 66 - "writeInvalidPayload"
-Cohesion: 0.19
-Nodes (5): writeCommerceError(), writeBadRequestError(), writeInvalidPayload(), writeWaitingListError(), CommerceHandler
-
-### Community 67 - "bookingApi.ts"
-Cohesion: 0.16
-Nodes (14): backendOrigin, buildApiUrl(), AvailabilityResponse, BookingResult, fetchPublicReview(), Professional, PublicAppointment, PublicConfiguration (+6 more)
+Cohesion: 0.29
+Nodes (3): writeCommerceError(), writeInvalidPayload(), CommerceHandler
 
 ### Community 68 - "templates.go"
-Cohesion: 0.29
-Nodes (16): greeting(), RenderCancellation(), RenderConfirmation(), RenderReminder(), RenderReschedule(), sampleData(), TestGreetingWithoutName(), TestRenderCancellation() (+8 more)
-
-### Community 69 - "Container"
-Cohesion: 0.13
-Nodes (8): UseCase, NewUseCase(), UseCase, Container, NewCustomerHandler(), NewExportHandler(), NewProfessionalHandler(), Repository
+Cohesion: 0.27
+Nodes (17): greeting(), PublicBookingOrigin(), RenderCancellation(), RenderConfirmation(), RenderReminder(), RenderReschedule(), sampleData(), TestGreetingWithoutName() (+9 more)
 
 ### Community 70 - "compilerOptions"
 Cohesion: 0.09
 Nodes (21): compilerOptions, allowJs, allowSyntheticDefaultImports, esModuleInterop, forceConsistentCasingInFileNames, isolatedModules, jsx, lib (+13 more)
 
 ### Community 71 - "AppointmentRepository"
-Cohesion: 0.20
+Cohesion: 0.19
 Nodes (5): appointmentSelectColumns(), scanAppointmentRow(), scanAppointmentRows(), AppointmentRepository, appointmentScanner
 
 ### Community 72 - "compilerOptions"
@@ -455,24 +426,20 @@ Cohesion: 0.09
 Nodes (21): compilerOptions, allowJs, allowSyntheticDefaultImports, esModuleInterop, forceConsistentCasingInFileNames, isolatedModules, jsx, lib (+13 more)
 
 ### Community 74 - "OutboxRepository"
-Cohesion: 0.16
-Nodes (4): quoteLiteral(), OutboxRepository, OutboxEvent, OutboxRepository
+Cohesion: 0.14
+Nodes (6): TestOutboxPublishAndDispatch(), NewOutboxRepository(), quoteLiteral(), OutboxRepository, OutboxEvent, OutboxRepository
 
 ### Community 75 - "UseCase"
 Cohesion: 0.24
 Nodes (7): UseCase, NewUseCase(), NewSystemHandler(), go_pkg_runtime, EventDispatcher, Repository, SystemHandler
 
 ### Community 76 - "totp.go"
-Cohesion: 0.20
-Nodes (8): generateTOTPSecret(), totpCode(), totpURI(), validateTOTP(), go_pkg_crypto_sha1, go_pkg_encoding_base32, go_pkg_encoding_binary, go_pkg_net_url
+Cohesion: 0.15
+Nodes (11): MFAStatus, generateTOTPSecret(), totpCode(), totpURI(), validateTOTP(), isMFAEligibleRole(), go_pkg_crypto_hmac, go_pkg_crypto_sha1 (+3 more)
 
 ### Community 78 - "testing.T"
 Cohesion: 0.35
 Nodes (11): UseCase, newTestUseCase(), TestAvailableSlotsRespectsClosedDays(), TestCancelPublic(), TestCreateBookingGeneratesManagementCode(), TestManagementCodeNormalization(), TestPortalCancelValidatesOwnership(), TestPortalLookup() (+3 more)
-
-### Community 79 - "auth/entities.go"
-Cohesion: 0.20
-Nodes (6): ChangePasswordInput, LoginInput, MFAStatus, PasswordResetCodeConfirmInput, PasswordResetConfirmInput, AuthState
 
 ### Community 80 - "ERP Agendamentos"
 Cohesion: 0.14
@@ -483,36 +450,28 @@ Cohesion: 0.40
 Nodes (3): NewBcryptHasher(), go_pkg_golang_org_x_crypto_bcrypt, BcryptHasher
 
 ### Community 82 - "UseCase"
-Cohesion: 0.27
-Nodes (8): UseCase, NewUseCase(), NewCommerceHandler(), GiftCardRepository, MemberPlanRepository, MembershipRepository, PackageCreditRepository, PackageRepository
+Cohesion: 0.29
+Nodes (9): UseCase, NewUseCase(), NewCommerceHandler(), repositorySet, GiftCardRepository, MemberPlanRepository, MembershipRepository, PackageCreditRepository (+1 more)
 
-### Community 83 - "email_provider.go"
-Cohesion: 0.21
-Nodes (8): buildNotificationProvider(), intEnv(), logFallback(), NewEmailProvider(), NewLogProvider(), go_pkg_net_smtp, EmailProvider, LogProvider
-
-### Community 84 - "widget_handler.go"
-Cohesion: 0.60
-Nodes (3): NewWidgetHandler(), resolveWidgetBookingOrigin(), WidgetHandler
+### Community 83 - "go_pkg_context"
+Cohesion: 0.11
+Nodes (12): buildNotificationProvider(), intEnv(), logFallback(), NewEmailProvider(), NewLogProvider(), go_pkg_context, go_pkg_erpagendamentos_backend_internal_domain_payment, go_pkg_io (+4 more)
 
 ### Community 85 - "booking/src/lib/apiError.ts"
-Cohesion: 0.27
-Nodes (8): ApiError, ApiErrorPayload, buildApiError(), parseApiResponse(), API_ERROR_MESSAGES, FIELD_ERROR_MESSAGES, getApiErrorMessage(), translateFieldErrors()
+Cohesion: 0.24
+Nodes (10): ApiError, ApiErrorPayload, buildApiError(), parseApiResponse(), API_ERROR_MESSAGES, EXACT_MESSAGE_MAP, getApiErrorMessage(), SUBSTRING_MESSAGE_PATTERNS (+2 more)
 
 ### Community 86 - "time.Duration"
-Cohesion: 0.14
-Nodes (10): isProductionAuthEnvironment(), Claims, CleanupSummary, decodeSegment(), encodeSegment(), NewJWTManager(), go_pkg_crypto_hmac, time.Duration (+2 more)
+Cohesion: 0.18
+Nodes (9): Claims, CleanupSummary, decodeSegment(), encodeSegment(), NewJWTManager(), go_pkg_crypto_sha256, time.Duration, JWTManager (+1 more)
 
 ### Community 88 - "FinancePage.tsx"
 Cohesion: 0.15
 Nodes (21): FinancePage, fetchCashRegisterHistory(), fetchCurrentCashRegister(), fetchFinancialSummary(), fetchFinancialTransactions(), ActiveTab, FinancePage(), handleCloseShift() (+13 more)
 
-### Community 89 - ".UpdateAccountRole"
-Cohesion: 0.39
-Nodes (4): canManageTenantAccount(), isPrivilegedAdminRole(), isStaffRole(), normalizeTenantScope()
-
 ### Community 91 - "observability.go"
-Cohesion: 0.15
-Nodes (14): isHopByHopHeader(), RecordRequestMetric(), isSensitiveLogKey(), redactSensitiveText(), resolveRequestID(), sanitizeLogString(), sanitizeLogValue(), truncateLogString() (+6 more)
+Cohesion: 0.27
+Nodes (8): isSensitiveLogKey(), redactSensitiveText(), sanitizeLogString(), sanitizeLogValue(), truncateLogString(), go_pkg_regexp, contextKey, responseRecorder
 
 ### Community 92 - "admin/vite.config.ts"
 Cohesion: 0.60
@@ -522,61 +481,53 @@ Nodes (3): ref_tailwindcss_vite, ref_vite, ref_vitejs_plugin_react
 Cohesion: 0.36
 Nodes (5): DayMetric, ProfessionalMetric, ServiceMetric, Analytics, StatusCount
 
-### Community 94 - "buildAuthComponents"
-Cohesion: 0.29
-Nodes (9): Repository, TokenManager, PasswordHasher, NewUseCase(), buildAuthComponents(), boolEnv(), durationSecondsEnv(), seedAdminAccount() (+1 more)
-
-### Community 95 - "booking/usecase.go"
-Cohesion: 0.29
-Nodes (12): countOverlappingSlots(), isClosedDay(), localMidnight(), overlapsAnyBusy(), parseClock(), PortalAppointment, PortalCustomer, PortalResult (+4 more)
+### Community 94 - "UseCase"
+Cohesion: 0.12
+Nodes (16): Repository, SecretCipher, TokenManager, canManageTenantAccount(), PasswordHasher, UseCase, isPrivilegedAdminRole(), isProductionAuthEnvironment() (+8 more)
 
 ### Community 96 - "TenantsPage.tsx"
 Cohesion: 0.09
 Nodes (24): TenantsPage, checkSystemReadiness(), createTenant(), fetchAuditLogs(), fetchSystemStatus(), fetchTenants(), updateTenant(), updateTenantSubscription() (+16 more)
 
-### Community 98 - "go_pkg_erpagendamentos_backend_internal_domain_appointment"
-Cohesion: 0.60
-Nodes (4): BuildICalCalendar(), formatUTC(), sanitizeLine(), go_pkg_erpagendamentos_backend_internal_domain_appointment
+### Community 98 - "ical.go"
+Cohesion: 0.83
+Nodes (3): BuildICalCalendar(), formatUTC(), sanitizeLine()
 
 ### Community 99 - "booking/src/App.tsx"
-Cohesion: 0.32
-Nodes (4): App(), booking_src_index, initWidgetBridge(), SlugEntryPage()
+Cohesion: 0.16
+Nodes (5): App(), booking_src_index, initWidgetBridge(), BookingPage(), SlugEntryPage()
 
-### Community 110 - "ReminderWorker"
-Cohesion: 0.17
-Nodes (11): MaintenanceWorker, MaintenanceConfig, UseCase, NewMaintenanceWorker(), formatAppointmentLocal(), UseCase, NewReminderWorker(), startBackgroundWorkers() (+3 more)
+### Community 110 - "context.Context"
+Cohesion: 0.20
+Nodes (9): MaintenanceWorker, MaintenanceConfig, UseCase, NewMaintenanceWorker(), NewPostgresTxRunner(), context.Context, NopTxRunner, PostgresTxRunner (+1 more)
 
 ### Community 115 - "PortalPage.tsx"
 Cohesion: 0.16
-Nodes (15): fetchAvailability(), PortalAppointment, portalCancelAppointment(), portalLookup(), portalRescheduleAppointment(), PortalResult, Slot, ACTIONABLE_STATUSES (+7 more)
+Nodes (14): PortalAppointment, portalCancelAppointment(), portalLookup(), portalRescheduleAppointment(), PortalResult, Slot, ACTIONABLE_STATUSES, PortalPage() (+6 more)
 
-### Community 116 - "go_pkg_context"
-Cohesion: 0.24
-Nodes (6): NewPostgresTxRunner(), go_pkg_context, go_pkg_erpagendamentos_backend_internal_domain_payment, go_pkg_io, PostgresTxRunner, TxRunner
-
-### Community 122 - "repositories.go"
+### Community 122 - "go_pkg_os"
 Cohesion: 0.11
-Nodes (18): main(), resolveDurationEnv(), resolvePositiveIntEnv(), applyDatabaseSQL(), resolveSchemaFile(), loadEnvFile(), resolveMaxRequestBodyBytes(), shouldLimitRequestBody() (+10 more)
+Nodes (17): newLazyAppHandler(), main(), resolveDurationEnv(), resolvePositiveIntEnv(), loadEnvFile(), resolveMaxRequestBodyBytes(), shouldLimitRequestBody(), withRequestBodyLimit() (+9 more)
 
 ## Knowledge Gaps
-- **257 isolated node(s):** `graphify-mcp`, `name`, `private`, `version`, `type` (+252 more)
+- **259 isolated node(s):** `graphify-mcp`, `name`, `private`, `version`, `type` (+254 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Container` connect `Container` to `Payment`, `go_pkg_net_http`, `Review`, `UseCase`, `Tenant`, `Service`, `auth_cookie.go`, `database/sql.DB`, `Resource`, `Queue`, `Entry`, `UseCase`, `UseCase`, `NewContainer`, `UseCase`, `UseCase`, `UseCase`, `UseCase`, `AuditLog`, `EventBroker`, `UseCase`, `UseCase`, `buildAuthComponents`, `ReminderWorker`?**
-  _High betweenness centrality (0.045) - this node is a cross-community bridge._
-- **Why does `RouterConfig` connect `RouterConfig` to `Payment`, `go_pkg_net_http`, `Review`, `UseCase`, `Tenant`, `Service`, `Resource`, `Entry`, `UseCase`, `UseCase`, `NewContainer`, `UseCase`, `UseCase`, `UseCase`, `UseCase`, `AuditLog`, `EventBroker`, `Container`, `UseCase`, `UseCase`, `time.Duration`, `ReminderWorker`?**
-  _High betweenness centrality (0.030) - this node is a cross-community bridge._
-- **Why does `UseCase` connect `UseCase` to `net/http.ResponseWriter`, `writeAPIError`, `RouterConfig`, `auth/usecase.go`, `auth_cookie.go`, `withIdempotency`, `NewContainer`, `AuthRepository`, `net/http.Request`, `auth_handler.go`, `rate_limit.go`, `Account`, `Container`, `totp.go`, `auth/entities.go`, `time.Duration`, `.UpdateAccountRole`, `buildAuthComponents`, `booking/usecase.go`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+- **Why does `Container` connect `Container` to `Payment`, `go_pkg_net_http`, `Review`, `UseCase`, `Repository`, `Tenant`, `Service`, `RouterConfig`, `database/sql.DB`, `Customer`, `UseCase`, `Professional`, `CashRegister`, `Queue`, `Entry`, `UseCase`, `UseCase`, `UseCase`, `UseCase`, `sync.Mutex`, `AuditLog`, `EventBroker`, `UseCase`, `UseCase`, `UseCase`, `context.Context`?**
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
+- **Why does `RouterConfig` connect `RouterConfig` to `Payment`, `go_pkg_net_http`, `Review`, `UseCase`, `Repository`, `Tenant`, `Service`, `Customer`, `UseCase`, `Professional`, `CashRegister`, `Entry`, `UseCase`, `UseCase`, `Container`, `UseCase`, `UseCase`, `sync.Mutex`, `AuditLog`, `EventBroker`, `UseCase`, `UseCase`, `time.Duration`, `UseCase`, `context.Context`?**
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `UseCase` connect `UseCase` to `net/http.Request`, `withIdempotency`, `writeAPIError`, `time.Time`, `Container`, `totp.go`, `AuthRepository`, `AppointmentHandler`, `auth/entities.go`, `RouterConfig`, `time.Duration`, `rate_limit.go`?**
+  _High betweenness centrality (0.027) - this node is a cross-community bridge._
 - **Are the 131 inferred relationships involving `writeJSON()` (e.g. with `health()` and `readiness()`) actually correct?**
   _`writeJSON()` has 131 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 104 inferred relationships involving `resolveRequestTenantID()` (e.g. with `.Analytics()` and `.CheckIn()`) actually correct?**
   _`resolveRequestTenantID()` has 104 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `graphify-mcp`, `name`, `private` to the rest of the system?**
-  _257 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _259 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `adminFetch` be split into smaller, more focused modules?**
-  _Cohesion score 0.05263157894736842 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04938271604938271 - nodes in this community are weakly interconnected._

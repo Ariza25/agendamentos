@@ -18,7 +18,7 @@ func NewOnboardingHandler(onboardingUseCase *onboarding.UseCase) *OnboardingHand
 func (h *OnboardingHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	var input onboarding.SignupInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeInvalidPayload(w, "invalid signup payload")
+		writeInvalidPayload(w, "Não foi possível ler os dados enviados para o cadastro.")
 		return
 	}
 
@@ -31,6 +31,7 @@ func (h *OnboardingHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	csrfToken := setSessionCookies(w, session.Token)
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"session":   session,
+		"user":      session.User,
 		"tenant":    tenant,
 		"csrfToken": csrfToken,
 	})

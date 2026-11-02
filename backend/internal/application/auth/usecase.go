@@ -221,10 +221,10 @@ func (u *UseCase) ChangePassword(input domain.ChangePasswordInput) error {
 	validation := NewValidationError()
 
 	if input.CurrentPassword == "" {
-		validation.Add("currentPassword", "Enter the current password.")
+		validation.Add("currentPassword", "Informe a senha atual.")
 	}
 	if input.NewPassword == "" {
-		validation.Add("newPassword", "Enter the new password.")
+		validation.Add("newPassword", "Informe a nova senha.")
 	} else {
 		validatePasswordField(input.NewPassword, "newPassword", validation)
 	}
@@ -237,7 +237,7 @@ func (u *UseCase) ChangePassword(input domain.ChangePasswordInput) error {
 		return ErrAccountNotFound
 	}
 	if err := u.hasher.Compare(account.PasswordHash, input.CurrentPassword); err != nil {
-		validation.Add("currentPassword", "Current password incorrect.")
+		validation.Add("currentPassword", "Senha atual incorreta.")
 		return validation
 	}
 
@@ -316,10 +316,10 @@ func (u *UseCase) ConfirmPasswordReset(input domain.PasswordResetConfirmInput) e
 	newPassword := strings.TrimSpace(input.NewPassword)
 	validation := NewValidationError()
 	if token == "" {
-		validation.Add("token", "Invalid reset link.")
+		validation.Add("token", "Link de redefinição inválido.")
 	}
 	if newPassword == "" {
-		validation.Add("newPassword", "Enter the new password.")
+		validation.Add("newPassword", "Informe a nova senha.")
 	} else {
 		validatePasswordField(newPassword, "newPassword", validation)
 	}
@@ -345,12 +345,12 @@ func (u *UseCase) ConfirmPasswordResetCode(input domain.PasswordResetCodeConfirm
 	code := strings.TrimSpace(input.Code)
 	validation := NewValidationError()
 	if email == "" {
-		validation.Add("email", "Enter your email.")
+		validation.Add("email", "Informe seu e-mail.")
 	}
 	if len(code) != 6 {
-		validation.Add("code", "Enter the 6-digit code.")
+		validation.Add("code", "Informe o código de 6 dígitos.")
 	} else if _, ok := new(big.Int).SetString(code, 10); !ok {
-		validation.Add("code", "Enter only the numbers of the code.")
+		validation.Add("code", "Informe apenas os números do código.")
 	}
 	if validation.HasErrors() {
 		return validation
@@ -358,7 +358,7 @@ func (u *UseCase) ConfirmPasswordResetCode(input domain.PasswordResetCodeConfirm
 	newPassword := strings.TrimSpace(input.NewPassword)
 	passwordValidation := NewValidationError()
 	if newPassword == "" {
-		passwordValidation.Add("newPassword", "Enter the new password.")
+		passwordValidation.Add("newPassword", "Informe a nova senha.")
 	} else {
 		validatePasswordField(newPassword, "newPassword", passwordValidation)
 	}
@@ -433,10 +433,10 @@ func (u *UseCase) Login(input domain.LoginInput) (domain.Session, error) {
 	password := strings.TrimSpace(input.Password)
 	validation := NewValidationError()
 	if email == "" {
-		validation.Add("email", "Enter your email.")
+		validation.Add("email", "Informe seu e-mail.")
 	}
 	if password == "" {
-		validation.Add("password", "Enter your password.")
+		validation.Add("password", "Informe sua senha.")
 	}
 	if validation.HasErrors() {
 		return domain.Session{}, validation
@@ -444,14 +444,14 @@ func (u *UseCase) Login(input domain.LoginInput) (domain.Session, error) {
 
 	account, err := u.repository.GetStaffAccountByEmail(email)
 	if err != nil {
-		validation.Add("email", "Incorrect email or password.")
-		validation.Add("password", "Incorrect email or password.")
+		validation.Add("email", "E-mail ou senha incorretos.")
+		validation.Add("password", "E-mail ou senha incorretos.")
 		return domain.Session{}, validation
 	}
 
 	if err := u.hasher.Compare(account.PasswordHash, password); err != nil {
-		validation.Add("email", "Incorrect email or password.")
-		validation.Add("password", "Incorrect email or password.")
+		validation.Add("email", "E-mail ou senha incorretos.")
+		validation.Add("password", "E-mail ou senha incorretos.")
 		return domain.Session{}, validation
 	}
 	if isMFAEligibleRole(account.Role) && account.MFAEnabled {
@@ -463,7 +463,7 @@ func (u *UseCase) Login(input domain.LoginInput) (domain.Session, error) {
 		}
 		secret, decryptErr := u.mfaCipher.Decrypt(account.MFASecret)
 		if decryptErr != nil || !validateTOTP(secret, input.MFACode, u.now()) {
-			validation.Add("mfaCode", "Invalid verification code.")
+			validation.Add("mfaCode", "Código de verificação inválido.")
 			return domain.Session{}, validation
 		}
 	}
@@ -545,15 +545,15 @@ func (u *UseCase) registerWithRole(input domain.RegisterInput, role string) (dom
 	validation := NewValidationError()
 
 	if name == "" {
-		validation.Add("name", "Enter the full name.")
+		validation.Add("name", "Informe seu nome completo.")
 	}
 	if normalizedEmail == "" {
-		validation.Add("email", "Enter the email.")
+		validation.Add("email", "Informe seu e-mail.")
 	} else if !strings.Contains(normalizedEmail, "@") {
-		validation.Add("email", "Enter a valid email.")
+		validation.Add("email", "Informe um e-mail válido.")
 	}
 	if password == "" {
-		validation.Add("password", "Enter a password.")
+		validation.Add("password", "Informe sua senha.")
 	} else {
 		validatePassword(password, validation)
 	}
@@ -567,7 +567,7 @@ func (u *UseCase) registerWithRole(input domain.RegisterInput, role string) (dom
 	}
 
 	if _, err := u.repository.GetStaffAccountByEmail(normalizedEmail); err == nil {
-		validation.Add("email", "An account with this email already exists.")
+		validation.Add("email", "Já existe uma conta cadastrada com este e-mail.")
 		return domain.Session{}, validation
 	}
 
@@ -592,7 +592,7 @@ func validatePassword(password string, validation *ValidationError) {
 
 func validatePasswordField(password string, field string, validation *ValidationError) {
 	if len(password) < 8 {
-		validation.Add(field, "The password must have at least 8 characters and contain uppercase letters, lowercase letters, numbers and a special character.")
+		validation.Add(field, "A senha deve ter no mínimo 8 caracteres.")
 		return
 	}
 
@@ -611,7 +611,7 @@ func validatePasswordField(password string, field string, validation *Validation
 	}
 
 	if !hasUpper || !hasLower || !hasNumber || !passwordSpecialCharPattern.MatchString(password) {
-		validation.Add(field, "The password must have at least 8 characters and contain uppercase letters, lowercase letters, numbers and a special character.")
+		validation.Add(field, "A senha deve conter letras maiúsculas, minúsculas, números e caractere especial.")
 	}
 }
 

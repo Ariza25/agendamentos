@@ -102,5 +102,32 @@ func TestOnboardingSignup(t *testing.T) {
 	if sessionMinimal.User.Email != "carlos@barbeiro.com" {
 		t.Errorf("expected email carlos@barbeiro.com, got: %s", sessionMinimal.User.Email)
 	}
+
+	// 5. Signup with OwnerName instead of AdminName should succeed
+	sessionOwner, tenantOwner, err := onboardingUseCase.Signup(onboarding.SignupInput{
+		OwnerName: "Juliana Silva",
+		Email:     "juliana@silva.com",
+		Password:  "Senha@1234",
+		Phone:     "11988887777",
+	})
+	if err != nil {
+		t.Fatalf("expected successful signup with OwnerName, got: %v", err)
+	}
+	if tenantOwner.Name != "Estabelecimento de Juliana Silva" {
+		t.Errorf("expected name 'Estabelecimento de Juliana Silva', got: %s", tenantOwner.Name)
+	}
+	if sessionOwner.User.Name != "Juliana Silva" {
+		t.Errorf("expected user name 'Juliana Silva', got: %s", sessionOwner.User.Name)
+	}
+
+	// 6. Duplicate email should fail with translated error message
+	_, _, err = onboardingUseCase.Signup(onboarding.SignupInput{
+		OwnerName: "Outro Don",
+		Email:     "vito@corleone.com",
+		Password:  "Senha@1234",
+	})
+	if err == nil {
+		t.Errorf("expected error for duplicate email, got nil")
+	}
 }
 

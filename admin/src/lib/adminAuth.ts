@@ -68,6 +68,7 @@ export async function loginAdmin(input: AdminLoginInput): Promise<AdminAccount> 
 export type SignupInput = {
   businessName?: string
   slug?: string
+  adminName?: string
   ownerName: string
   email: string
   password: string
@@ -76,29 +77,37 @@ export type SignupInput = {
 }
 
 export async function signupAdmin(input: SignupInput): Promise<AdminAccount> {
+  const requestBody = {
+    ...input,
+    adminName: input.adminName || input.ownerName,
+    ownerName: input.ownerName || input.adminName,
+  }
   const response = await fetch(buildApiUrl('/api/v1/auth/signup'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...buildAdminAuthHeaders() },
-    body: JSON.stringify(input),
+    body: JSON.stringify(requestBody),
   })
 
-  const payload = (await response.json().catch(() => null)) as
+  const resData = (await response.json().catch(() => null)) as
     | ({
         error?: string
         fieldErrors?: Record<string, string>
         code?: string
         csrfToken?: string
         user?: Partial<AdminAccount>
+        session?: { user?: Partial<AdminAccount> }
       })
     | null
 
-  if (!response.ok || !payload?.csrfToken || !payload.user) {
-    throw buildApiError(payload ?? null, 'Falha ao cadastrar estabelecimento.', response.status)
+  const userPayload = resData?.user || resData?.session?.user
+
+  if (!response.ok || !resData?.csrfToken || !userPayload) {
+    throw buildApiError(resData ?? null, 'Falha ao cadastrar estabelecimento.', response.status)
   }
 
-  const user = normalizeAdminAccount(payload.user)
-  persistAdminSession(user, payload.csrfToken)
+  const user = normalizeAdminAccount(userPayload)
+  persistAdminSession(user, resData.csrfToken)
   return user
 }
 
