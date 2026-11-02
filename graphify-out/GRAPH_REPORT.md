@@ -1,7 +1,7 @@
 # Graph Report - erpagendamentos  (2026-11-01)
 
 ## Corpus Check
-- 266 files · ~127,638 words
+- 266 files · ~127,642 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 16 file(s) not represented in the graph (top: (none) 7, .conf 5, .css 3)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d56fe000`
+- Built from commit: `4e939256`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

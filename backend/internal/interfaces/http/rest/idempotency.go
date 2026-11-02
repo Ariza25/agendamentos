@@ -228,3 +228,4 @@ func buildCompoundIdempotencyKey(r *http.Request, rawKey string, authUseCase *ap
 	hash := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(hash[:])
 }
+

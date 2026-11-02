@@ -59,11 +59,11 @@ func initializeRepositories() (repositorySet, *sql.DB, bool) {
 	repositories := memoryRepositories()
 	databaseURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	databaseRequired := databaseURL != ""
-	if isProductionEnv() && databaseURL == "" {
-		log.Fatal("DATABASE_URL is required when ERPAGENDAMENTOS_ENV=production")
-	}
 	if databaseURL == "" {
-		return repositories, nil, databaseRequired
+		if isProductionEnv() {
+			log.Println(`{"level":"WARN","message":"DATABASE_URL is not configured; running with in-memory persistence until database URL is provided."}`)
+		}
+		return repositories, nil, false
 	}
 
 	db, err := postgres.Open(databaseURL)
