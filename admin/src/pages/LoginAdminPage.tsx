@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { Button } from '../shared/components/Button'
 import { Field, Input } from '../shared/components/FormControls'
+import { GoogleButton } from '../shared/components/GoogleButton'
 import { useToast } from '../shared/components/toast/ToastProvider'
 import { loginAdmin, requestAdminPasswordReset, type AdminAuthError, type AdminAccount } from '../lib/adminAuth'
 
@@ -94,7 +95,22 @@ export function AdminLoginPage({ onLogin }: LoginAdminPageProps) {
             Entre com uma conta autorizada para gerenciar agenda, serviços, clientes e configurações.
           </p>
 
-          <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
+          <div className="mt-8">
+            <GoogleButton text="Continuar com o Google" />
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-stone-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[var(--color-panel)] px-3 font-bold tracking-wider text-[var(--color-ink-soft)]">
+                  ou entre com seu e-mail
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <form className="grid gap-4" onSubmit={handleSubmit}>
             <Field error={fieldErrors.email} label="Email">
               <Input
                 autoComplete="email"

@@ -12,6 +12,7 @@ import { useToast } from './shared/components/toast/ToastProvider'
 import {
   confirmAdminPasswordReset,
   getAdminSession,
+  handleGoogleAuthRedirect,
   logoutAdmin,
   refreshAdminAccount,
   subscribeToAdminAuthChanges,
@@ -90,11 +91,22 @@ function ResetPasswordPage() {
 }
 
 export default function App() {
+  const { showToast } = useToast()
   const { pathname } = useLocation()
   const isResetPasswordPage = pathname === '/reset-password'
   const isSignupPage = pathname === '/signup'
 
   const [session, setSession] = useState(getAdminSession())
+
+  useEffect(() => {
+    const result = handleGoogleAuthRedirect()
+    if (result.user) {
+      setSession(getAdminSession())
+      showToast({ message: `Bem-vindo, ${result.user.name}!`, tone: 'success' })
+    } else if (result.error) {
+      showToast({ message: result.error, tone: 'error' })
+    }
+  }, [showToast])
 
   useEffect(() => {
     if (isResetPasswordPage || isSignupPage) {

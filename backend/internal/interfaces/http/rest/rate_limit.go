@@ -106,7 +106,7 @@ type persistentRateLimit struct {
 func persistentRateLimitConfig(r *http.Request) (persistentRateLimit, bool) {
 	path := strings.TrimSpace(r.URL.Path)
 	switch {
-	case path == "/api/v1/auth/login":
+	case path == "/api/v1/auth/login" || path == "/api/v1/auth/google":
 		return persistentRateLimit{scope: "login-route", limit: 30, window: 15 * time.Minute}, true
 	case path == "/api/v1/auth/signup" || path == "/api/v1/onboarding/signup":
 		return persistentRateLimit{scope: "auth-signup", limit: 10, window: 15 * time.Minute}, true
@@ -260,7 +260,7 @@ func rateLimitRouteKey(r *http.Request) string {
 func isSensitiveRateLimitedRoute(r *http.Request) bool {
 	path := strings.TrimSpace(r.URL.Path)
 	switch {
-	case strings.HasPrefix(path, "/api/v1/auth/login"):
+	case strings.HasPrefix(path, "/api/v1/auth/login") || strings.HasPrefix(path, "/api/v1/auth/google"):
 		return true
 	case strings.HasPrefix(path, "/api/v1/auth/signup") || strings.HasPrefix(path, "/api/v1/onboarding/signup"):
 		return true

@@ -129,5 +129,24 @@ func TestOnboardingSignup(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error for duplicate email, got nil")
 	}
+
+	// 7. Signup with External Provider (Google)
+	sessionGoogle, tenantGoogle, err := onboardingUseCase.SignupWithExternalProvider(
+		"Marcos Google",
+		"marcos@gmail.com",
+		"google",
+	)
+	if err != nil {
+		t.Fatalf("expected successful external signup, got: %v", err)
+	}
+	if sessionGoogle.User.Email != "marcos@gmail.com" {
+		t.Errorf("expected email 'marcos@gmail.com', got '%s'", sessionGoogle.User.Email)
+	}
+	if tenantGoogle.Name != "Estabelecimento de Marcos Google" {
+		t.Errorf("expected business name, got '%s'", tenantGoogle.Name)
+	}
+	if sessionGoogle.User.Role != "owner" {
+		t.Errorf("expected owner role, got '%s'", sessionGoogle.User.Role)
+	}
 }
 

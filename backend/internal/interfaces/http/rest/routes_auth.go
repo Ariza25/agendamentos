@@ -4,6 +4,7 @@ import "net/http"
 
 func registerAuthRoutes(mux *http.ServeMux, config RouterConfig) {
 	authHandler := NewAuthHandler(config.AuthUseCase)
+	googleHandler := NewAuthGoogleHandler(config.AuthUseCase, config.OnboardingUseCase)
 
 	mux.HandleFunc("GET /health", health)
 	mux.HandleFunc("GET /healthz", health)
@@ -16,6 +17,11 @@ func registerAuthRoutes(mux *http.ServeMux, config RouterConfig) {
 	mux.HandleFunc("POST /api/v1/auth/password-reset/confirm", authHandler.ConfirmPasswordReset)
 	mux.HandleFunc("POST /api/v1/auth/password-reset/code/request", authHandler.RequestPasswordResetCode)
 	mux.HandleFunc("POST /api/v1/auth/password-reset/code/confirm", authHandler.ConfirmPasswordResetCode)
+
+	mux.HandleFunc("GET /api/v1/auth/google/status", googleHandler.Status)
+	mux.HandleFunc("GET /api/v1/auth/google/login", googleHandler.Login)
+	mux.HandleFunc("GET /api/v1/auth/google/callback", googleHandler.Callback)
+	mux.HandleFunc("POST /api/v1/auth/google", googleHandler.VerifyIDToken)
 
 	mux.HandleFunc("GET /api/v1/auth/me", authHandler.Me)
 	mux.HandleFunc("GET /api/v1/auth/sessions", authHandler.ListSessions)

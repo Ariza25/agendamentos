@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { Button } from '../shared/components/Button'
 import { Field, Input } from '../shared/components/FormControls'
+import { GoogleButton } from '../shared/components/GoogleButton'
 import { useToast } from '../shared/components/toast/ToastProvider'
 import { signupAdmin, type AdminAccount, type AdminAuthError } from '../lib/adminAuth'
 
@@ -132,7 +133,22 @@ export function SignupPage({ onSignup }: SignupPageProps) {
           Cadastre seu acesso para gerenciar sua agenda, equipe e clientes.
         </p>
 
-        <form className="mt-8 grid gap-5" onSubmit={handleSubmit}>
+        <div className="mt-8">
+          <GoogleButton text="Cadastrar com o Google" />
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-stone-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[var(--color-panel)] px-3 font-bold tracking-wider text-[var(--color-ink-soft)]">
+                ou cadastre-se com seu e-mail
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <form className="grid gap-5" onSubmit={handleSubmit}>
           <div className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
             <Field error={fieldErrors.ownerName} label="Seu Nome Completo">
               <Input

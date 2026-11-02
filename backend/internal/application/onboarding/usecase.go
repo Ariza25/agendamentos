@@ -154,7 +154,71 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("não foi possível criar a conta de administrador: %w", err)
 	}
 
-	// 4. Seed Default Working Hours Configuration
+	// 4. Seed default configuration, professional and services
+	u.seedDefaults(createdTenant.ID, businessName, adminName, email, strings.TrimSpace(input.Phone), session.User.ID, segment)
+
+	return session, createdTenant, nil
+}
+
+func (u *UseCase) SignupWithExternalProvider(name string, email string, provider string) (authdomain.Session, tenantdomain.Tenant, error) {
+	adminName := strings.TrimSpace(name)
+	if adminName == "" {
+		adminName = "Administrador"
+	}
+
+	email = strings.ToLower(strings.TrimSpace(email))
+	if email == "" || !strings.Contains(email, "@") {
+		return authdomain.Session{}, tenantdomain.Tenant{}, ErrEmailRequired
+	}
+
+	businessName := "Estabelecimento de " + adminName
+	clean := strings.ToLower(regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(adminName, "-"))
+	clean = strings.Trim(clean, "-")
+	if clean == "" {
+		clean = "estabelecimento"
+	}
+	slug := fmt.Sprintf("%s-%d", clean, time.Now().Unix()%10000)
+
+	// Verify slug uniqueness
+	if _, err := u.tenantRepo.GetBySlug(slug); err == nil {
+		slug = fmt.Sprintf("%s-%d", slug, time.Now().UnixNano()%100000)
+	}
+
+	// 1. Create Tenant with 14-Day Free Trial
+	tenantID := uuid.NewString()
+	trialEnds := time.Now().Add(14 * 24 * time.Hour).Format(time.RFC3339)
+	createdTenant, err := u.tenantRepo.Create(tenantdomain.Tenant{
+		ID:                 tenantID,
+		Name:               businessName,
+		Slug:               slug,
+		Segment:            "barbearia",
+		Active:             true,
+		Plan:               "trial",
+		SubscriptionStatus: "trialing",
+		TrialEndsAt:        trialEnds,
+		ActiveModules: []string{
+			"agenda", "appointments", "customers", "services", "professionals",
+			"finance", "commissions", "inventory", "pos_cashregister", "notifications", "reviews",
+		},
+		MaxProfessionals: 5,
+	})
+	if err != nil {
+		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("não foi possível criar o estabelecimento: %w", err)
+	}
+
+	// 2. Register Owner Account via External Provider
+	session, err := u.authUseCase.RegisterExternalOwner(adminName, email, createdTenant.ID, provider)
+	if err != nil {
+		return authdomain.Session{}, tenantdomain.Tenant{}, fmt.Errorf("não foi possível criar a conta de administrador: %w", err)
+	}
+
+	// 3. Seed default configuration, professional and services
+	u.seedDefaults(createdTenant.ID, businessName, adminName, email, "", session.User.ID, "barbearia")
+
+	return session, createdTenant, nil
+}
+
+func (u *UseCase) seedDefaults(tenantID, businessName, adminName, email, phone, userID, segment string) {
 	workingHours := []configdomain.WorkingHours{
 		{DayOfWeek: 0, OpenTime: "09:00", CloseTime: "18:00", Enabled: false}, // Domingo
 		{DayOfWeek: 1, OpenTime: "09:00", CloseTime: "19:00", Enabled: true},  // Segunda
@@ -165,7 +229,7 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 		{DayOfWeek: 6, OpenTime: "09:00", CloseTime: "18:00", Enabled: true},  // Sábado
 	}
 	_, _ = u.configRepo.Update(configdomain.Configuration{
-		TenantID:                   createdTenant.ID,
+		TenantID:                   tenantID,
 		EstablishmentName:          businessName,
 		WorkingHours:               workingHours,
 		AppointmentIntervalMinutes: 30,
@@ -177,18 +241,16 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 		NotificationReminderHours:  24,
 	})
 
-	// 5. Seed Default Professional
 	pro, _ := u.professionalRepo.Create(prodomain.Professional{
-		TenantID: createdTenant.ID,
-		UserID:   session.User.ID,
+		TenantID: tenantID,
+		UserID:   userID,
 		Name:     adminName,
 		Email:    email,
-		Phone:    strings.TrimSpace(input.Phone),
+		Phone:    phone,
 		Color:    "#0284c7",
 		Active:   true,
 	})
 
-	// 6. Seed Segment-Specific Initial Services
 	type sampleSvc struct {
 		name     string
 		desc     string
@@ -220,7 +282,7 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 
 	for _, s := range sampleServices {
 		createdSvc, err := u.serviceRepo.Create(servicedomain.Service{
-			TenantID:        createdTenant.ID,
+			TenantID:        tenantID,
 			Name:            s.name,
 			Description:     s.desc,
 			DurationMinutes: s.duration,
@@ -229,10 +291,8 @@ func (u *UseCase) Signup(input SignupInput) (authdomain.Session, tenantdomain.Te
 			Active:          true,
 		})
 		if err == nil && pro.ID != "" {
-			_ = u.serviceRepo.SetProfessionals(createdTenant.ID, createdSvc.ID, []string{pro.ID})
+			_ = u.serviceRepo.SetProfessionals(tenantID, createdSvc.ID, []string{pro.ID})
 		}
 	}
-
-	return session, createdTenant, nil
 }
 

@@ -299,3 +299,85 @@ export function roleLabel(role?: string): string {
       return role ?? 'Sem perfil'
   }
 }
+
+export type GoogleAuthStatus = {
+  enabled: boolean
+  clientId?: string
+}
+
+export async function getGoogleAuthStatus(): Promise<GoogleAuthStatus> {
+  try {
+    const response = await fetch(buildApiUrl('/api/v1/auth/google/status'))
+    if (!response.ok) {
+      return { enabled: false }
+    }
+    const data = await response.json()
+    return {
+      enabled: Boolean(data?.enabled),
+      clientId: data?.clientId,
+    }
+  } catch {
+    return { enabled: false }
+  }
+}
+
+export function initiateGoogleLogin(returnUrl?: string) {
+  if (typeof window === 'undefined') return
+  const currentUrl = returnUrl || window.location.href.split('#')[0]
+  const targetUrl = new URL(buildApiUrl('/api/v1/auth/google/login'), window.location.origin)
+  targetUrl.searchParams.set('audience', 'admin')
+  targetUrl.searchParams.set('return_url', currentUrl)
+  window.location.href = targetUrl.toString()
+}
+
+export function handleGoogleAuthRedirect(): {
+  user: AdminAccount | null
+  error: string | null
+} {
+  if (typeof window === 'undefined') {
+    return { user: null, error: null }
+  }
+
+  // Check URL fragment: #google_auth=success&csrfToken=...&user=...
+  const hash = window.location.hash
+  if (hash && hash.includes('google_auth=success')) {
+    const params = new URLSearchParams(hash.replace(/^#/, ''))
+    const csrfToken = params.get('csrfToken') || ''
+    const userRaw = params.get('user')
+    if (csrfToken && userRaw) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(userRaw)) as Partial<AdminAccount>
+        const user = normalizeAdminAccount(parsed)
+        persistAdminSession(user, csrfToken)
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        return { user, error: null }
+      } catch {
+        // ignore parse error
+      }
+    }
+  }
+
+  // Check query parameter error: ?google_error=...
+  const searchParams = new URLSearchParams(window.location.search)
+  const googleError = searchParams.get('google_error')
+  if (googleError) {
+    searchParams.delete('google_error')
+    const newSearch = searchParams.toString()
+    const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash
+    window.history.replaceState(null, '', newUrl)
+
+    if (googleError === 'not_configured') {
+      return {
+        user: null,
+        error:
+          'A integração com o Google ainda não foi configurada. As chaves GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET devem ser adicionadas nas variáveis de ambiente.',
+      }
+    }
+    if (googleError === 'cancelled') {
+      return { user: null, error: 'O login com o Google foi cancelado.' }
+    }
+    return { user: null, error: 'Não foi possível concluir o login com o Google. Tente novamente.' }
+  }
+
+  return { user: null, error: null }
+}

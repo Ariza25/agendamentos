@@ -117,6 +117,45 @@ func (u *UseCase) RegisterOwner(input domain.RegisterInput) (domain.Session, err
 	return u.registerWithRole(input, "owner")
 }
 
+func (u *UseCase) GetStaffAccountByEmail(email string) (domain.Account, error) {
+	return u.repository.GetStaffAccountByEmail(strings.ToLower(strings.TrimSpace(email)))
+}
+
+func (u *UseCase) BuildSessionForAccount(account domain.Account) (domain.Session, error) {
+	return u.buildSession(account)
+}
+
+func (u *UseCase) RegisterExternalOwner(name string, email string, tenantID string, provider string) (domain.Session, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = "Administrador"
+	}
+	if normalizedEmail == "" || !strings.Contains(normalizedEmail, "@") {
+		return domain.Session{}, errors.New("o e-mail de acesso é obrigatório e deve ser válido.")
+	}
+
+	randomPassword := uuid.NewString()
+	passwordHash, err := u.hasher.Hash(randomPassword)
+	if err != nil {
+		return domain.Session{}, err
+	}
+
+	account, err := u.repository.CreateAccount(domain.Account{
+		Name:         name,
+		Email:        normalizedEmail,
+		Phone:        "",
+		PasswordHash: passwordHash,
+		Role:         "owner",
+		TenantID:     strings.TrimSpace(tenantID),
+	})
+	if err != nil {
+		return domain.Session{}, err
+	}
+
+	return u.buildSession(account)
+}
+
 func (u *UseCase) CreateOrUpdateTenantOwner(input domain.RegisterInput, tenantID string) (domain.Account, bool, error) {
 	tenantID = strings.TrimSpace(tenantID)
 	if tenantID == "" {
