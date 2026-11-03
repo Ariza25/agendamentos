@@ -83,8 +83,12 @@ func (r *TenantRepository) GetBySlug(slug string) (tenant.Tenant, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	id, exists := r.bySlug[strings.ToLower(strings.TrimSpace(slug))]
+	norm := strings.ToLower(strings.TrimSpace(slug))
+	id, exists := r.bySlug[norm]
 	if !exists {
+		if item, idExists := r.tenants[norm]; idExists {
+			return item, nil
+		}
 		return tenant.Tenant{}, fmt.Errorf("tenant not found")
 	}
 	return r.tenants[id], nil

@@ -360,25 +360,38 @@ func (r *AppointmentRepository) Analytics(tenantID string, from string, to strin
 	return result, nil
 }
 
-func parseAppointmentBound(value string) (time.Time, bool) {
+func parseTimeFlexible(value string) (time.Time, bool) {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return time.Time{}, false
 	}
-	parsed, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		return time.Time{}, false
+	formats := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
 	}
-	return parsed, true
+	for _, format := range formats {
+		if parsed, err := time.Parse(format, value); err == nil {
+			return parsed, true
+		}
+	}
+	return time.Time{}, false
+}
+
+func parseAppointmentBound(value string) (time.Time, bool) {
+	return parseTimeFlexible(value)
 }
 
 func parseAppointmentInterval(item appointment.Appointment) (time.Time, time.Time, bool) {
-	startsAt, err := time.Parse(time.RFC3339, item.StartsAt)
-	if err != nil {
+	startsAt, ok1 := parseTimeFlexible(item.StartsAt)
+	if !ok1 {
 		return time.Time{}, time.Time{}, false
 	}
-	endsAt, err := time.Parse(time.RFC3339, item.EndsAt)
-	if err != nil {
+	endsAt, ok2 := parseTimeFlexible(item.EndsAt)
+	if !ok2 {
 		return time.Time{}, time.Time{}, false
 	}
 	return startsAt, endsAt, true

@@ -14,6 +14,7 @@ import (
 type authComponents struct {
 	useCase     *auth.UseCase
 	maintenance auth.MaintenanceConfig
+	hasher      auth.PasswordHasher
 }
 
 func buildAuthComponents(authRepository authdomain.Repository) authComponents {
@@ -56,5 +57,6 @@ func buildAuthComponents(authRepository authdomain.Repository) authComponents {
 			Interval:  durationSecondsEnv("AUTH_MAINTENANCE_INTERVAL_SECONDS", time.Hour),
 			Retention: durationSecondsEnv("AUTH_RESET_TOKEN_RETENTION_SECONDS", 7*24*time.Hour),
 		},
+		hasher: passwordHasher,
 	}
 }

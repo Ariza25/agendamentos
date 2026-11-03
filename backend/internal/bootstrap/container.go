@@ -91,6 +91,7 @@ func NewContainer() *Container {
 
 	ensureDefaultTenant(repositories.tenant)
 	authComponents := buildAuthComponents(authRepository)
+	seedHomologationData(repositories, authComponents.hasher)
 
 	eventBroker := rest.NewEventBroker()
 	stockUseCase := stock.NewUseCase(repositories.stock)
