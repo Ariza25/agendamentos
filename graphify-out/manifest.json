@@ -126,10 +126,10 @@
     "semantic_hash": "80194934e5b447f55bce962a7fd6f76a"
   },
   "admin/src/pages/ConfigurationPage.tsx": {
-    "mtime": 1793536255.669174,
-    "seen": 1793662640.7758858,
-    "ast_hash": "5d1861284c90c65520b1f2b70f436e9f",
-    "semantic_hash": "5d1861284c90c65520b1f2b70f436e9f"
+    "mtime": 1793666686.1003273,
+    "seen": 1793666897.370069,
+    "ast_hash": "54bd6f19349ad9f0df43e2524a1a040f",
+    "semantic_hash": ""
   },
   "admin/src/pages/CustomersPage.tsx": {
     "mtime": 1786050059.06242,
@@ -144,9 +144,9 @@
     "semantic_hash": "4552019097a06e25d3c1d49132b68b38"
   },
   "admin/src/pages/LoginAdminPage.tsx": {
-    "mtime": 1793662072.988841,
-    "seen": 1793662640.7758858,
-    "ast_hash": "97e0e18da70421b5a5c03d3b4a19cb00",
+    "mtime": 1793666587.6755197,
+    "seen": 1793666897.370069,
+    "ast_hash": "4cd87dfff1b6e1bde448b86919a2a2a4",
     "semantic_hash": ""
   },
   "admin/src/pages/MembershipsPage.tsx": {
@@ -174,10 +174,10 @@
     "semantic_hash": "047e109b15aa708232dc4c7e0cfc33eb"
   },
   "admin/src/pages/ProfessionalsPage.tsx": {
-    "mtime": 1786038947.4012735,
-    "seen": 1793662640.7758858,
-    "ast_hash": "212556621ae98b10c3a1678d96c38093",
-    "semantic_hash": "212556621ae98b10c3a1678d96c38093"
+    "mtime": 1793666713.667461,
+    "seen": 1793666897.370069,
+    "ast_hash": "9f5a0106ee24dfa78539bde51610b76a",
+    "semantic_hash": ""
   },
   "admin/src/pages/ResourcesPage.tsx": {
     "mtime": 1786064486.0053627,
@@ -192,10 +192,10 @@
     "semantic_hash": "f7c6b8f795d4ecfe47b97ea4d9095adc"
   },
   "admin/src/pages/ServicesPage.tsx": {
-    "mtime": 1786038918.3982704,
-    "seen": 1793662640.7758858,
-    "ast_hash": "5787bcd8b11936ce7a4521ebde8823c2",
-    "semantic_hash": "5787bcd8b11936ce7a4521ebde8823c2"
+    "mtime": 1793666740.7759578,
+    "seen": 1793666897.370069,
+    "ast_hash": "e214a059deb886a3e686016c634b8b0b",
+    "semantic_hash": ""
   },
   "admin/src/pages/TeamPage.tsx": {
     "mtime": 1786038979.4363875,
@@ -600,8 +600,8 @@
     "semantic_hash": "44108a0cb7ba3a5f790d33c662806719"
   },
   "backend/internal/infrastructure/persistence/memory/appointment_repository.go": {
-    "mtime": 1793664834.5872176,
-    "seen": 1793665232.485294,
+    "mtime": 1793665636.2783284,
+    "seen": 1793666897.370069,
     "ast_hash": "3ff4c28a5b8eb17837d2701c48c3988e",
     "semantic_hash": ""
   },
@@ -666,8 +666,8 @@
     "semantic_hash": "d93d759d6df537d846f646779319ecb7"
   },
   "backend/internal/infrastructure/persistence/memory/tenant_repository.go": {
-    "mtime": 1793664990.7702289,
-    "seen": 1793665232.485294,
+    "mtime": 1793665636.306853,
+    "seen": 1793666897.370069,
     "ast_hash": "bb983b3da61490c05f8ba8b912b2152d",
     "semantic_hash": ""
   },
@@ -1056,10 +1056,10 @@
     "semantic_hash": "e5d3502c642a53dc75b17cd12c902164"
   },
   "booking/src/pages/BookingPage.tsx": {
-    "mtime": 1793536256.2891867,
-    "seen": 1793662640.776887,
-    "ast_hash": "da8c2dc1973245f4f1019d20b64782a0",
-    "semantic_hash": "da8c2dc1973245f4f1019d20b64782a0"
+    "mtime": 1793666767.876415,
+    "seen": 1793666897.370069,
+    "ast_hash": "7a14b16ef635fccfa1fe4a103308225b",
+    "semantic_hash": ""
   },
   "booking/src/pages/ManagePage.tsx": {
     "mtime": 1786045495.87494,
@@ -1764,14 +1764,14 @@
     "semantic_hash": ""
   },
   "backend/internal/bootstrap/seed_homologation.go": {
-    "mtime": 1793665080.8208709,
-    "seen": 1793665232.485294,
-    "ast_hash": "f6d7ec3815f5dd1fb0e8778ccdb19b38",
+    "mtime": 1793666795.0238903,
+    "seen": 1793666897.370069,
+    "ast_hash": "896474555b8d80f2126c5ded124177a8",
     "semantic_hash": ""
   },
   "backend/internal/bootstrap/seed_homologation_test.go": {
-    "mtime": 1793665166.7677581,
-    "seen": 1793665232.485294,
+    "mtime": 1793665636.2489746,
+    "seen": 1793666897.370069,
     "ast_hash": "2fc25bd0e17c10844e5a9185ee04b691",
     "semantic_hash": ""
   }

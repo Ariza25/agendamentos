@@ -35,13 +35,13 @@ const CHANNEL_OPTIONS = [
 ]
 
 const PRESET_COLORS = [
-  { name: 'Carmim (Padrão)', value: '#b42318' },
-  { name: 'Azul Safira', value: '#2563eb' },
+  { name: 'Azul Marinho (Padrão)', value: '#1e3a8a' },
+  { name: 'Azul Cobalto', value: '#2563eb' },
+  { name: 'Azul Gelo / Sky', value: '#0284c7' },
   { name: 'Esmeralda', value: '#059669' },
-  { name: 'Roxo Imperial', value: '#7c3aed' },
   { name: 'Âmbar Ouro', value: '#d97706' },
   { name: 'Grafite Elegante', value: '#1e293b' },
-  { name: 'Rosa Magenta', value: '#db2777' },
+  { name: 'Carmim Nobre', value: '#b42318' },
 ]
 
 type ActiveTab = 'rules' | 'branding'
@@ -73,7 +73,7 @@ export function ConfigurationPage() {
 
   // Branding & White-label state
   const [logoUrl, setLogoUrl] = useState('')
-  const [primaryColor, setPrimaryColor] = useState('#b42318')
+  const [primaryColor, setPrimaryColor] = useState('#1e3a8a')
   const [address, setAddress] = useState('')
   const [addressNumber, setAddressNumber] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
@@ -123,7 +123,7 @@ export function ConfigurationPage() {
 
         // Branding
         setLogoUrl(data.logoUrl || '')
-        setPrimaryColor(data.primaryColor || '#b42318')
+        setPrimaryColor(data.primaryColor || '#1e3a8a')
         setAddress(data.address || '')
         setAddressNumber(data.addressNumber || '')
         setNeighborhood(data.neighborhood || '')
@@ -219,7 +219,7 @@ export function ConfigurationPage() {
         calendarSyncEnabled,
         // Branding & Contacts
         logoUrl: logoUrl.trim(),
-        primaryColor: primaryColor.trim() || '#b42318',
+        primaryColor: primaryColor.trim() || '#1e3a8a',
         address: address.trim(),
         addressNumber: addressNumber.trim(),
         neighborhood: neighborhood.trim(),
@@ -635,13 +635,13 @@ export function ConfigurationPage() {
                     <input
                       type="color"
                       aria-label="Seletor de cor primária"
-                      value={primaryColor || '#b42318'}
+                      value={primaryColor || '#1e3a8a'}
                       onChange={(e) => setPrimaryColor(e.target.value)}
                       className="h-10 w-14 cursor-pointer rounded-lg border border-[var(--color-line)] p-1 bg-transparent"
                     />
                     <Input
                       className="w-32 font-mono text-sm"
-                      placeholder="#b42318"
+                      placeholder="#1e3a8a"
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
                     />
@@ -825,7 +825,7 @@ export function ConfigurationPage() {
               <div
                 className="mt-4 overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white p-6 shadow-sm transition-all"
                 style={{
-                  borderTop: `6px solid ${primaryColor || '#b42318'}`,
+                  borderTop: `6px solid ${primaryColor || '#1e3a8a'}`,
                 }}
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -842,7 +842,7 @@ export function ConfigurationPage() {
                     ) : (
                       <div
                         className="flex h-16 w-16 items-center justify-center rounded-2xl text-white shadow-sm"
-                        style={{ backgroundColor: primaryColor || '#b42318' }}
+                        style={{ backgroundColor: primaryColor || '#1e3a8a' }}
                       >
                         <Building2 className="h-8 w-8" />
                       </div>
@@ -859,7 +859,7 @@ export function ConfigurationPage() {
 
                   <button
                     type="button"
-                    style={{ backgroundColor: primaryColor || '#b42318' }}
+                    style={{ backgroundColor: primaryColor || '#1e3a8a' }}
                     className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
                   >
                     Agendar Horário

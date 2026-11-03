@@ -16,7 +16,7 @@ import { Spinner } from '../shared/components/Spinner'
 import { useToast } from '../shared/components/toast/ToastProvider'
 import type { Service } from '../types'
 
-const COLOR_OPTIONS = ['#b42318', '#0f766e', '#b45309', '#4338ca', '#be185d', '#15803d', '#c2410c', '#475569']
+const COLOR_OPTIONS = ['#1e3a8a', '#0284c7', '#059669', '#d97706', '#4338ca', '#be185d', '#15803d', '#475569']
 
 export function ServicesPage() {
   const { showToast } = useToast()
@@ -109,7 +109,7 @@ export function ServicesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: service.color || '#b42318' }} />
+                      <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: service.color || '#1e3a8a' }} />
                       <p className="truncate font-bold text-[var(--color-ink)]">{service.name}</p>
                     </div>
                     <p className="mt-1 truncate text-sm text-[var(--color-ink-soft)]">

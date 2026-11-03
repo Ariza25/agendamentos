@@ -75,6 +75,7 @@ func seedHomologationData(repos repositorySet, hasher auth.PasswordHasher) {
 		BufferMinutes:              0,
 		NotificationsEnabled:       true,
 		NotificationReminderHours:  24,
+		PrimaryColor:               "#1e3a8a",
 	})
 
 	// 3. User Accounts (Owner, Admin, Test)
@@ -781,3 +782,4 @@ func seedAppointments(
 		})
 	}
 }
+

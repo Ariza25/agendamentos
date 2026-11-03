@@ -190,14 +190,22 @@ export function AdminLoginPage({ onLogin }: LoginAdminPageProps) {
         </div>
       </section>
 
-      <section className="hidden min-h-screen flex-col justify-center bg-[var(--color-primary)] px-12 py-16 text-white lg:flex">
-        <p className="max-w-md font-headline text-4xl font-black leading-tight tracking-tight">
-          Organize sua agenda e deixe seus clientes agendarem sozinhos.
-        </p>
-        <p className="mt-5 max-w-md text-base leading-7 text-white/85">
-          Configure os períodos de atendimento, cadastre serviços e profissionais, e disponibilize uma tela pública
-          de agendamento para o cliente final.
-        </p>
+      <section className="relative hidden min-h-screen flex-col justify-center overflow-hidden bg-gradient-to-br from-[#1e3a8a] via-[#172554] to-[#0f172a] px-12 py-16 text-white lg:flex">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-sky-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-20 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
+        <div className="relative z-10 max-w-md">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3.5 py-1 text-xs font-bold text-sky-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
+            Gestão inteligente de agendamentos
+          </div>
+          <p className="font-headline text-4xl font-black leading-tight tracking-tight text-white">
+            Organize sua agenda e deixe seus clientes agendarem sozinhos.
+          </p>
+          <p className="mt-5 text-base leading-7 text-sky-100/85">
+            Configure os períodos de atendimento, cadastre serviços e profissionais, e disponibilize uma tela pública
+            de agendamento para o cliente final.
+          </p>
+        </div>
       </section>
     </main>
   )

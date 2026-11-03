@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #b42318;
-  --color-primary-strong: #8f241a;
-  --color-bg-base: #f7f2ea;
-  --color-bg-elevated: #fffdf8;
-  --color-bg-muted: #f2ece4;
-  --color-text: #201a16;
-  --color-text-muted: #6f655d;
-  --color-border: #e7ddd1;
+  --color-primary: #1e3a8a;
+  --color-primary-strong: #172554;
+  --color-ice: #0284c7;
+  --color-ice-subtle: #e0f2fe;
+  --color-bg-base: #f8fafc;
+  --color-bg-elevated: #ffffff;
+  --color-bg-muted: #f1f5f9;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
   --color-danger: #dc2626;
   --color-danger-strong: #b91c1c;
-  --color-success: #0f766e;
-  --color-warning: #b45309;
+  --color-success: #059669;
+  --color-warning: #d97706;
 
   --color-panel: var(--color-bg-base);
   --color-panel-alt: var(--color-bg-muted);
@@ -35,8 +37,8 @@
     margin: 0;
     min-width: 320px;
     background:
-      radial-gradient(circle at top left, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 32%),
-      radial-gradient(circle at bottom right, color-mix(in oklab, var(--color-success) 10%, transparent), transparent 32%),
+      radial-gradient(circle at top left, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(2, 132, 199, 0.08), transparent 32%),
       linear-gradient(180deg, var(--color-bg-base) 0%, var(--color-bg-muted) 100%);
   }
 

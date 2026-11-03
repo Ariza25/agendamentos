@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #b42318;
-  --color-primary-strong: #8f241a;
-  --color-bg-base: #f7f2ea;
-  --color-bg-elevated: #fffdf8;
-  --color-bg-muted: #f2ece4;
-  --color-text: #201a16;
-  --color-text-muted: #6f655d;
-  --color-border: #e7ddd1;
+  --color-primary: #1e3a8a;
+  --color-primary-strong: #172554;
+  --color-ice: #0284c7;
+  --color-ice-subtle: #e0f2fe;
+  --color-bg-base: #f8fafc;
+  --color-bg-elevated: #ffffff;
+  --color-bg-muted: #f1f5f9;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
   --color-danger: #dc2626;
   --color-danger-strong: #b91c1c;
-  --color-success: #0f766e;
-  --color-warning: #b45309;
-  --color-modal-backdrop: rgba(18, 24, 32, 0.58);
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-modal-backdrop: rgba(15, 23, 42, 0.65);
   --color-state-error-bg: #fef2f2;
   --color-state-error-border: #fecaca;
   --color-state-error-text: #b91c1c;
@@ -23,8 +25,8 @@
   --color-state-success-bg: #ecfdf5;
   --color-state-success-border: #a7f3d0;
   --color-state-success-text: #065f46;
-  --color-accent-soft-bg: #ffedd5;
-  --color-accent-soft-text: #c2410c;
+  --color-accent-soft-bg: #f0f9ff;
+  --color-accent-soft-text: #0369a1;
 
   --color-panel: var(--color-bg-base);
   --color-panel-alt: var(--color-bg-muted);
@@ -51,7 +53,8 @@
     margin: 0;
     min-width: 320px;
     background:
-      radial-gradient(circle at top left, color-mix(in oklab, var(--color-primary) 18%, transparent), transparent 28%),
+      radial-gradient(circle at top left, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 32%),
+      radial-gradient(circle at bottom right, rgba(2, 132, 199, 0.08), transparent 32%),
       linear-gradient(180deg, var(--color-bg-base) 0%, var(--color-bg-muted) 100%);
   }
 
@@ -189,7 +192,7 @@
 
   select.admin-select-control:not([multiple]) {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236f655d' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-position: right 0.875rem center;
     background-repeat: no-repeat;
     background-size: 1rem;
@@ -225,11 +228,11 @@
   }
 
   .admin-shell-shadow {
-    box-shadow: 0 24px 80px rgba(40, 24, 16, 0.08);
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
   }
 
   .admin-card-shadow {
-    box-shadow: 0 16px 36px rgba(42, 28, 20, 0.08);
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
   }
 
   .app-modal-backdrop {

@@ -514,7 +514,7 @@ function ServiceStep({
                     {isSelected && <Check className="h-3.5 w-3.5" />}
                   </div>
                 )}
-                <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: item.color || '#b42318' }} />
+                <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: item.color || '#1e3a8a' }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-bold text-[var(--color-ink)]">{item.name}</span>
                   {item.description ? (
@@ -574,7 +574,7 @@ function ProfessionalStep({
             >
               <span
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: item.color || '#b42318' }}
+                style={{ backgroundColor: item.color || '#1e3a8a' }}
               >
                 <User className="h-5 w-5" />
               </span>

@@ -15,7 +15,7 @@ import { Spinner } from '../shared/components/Spinner'
 import { useToast } from '../shared/components/toast/ToastProvider'
 import type { Professional } from '../types'
 
-const COLOR_OPTIONS = ['#b42318', '#0f766e', '#b45309', '#4338ca', '#be185d', '#15803d', '#c2410c', '#475569']
+const COLOR_OPTIONS = ['#1e3a8a', '#0284c7', '#059669', '#d97706', '#4338ca', '#be185d', '#15803d', '#475569']
 
 export function ProfessionalsPage() {
   const { showToast } = useToast()
@@ -108,7 +108,7 @@ export function ProfessionalsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-headline text-sm font-black text-white" style={{ backgroundColor: professional.color || '#b42318' }}>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-headline text-sm font-black text-white" style={{ backgroundColor: professional.color || '#1e3a8a' }}>
                         {professional.name.trim().charAt(0).toUpperCase() || '?'}
                       </span>
                       <p className="truncate font-bold text-[var(--color-ink)]">{professional.name}</p>
