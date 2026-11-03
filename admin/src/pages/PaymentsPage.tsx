@@ -95,7 +95,13 @@ export function PaymentsPage() {
       <Section
         actions={
           <>
-            <Button disabled={exporting} icon={<Download className="h-4 w-4" />} loading={exporting} onClick={() => void handleExport()}>
+            <Button
+              disabled={exporting}
+              icon={<Download className="h-4 w-4" />}
+              loading={exporting}
+              onClick={() => void handleExport()}
+              variant="secondary"
+            >
               Exportar CSV
             </Button>
             <Button icon={<Plus className="h-4 w-4" />} onClick={() => setIsFormOpen(true)}>

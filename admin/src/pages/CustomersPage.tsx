@@ -76,7 +76,13 @@ export function CustomersPage() {
       <Section
         actions={
           <>
-            <Button disabled={exporting} icon={<Download className="h-4 w-4" />} loading={exporting} onClick={() => void handleExport()}>
+            <Button
+              disabled={exporting}
+              icon={<Download className="h-4 w-4" />}
+              loading={exporting}
+              onClick={() => void handleExport()}
+              variant="secondary"
+            >
               Exportar CSV
             </Button>
             <Button

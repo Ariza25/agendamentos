@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { checkInAppointment, fetchAppointments, fetchAppointmentSummary, markAppointmentNoShow } from '../lib/adminApi'
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_TONES } from '../lib/appointmentStatus'
-import { formatDate, formatTime, todayKey } from '../lib/format'
+import { formatDate, formatTime, fromDateKey, toDateKey, todayKey } from '../lib/format'
 import { CheckoutComandaModal } from '../features/appointments/components/CheckoutComandaModal'
 import { useReferenceData } from '../shared/hooks/useReferenceData'
 import { useAdminEvents } from '../shared/hooks/useAdminEvents'
@@ -236,11 +236,7 @@ export function AgendaPage() {
 }
 
 function shiftDate(dateKey: string, offsetDays: number): string {
-  const [year, month, day] = dateKey.split('-').map(Number)
-  const date = new Date(year, month - 1, day)
+  const date = fromDateKey(dateKey)
   date.setDate(date.getDate() + offsetDays)
-  const nextYear = date.getFullYear()
-  const nextMonth = String(date.getMonth() + 1).padStart(2, '0')
-  const nextDay = String(date.getDate()).padStart(2, '0')
-  return `${nextYear}-${nextMonth}-${nextDay}`
+  return toDateKey(date)
 }

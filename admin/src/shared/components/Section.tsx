@@ -29,7 +29,11 @@ export function Section({ title, subtitle, actions, children, className, titleCl
               {subtitle ? <p className="text-sm text-[var(--color-ink-soft)]">{subtitle}</p> : null}
             </div>
           ) : null}
-          {actions}
+          {actions ? (
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              {actions}
+            </div>
+          ) : null}
         </div>
       ) : null}
       {children}

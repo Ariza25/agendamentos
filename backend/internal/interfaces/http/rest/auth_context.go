@@ -31,6 +31,9 @@ func resolveAuthClaims(r *http.Request, authUseCase *appauth.UseCase) (authdomai
 		}
 	}
 	if token == "" {
+		token = strings.TrimSpace(r.URL.Query().Get("token"))
+	}
+	if token == "" {
 		return authdomain.Claims{}, false
 	}
 

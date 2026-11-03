@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { buildApiUrl } from '../../lib/apiBase'
+import { getAdminAuthToken } from '../../lib/adminAuth'
 
 export type AdminEvent = {
   type: string
@@ -17,16 +19,51 @@ export function useAdminEvents(onEvent?: EventListener) {
   useEffect(() => {
     let source: EventSource | null = null
     let retryTimeout: ReturnType<typeof setTimeout> | null = null
+    let isDisposed = false
+
+    function cleanup() {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
+        retryTimeout = null
+      }
+      if (source) {
+        source.close()
+        source = null
+      }
+      setIsConnected(false)
+    }
+
+    function scheduleReconnect() {
+      if (isDisposed) return
+      cleanup()
+      const token = getAdminAuthToken()
+      if (token) {
+        retryTimeout = setTimeout(connect, 10000)
+      }
+    }
 
     function connect() {
+      if (isDisposed) return
+      const token = getAdminAuthToken()
+      if (!token) {
+        cleanup()
+        return
+      }
+
+      cleanup()
+
       try {
-        source = new EventSource('/api/v1/admin/events', { withCredentials: true })
+        const url = buildApiUrl(`/api/v1/admin/events?token=${encodeURIComponent(token)}`)
+        source = new EventSource(url, { withCredentials: true })
 
         source.onopen = () => {
-          setIsConnected(true)
+          if (!isDisposed) {
+            setIsConnected(true)
+          }
         }
 
         source.onmessage = (e) => {
+          if (isDisposed) return
           try {
             const parsed: AdminEvent = JSON.parse(e.data)
             if (onEventRef.current) {
@@ -38,29 +75,25 @@ export function useAdminEvents(onEvent?: EventListener) {
         }
 
         source.onerror = () => {
-          setIsConnected(false)
-          if (source) {
-            source.close()
-            source = null
-          }
-          // Attempt reconnect after 5s
-          retryTimeout = setTimeout(connect, 5000)
+          scheduleReconnect()
         }
       } catch {
-        setIsConnected(false)
-        retryTimeout = setTimeout(connect, 5000)
+        scheduleReconnect()
       }
     }
 
     connect()
 
+    const handleAuthChange = () => {
+      connect()
+    }
+
+    window.addEventListener('erpagendamentos:admin:auth:changed', handleAuthChange)
+
     return () => {
-      if (retryTimeout) clearTimeout(retryTimeout)
-      if (source) {
-        source.close()
-        source = null
-      }
-      setIsConnected(false)
+      isDisposed = true
+      window.removeEventListener('erpagendamentos:admin:auth:changed', handleAuthChange)
+      cleanup()
     }
   }, [])
 

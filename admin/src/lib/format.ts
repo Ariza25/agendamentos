@@ -9,6 +9,9 @@ export function todayKey(offsetDays = 0): string {
 }
 
 export function toDateKey(date: Date): string {
+  if (!date || Number.isNaN(date.getTime())) {
+    return ''
+  }
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -16,16 +19,43 @@ export function toDateKey(date: Date): string {
 }
 
 export function fromDateKey(dateKey: string): Date {
-  const [year, month, day] = dateKey.split('-').map(Number)
+  if (!dateKey) {
+    return new Date()
+  }
+  if (dateKey.includes('T')) {
+    const parsed = new Date(dateKey)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed
+    }
+  }
+  const clean = dateKey.slice(0, 10)
+  const [year, month, day] = clean.split('-').map(Number)
+  if (!year || !month || !day || Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    const fallback = new Date(dateKey)
+    return Number.isNaN(fallback.getTime()) ? new Date() : fallback
+  }
   return new Date(year, month - 1, day)
 }
 
 export function formatDate(dateKey: string): string {
+  if (!dateKey) {
+    return ''
+  }
   const date = fromDateKey(dateKey)
-  return `${DAY_LABELS[date.getDay()]}, ${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  const dayName = DAY_LABELS[date.getDay()] ?? ''
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const yyyy = date.getFullYear()
+  return dayName ? `${dayName}, ${dd}/${mm}/${yyyy}` : `${dd}/${mm}/${yyyy}`
 }
 
 export function formatTime(rfc3339: string): string {
+  if (!rfc3339) {
+    return ''
+  }
   const date = new Date(rfc3339)
   if (Number.isNaN(date.getTime())) {
     return ''
@@ -34,20 +64,31 @@ export function formatTime(rfc3339: string): string {
 }
 
 export function formatDateTime(rfc3339: string): string {
+  if (!rfc3339) {
+    return ''
+  }
   const date = new Date(rfc3339)
   if (Number.isNaN(date.getTime())) {
     return ''
   }
   const key = toDateKey(date)
-  return `${formatDate(key)} às ${formatTime(rfc3339)}`
+  const time = formatTime(rfc3339)
+  return time ? `${formatDate(key)} às ${time}` : formatDate(key)
 }
 
 export function formatMoney(valueInCents: number): string {
-  return new Intl.NumberFormat('pt-BR', { currency: 'BRL', style: 'currency' }).format((valueInCents ?? 0) / 100)
+  const safe = Number.isFinite(valueInCents) ? valueInCents : 0
+  return new Intl.NumberFormat('pt-BR', { currency: 'BRL', style: 'currency' }).format(safe / 100)
 }
 
 export function localDateTimeValue(rfc3339: string): string {
+  if (!rfc3339) {
+    return ''
+  }
   const date = new Date(rfc3339)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -68,7 +109,13 @@ export function toRFC3339(localValue: string): string {
 }
 
 export function addMinutes(rfc3339: string, minutes: number): string {
+  if (!rfc3339) {
+    return ''
+  }
   const date = new Date(rfc3339)
-  date.setMinutes(date.getMinutes() + minutes)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  date.setMinutes(date.getMinutes() + (Number.isFinite(minutes) ? minutes : 0))
   return date.toISOString()
 }

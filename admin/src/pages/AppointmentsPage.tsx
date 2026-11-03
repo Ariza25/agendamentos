@@ -121,14 +121,20 @@ export function AppointmentsPage() {
     <PageContainer>
       <Section
         actions={
-          <>
-            <Button disabled={exporting} icon={<Download className="h-4 w-4" />} loading={exporting} onClick={() => void handleExport()}>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              disabled={exporting}
+              icon={<Download className="h-4 w-4" />}
+              loading={exporting}
+              onClick={() => void handleExport()}
+              variant="secondary"
+            >
               Exportar CSV
             </Button>
             <Button icon={<Plus className="h-4 w-4" />} onClick={() => setIsFormOpen(true)}>
               Novo agendamento
             </Button>
-          </>
+          </div>
         }
         subtitle="Filtre os agendamentos do dia e gerencie os horários."
         title="Agendamentos"
@@ -157,11 +163,16 @@ export function AppointmentsPage() {
               ))}
             </Select>
           </FieldInput>
-          <div className="flex items-end">
-            <Button onClick={loadAppointments} variant="secondary">
-              <Search className="h-4 w-4" />
-              Buscar
-            </Button>
+          <div className="flex flex-col justify-end">
+            <span className="text-xs font-bold uppercase tracking-wide text-transparent select-none hidden md:block">
+              Filtrar
+            </span>
+            <div className="mt-1">
+              <Button className="h-11 w-full justify-center" onClick={loadAppointments} variant="secondary">
+                <Search className="h-4 w-4 mr-1.5" />
+                Buscar
+              </Button>
+            </div>
           </div>
         </div>
       </Section>
