@@ -30,27 +30,27 @@ export type AdminModuleSetting = {
 }
 
 const ADMIN_AREAS_ROLES: Record<AdminAreaKey, AdminRole[]> = {
-  agenda: ['owner', 'admin', 'receptionist', 'professional'],
-  appointments: ['owner', 'admin', 'receptionist', 'professional'],
-  customers: ['owner', 'admin', 'receptionist'],
-  services: ['owner', 'admin'],
-  resources: ['owner', 'admin'],
-  professionals: ['owner', 'admin'],
-  configuration: ['owner', 'admin'],
-  team: ['owner', 'admin'],
-  tenants: ['owner', 'admin'],
-  analytics: ['owner', 'admin'],
-  notifications: ['owner', 'admin', 'receptionist'],
-  payments: ['owner', 'admin', 'receptionist'],
-  'waiting-list': ['owner', 'admin', 'receptionist'],
-  reviews: ['owner', 'admin', 'receptionist'],
-  packages: ['owner', 'admin'],
-  'gift-cards': ['owner', 'admin'],
-  memberships: ['owner', 'admin'],
-  widget: ['owner', 'admin'],
-  finance: ['owner', 'admin'],
-  inventory: ['owner', 'admin'],
-  commissions: ['owner', 'admin'],
+  agenda: ['owner', 'admin', 'receptionist', 'professional', 'master', 'superadmin'],
+  appointments: ['owner', 'admin', 'receptionist', 'professional', 'master', 'superadmin'],
+  customers: ['owner', 'admin', 'receptionist', 'master', 'superadmin'],
+  services: ['owner', 'admin', 'master', 'superadmin'],
+  resources: ['owner', 'admin', 'master', 'superadmin'],
+  professionals: ['owner', 'admin', 'master', 'superadmin'],
+  configuration: ['owner', 'admin', 'master', 'superadmin'],
+  team: ['owner', 'admin', 'master', 'superadmin'],
+  tenants: ['master', 'superadmin'],
+  analytics: ['owner', 'admin', 'master', 'superadmin'],
+  notifications: ['owner', 'admin', 'receptionist', 'master', 'superadmin'],
+  payments: ['owner', 'admin', 'receptionist', 'master', 'superadmin'],
+  'waiting-list': ['owner', 'admin', 'receptionist', 'master', 'superadmin'],
+  reviews: ['owner', 'admin', 'receptionist', 'master', 'superadmin'],
+  packages: ['owner', 'admin', 'master', 'superadmin'],
+  'gift-cards': ['owner', 'admin', 'master', 'superadmin'],
+  memberships: ['owner', 'admin', 'master', 'superadmin'],
+  widget: ['owner', 'admin', 'master', 'superadmin'],
+  finance: ['owner', 'admin', 'master', 'superadmin'],
+  inventory: ['owner', 'admin', 'master', 'superadmin'],
+  commissions: ['owner', 'admin', 'master', 'superadmin'],
 }
 
 export function canAccessAdminArea(area: AdminAreaKey, role?: AdminRole): boolean {
@@ -60,10 +60,10 @@ export function canAccessAdminArea(area: AdminAreaKey, role?: AdminRole): boolea
   return ADMIN_AREAS_ROLES[area]?.includes(role) ?? false
 }
 
-export function isMasterAdmin(tenantId?: string): boolean {
-  return tenantId === 'default'
+export function isMasterAdmin(tenantId?: string, role?: string): boolean {
+  return tenantId === 'default' || role === 'master' || role === 'superadmin'
 }
 
 export function roleCanManageAdminUsers(role?: AdminRole): boolean {
-  return role === 'owner' || role === 'admin'
+  return role === 'owner' || role === 'admin' || role === 'master' || role === 'superadmin'
 }

@@ -73,12 +73,12 @@ export function AdminShell({ user, onLogout }: AdminShellProps) {
     if (item.roles && !item.roles.includes(user.role ?? '')) {
       return false
     }
-    if (item.masterOnly && !isMasterAdmin(user.tenantId)) {
+    if (item.masterOnly && !isMasterAdmin(user.tenantId, user.role)) {
       return false
     }
     // Module permissions enforcement for tenant
     if (
-      !isMasterAdmin(user.tenantId) &&
+      !isMasterAdmin(user.tenantId, user.role) &&
       currentTenant &&
       currentTenant.activeModules &&
       currentTenant.activeModules.length > 0

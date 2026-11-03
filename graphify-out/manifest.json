@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "admin/src/app/AdminShell.tsx": {
-    "mtime": 1793655990.3708136,
-    "seen": 1793662640.7758858,
-    "ast_hash": "e8e0d3b415481147d2e1df533b7537e7",
+    "mtime": 1793671096.4714649,
+    "seen": 1793671187.2355099,
+    "ast_hash": "8002a56fa28594c6d3b2f97ae94f0ae9",
     "semantic_hash": ""
   },
   "admin/src/app/navigation.ts": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "admin/src/lib/adminAuth.ts": {
-    "mtime": 1793664075.1603692,
-    "seen": 1793665232.485294,
-    "ast_hash": "13343bbaf786c2a8c683afb4119f7fa5",
+    "mtime": 1793671055.9809468,
+    "seen": 1793671187.2355099,
+    "ast_hash": "92a0591ad999926f3553cb896d529b26",
     "semantic_hash": ""
   },
   "admin/src/lib/adminHttp.ts": {
@@ -66,10 +66,10 @@
     "semantic_hash": "1fe2709a6af8b36c3c7b408a6da49bcb"
   },
   "admin/src/lib/adminPermissions.ts": {
-    "mtime": 1793492795.8516293,
-    "seen": 1793662640.7758858,
-    "ast_hash": "87d5908a6562e747c672a4d1b37c2c56",
-    "semantic_hash": "87d5908a6562e747c672a4d1b37c2c56"
+    "mtime": 1793671087.281421,
+    "seen": 1793671187.2355099,
+    "ast_hash": "f3b5f44a91c9f451f5642a06e20bdbe2",
+    "semantic_hash": ""
   },
   "admin/src/lib/apiBase.ts": {
     "mtime": 1793587168.7801738,
@@ -96,9 +96,9 @@
     "semantic_hash": "495881c5c20d062fb1b2ae53fd03c905"
   },
   "admin/src/lib/format.ts": {
-    "mtime": 1793668594.2356417,
-    "seen": 1793668831.6631193,
-    "ast_hash": "dc5e886f768a77ba78f630235b5eb8df",
+    "mtime": 1793670967.4716136,
+    "seen": 1793671187.2355099,
+    "ast_hash": "aeb66e4ad257d644757dfa632e899cfc",
     "semantic_hash": ""
   },
   "admin/src/main.tsx": {
@@ -108,9 +108,9 @@
     "semantic_hash": "ac3851e1c1aa30c988b3939d6e8bea49"
   },
   "admin/src/pages/AgendaPage.tsx": {
-    "mtime": 1793668643.6145167,
-    "seen": 1793668831.6631193,
-    "ast_hash": "28f307d0b8affcf1394943a170b854b0",
+    "mtime": 1793671146.546354,
+    "seen": 1793671187.2355099,
+    "ast_hash": "3527e3137d2f9d5b2032a2069789a03e",
     "semantic_hash": ""
   },
   "admin/src/pages/AnalyticsPage.tsx": {
@@ -120,8 +120,8 @@
     "semantic_hash": "45d0ce7b50d1c939ce2678d2850772b9"
   },
   "admin/src/pages/AppointmentsPage.tsx": {
-    "mtime": 1793668680.3369079,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.2899635,
+    "seen": 1793671187.2355099,
     "ast_hash": "e05e4e532d1c1b1645118cbceb36ffc0",
     "semantic_hash": ""
   },
@@ -132,8 +132,8 @@
     "semantic_hash": ""
   },
   "admin/src/pages/CustomersPage.tsx": {
-    "mtime": 1793668705.6088734,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.3305767,
+    "seen": 1793671187.2355099,
     "ast_hash": "8e0279a9256aaa9b3c566b97a9a00936",
     "semantic_hash": ""
   },
@@ -168,8 +168,8 @@
     "semantic_hash": "b71a7e62c4f0a7cc11655319a8dc7515"
   },
   "admin/src/pages/PaymentsPage.tsx": {
-    "mtime": 1793668712.348096,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.3922572,
+    "seen": 1793671187.2355099,
     "ast_hash": "2a5552e1cc9d85c4143e26c7962b4aee",
     "semantic_hash": ""
   },
@@ -186,8 +186,8 @@
     "semantic_hash": "0e478531f01c0486a76943942f698d76"
   },
   "admin/src/pages/ReviewsPage.tsx": {
-    "mtime": 1793668719.1353002,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.4415076,
+    "seen": 1793671187.2355099,
     "ast_hash": "94f8e84909bf539598b56d8d245cdabf",
     "semantic_hash": ""
   },
@@ -264,8 +264,8 @@
     "semantic_hash": "990ace0194609b8ffc0a83a475ae90ef"
   },
   "admin/src/shared/components/Section.tsx": {
-    "mtime": 1793668660.3651454,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.48234,
+    "seen": 1793671187.2355099,
     "ast_hash": "e4dba0a6cbcf0b854d18fd6b67017b6a",
     "semantic_hash": ""
   },
@@ -1038,8 +1038,8 @@
     "semantic_hash": "7d85fcae554e3c57bc7927a6445ca9d2"
   },
   "booking/src/lib/format.ts": {
-    "mtime": 1793668613.4375563,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.697609,
+    "seen": 1793671187.2355099,
     "ast_hash": "3834470d44c586abab560b5e948b9cb2",
     "semantic_hash": ""
   },
@@ -1236,8 +1236,8 @@
     "semantic_hash": "33c2096dee93150a7a00b2bb14e0f55e"
   },
   "admin/src/shared/hooks/useAdminEvents.ts": {
-    "mtime": 1793668741.4631722,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.514427,
+    "seen": 1793671187.2355099,
     "ast_hash": "a4b1718d9776fbc36a27ee19d31400c5",
     "semantic_hash": ""
   },
@@ -1404,8 +1404,8 @@
     "semantic_hash": "ea6be69326ba50b7806971c4ad326cc7"
   },
   "backend/internal/interfaces/http/rest/events.go": {
-    "mtime": 1793668770.1018026,
-    "seen": 1793668831.6631193,
+    "mtime": 1793670131.672732,
+    "seen": 1793671187.2355099,
     "ast_hash": "513e8d2b8968c3ac65050638b0b5ff64",
     "semantic_hash": ""
   },

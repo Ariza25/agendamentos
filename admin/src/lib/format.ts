@@ -52,6 +52,26 @@ export function formatDate(dateKey: string): string {
   return dayName ? `${dayName}, ${dd}/${mm}/${yyyy}` : `${dd}/${mm}/${yyyy}`
 }
 
+export function formatDateShort(dateKey: string): string {
+  if (!dateKey) return ''
+  const date = fromDateKey(dateKey)
+  if (Number.isNaN(date.getTime())) return ''
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  return `${dd}/${mm}`
+}
+
+export function formatRelativeDay(dateKey: string): string {
+  if (!dateKey) return ''
+  const today = todayKey()
+  if (dateKey === today) return 'Hoje'
+  const tomorrow = todayKey(1)
+  if (dateKey === tomorrow) return 'Amanhã'
+  const yesterday = todayKey(-1)
+  if (dateKey === yesterday) return 'Ontem'
+  return ''
+}
+
 export function formatTime(rfc3339: string): string {
   if (!rfc3339) {
     return ''

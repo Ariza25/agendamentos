@@ -1,7 +1,7 @@
 import { buildApiError } from './apiError'
 import { buildApiUrl } from './apiBase'
 
-export type AdminRole = 'owner' | 'admin' | 'receptionist' | 'professional'
+export type AdminRole = 'owner' | 'admin' | 'receptionist' | 'professional' | 'master' | 'superadmin'
 
 export type AdminAccount = {
   id: string
@@ -31,7 +31,7 @@ export type AdminAuthError = {
   fieldErrors?: Record<string, string>
 }
 
-export const ADMIN_ROLES = new Set<AdminRole>(['owner', 'admin', 'receptionist', 'professional'])
+export const ADMIN_ROLES = new Set<AdminRole>(['owner', 'admin', 'receptionist', 'professional', 'master', 'superadmin'])
 
 const ADMIN_USER_STORAGE_KEY = 'erpagendamentos:admin:user'
 const ADMIN_CSRF_STORAGE_KEY = 'erpagendamentos:admin:csrf'
@@ -315,8 +315,11 @@ function normalizeAdminAccount(input: Partial<AdminAccount>): AdminAccount {
 
 export function roleLabel(role?: string): string {
   switch (role) {
+    case 'master':
+    case 'superadmin':
+      return 'Master (Dono do ERP)'
     case 'owner':
-      return 'Proprietario'
+      return 'Proprietário'
     case 'admin':
       return 'Administrador'
     case 'receptionist':
